@@ -68,14 +68,30 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   blackboard->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("endpoints", endpoints);
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
 
+  // TODO(orduno): Is 'Sequence' the appropriate node to use for 'root'?
+  //               since 'navigate_root' is a long running action and will return 'running'
+  //               Is it possible 'check_preconditions_root' doesn't get called on
+  //               subsequent ticks?
+
+  // TODO(orduno): A recovery node (e.g. Unstuck) return SUCCESS if it was able to execute all
+  //               actions. That doesn't mean we fixed the failure, we need to check the
+  //               condition again.
   std::string xml_text =
     R"(
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <SequenceStar name="root">
-      <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
-      <FollowPath path="${path}"/>
-    </SequenceStar>
+    <Sequence name="root">
+      <Sequence name="check_preconditions">
+        <Fallback name="check_motion">
+          <IsStuck>
+          <Unstuck>
+        </Fallback>
+      </Sequence>
+      <SequenceStar name="navigate">
+        <ComputePathToPose endpoints="${endpoints}" path="${path}"/>
+        <FollowPath path="${path}"/>
+      </SequenceStar>
+    </Sequence>
   </BehaviorTree>
 </root>)";
 
