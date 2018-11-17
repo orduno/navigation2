@@ -73,7 +73,7 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   //               Is it possible 'check_preconditions_root' doesn't get called on
   //               subsequent ticks?
 
-  // TODO(orduno): A recovery node (e.g. Unstuck) return SUCCESS if it was able to execute all
+  // TODO(orduno): A recovery action node (e.g. Spin) return SUCCESS if it was able to execute all
   //               actions. That doesn't mean we fixed the failure, we need to check the
   //               condition again.
   std::string xml_text =
@@ -83,8 +83,14 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
     <Sequence name="root">
       <Sequence name="check_preconditions">
         <Fallback name="check_motion">
-          <IsStuck>
-          <Unstuck>
+          <Inverter name="is_stuck">
+            <IsStuck/>
+          </Inverter>
+          <Sequence name="stuck_recovery">
+            <Stop/>
+            <Spin/>
+          </Sequence>
+          <Spin/>
         </Fallback>
       </Sequence>
       <SequenceStar name="navigate">
