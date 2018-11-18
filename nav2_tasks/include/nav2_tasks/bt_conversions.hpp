@@ -89,10 +89,10 @@ inline geometry_msgs::msg::Quaternion convertFromString(const std::string & key)
 }
 
 template<>
-inline geometry_msgs::msg::QuaternionStamped convertFromString(const std::string & key)
+inline geometry_msgs::msg::QuaternionStamped convertFromString(const std::string & /*key*/)
 {
-  geometry_msgs::msg::QuaternionStamped quaternion_stamped
-  return quaternion;
+  geometry_msgs::msg::QuaternionStamped quaternion_stamped;
+  return quaternion_stamped;
 }
 
 }  // namespace BT

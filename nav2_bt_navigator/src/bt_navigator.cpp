@@ -69,12 +69,11 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   blackboard->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path);  // NOLINT
 
   // TODO(orduno): Is 'Sequence' the appropriate node to use for 'root'?
-  //               since 'navigate_root' is a long running action and will return 'running'
-  //               Is it possible 'check_preconditions_root' doesn't get called on
-  //               subsequent ticks?
+  //               The 'navigate' action is long running action and will return 'running'.
+  //               Is the 'check_preconditions' branch ticked on subsequent ticks?
 
-  // TODO(orduno): A recovery action node (e.g. Spin) return SUCCESS if it was able to execute all
-  //               actions. That doesn't mean we fixed the failure, we need to check the
+  // TODO(orduno): A recovery action node (e.g. Spin) returns SUCCESS if it was able to execute
+  //               the actions. That doesn't mean we fixed the failure, we need to check the
   //               condition again.
   std::string xml_text =
     R"(
