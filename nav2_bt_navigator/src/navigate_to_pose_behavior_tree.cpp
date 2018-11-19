@@ -32,8 +32,8 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree(rclcpp::Node::SharedPtr n
   factory_.registerNodeType<nav2_tasks::ComputePathToPoseAction>("ComputePathToPose");
   factory_.registerNodeType<nav2_tasks::FollowPathAction>("FollowPath");
   factory_.registerNodeType<nav2_tasks::IsStuckCondition>("IsStuck");
-  factory_.registerNodeType<nav2_tasks::SpinAction>("Spin");
   factory_.registerNodeType<nav2_tasks::StopAction>("Stop");
+  factory_.registerNodeType<nav2_tasks::SpinAction>("Spin");
 }
 
 }  // namespace nav2_bt_navigator
