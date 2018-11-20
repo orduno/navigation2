@@ -82,7 +82,6 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
             <Stop/>
             <Spin/>
           </Sequence>
-          <Spin/>
         </Fallback>
       </Sequence>
       <SequenceStar name="navigate">
