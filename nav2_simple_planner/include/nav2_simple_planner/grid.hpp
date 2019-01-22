@@ -59,6 +59,11 @@ struct Grid
 
   bool isEmpty() const { return m[0].size() < 1; }
 
+  bool isWithinBounds(const Point & location) const
+  {
+    return !isOutOfBounds;
+  }
+
   bool isOutOfBounds(const Point & location) const
   {
     return

@@ -19,12 +19,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "nav2_tasks/costmap_service_client.hpp"
-#include "nav2_msgs/msg/costmap.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_robot/robot.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "nav2_simple_planner/astar_planner.hpp"
-#include "nav2_simple_planner/occupancy_grid.hpp"
+#include "nav2_simple_planner/world.hpp"
 
 namespace nav2_simple_planner
 {
@@ -39,41 +38,33 @@ public:
     const nav2_tasks::ComputePathToPoseCommand::SharedPtr command);
 
 private:
-  AStarPlanner astar_planner_;
+  // The planner implementation to use
+  std::unique_ptr<AStarPlanner> astar_planner_;
+
+  // The planning task interface
   std::unique_ptr<nav2_tasks::ComputePathToPoseTaskServer> task_server_;
+
+  // For getting the current position
   std::unique_ptr<nav2_robot::Robot> robot_;
 
-  // The costmap to use
-  nav2_msgs::msg::Costmap costmap_;
+  // For getting occupancy and cost
+  std::shared_ptr<World> world_;
 
   // The global frame of the costmap
   std::string global_frame_;
 
-  // Service client for getting the costmap
-  nav2_tasks::CostmapServiceClient costmap_client_;
-
-  // Request costmap from world model
-  void getCostmap(
-    nav2_msgs::msg::Costmap & costmap, const std::string layer = "master",
-    const std::chrono::milliseconds waitTime = std::chrono::milliseconds(100));
-
-  OccupancyGrid extractOccupancy(const nav2_msgs::msg::Costmap & costmap_);
+  // For getting the current pose from the robot
+  bool getPose(std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> & pose);
 
   // Compute a plan given start and goal poses, provided in global world frame.
-  bool makePlan(
+  bool makePath(
     const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & goal,
-    nav2_msgs::msg::Path & plan);
+    nav2_msgs::msg::Path & path);
 
-  // Transform a point from world to map frame
-  bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
+  nav2_msgs::msg::Path makeROSPath(const Path & path);
 
-  // Transform a point from map to world frame
-  void mapToWorld(double mx, double my, double & wx, double & wy);
-
-  nav2_msgs::msg::Path makeROSpath(const Path & path);
-
-    // Publish a path for visualization purposes
+  // Publish a path for visualization purposes
   void publishPlan(const nav2_msgs::msg::Path & path);
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 };

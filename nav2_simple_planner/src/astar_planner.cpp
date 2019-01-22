@@ -22,10 +22,11 @@
 namespace nav2_simple_planner
 {
 
-AStarPlanner::AStarPlanner()
-: motion_(std::make_shared<FullMotion>()),
+AStarPlanner::AStarPlanner(const std::shared_ptr<World> & world)
+: world_(world),
+  motion_(std::make_shared<FullMotion>()),
   logger_(std::make_shared<ConsoleLogger>(LogLevel::Debug)),
-  planner_(Planner{motion_, logger_})
+  planner_(Planner{world_, motion_, logger_})
 {
 }
 
@@ -33,10 +34,9 @@ AStarPlanner::~AStarPlanner()
 {
 }
 
-bool AStarPlanner::computePath(
-  const std::shared_ptr<OccupancyGrid> & occupancy, const Point & goal, const Point & start)
+bool AStarPlanner::computePath(const Point & goal, const Point & start)
 {
-  if (!planner_.setSearchProblem(occupancy, goal, start)) {
+  if (!planner_.setSearchProblem(goal, start)) {
     return false;
   }
 
@@ -48,7 +48,7 @@ bool AStarPlanner::computePath(
       std::pow(static_cast<double>(p1.column - p2.column), 2.0));
   });
 
-  ConnectedGrid connections(occupancy->num_rows(), occupancy->num_cols());
+  ConnectedGrid connections(world_->numCellsY(), world_->numCellsX());
 
   if(!planner_.searchForGoal(connections)) {
     return false;

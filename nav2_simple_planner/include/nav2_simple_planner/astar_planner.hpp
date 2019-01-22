@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "nav2_simple_planner/world.hpp"
 #include "nav2_simple_planner/motion.hpp"
 #include "nav2_simple_planner/planner.hpp"
 #include "nav2_simple_planner/path.hpp"
@@ -29,12 +30,12 @@ namespace nav2_simple_planner
 class AStarPlanner
 {
 public:
-  AStarPlanner();
+  explicit AStarPlanner(const std::shared_ptr<World> & world);
+  AStarPlanner() = delete;
 
   ~AStarPlanner();
 
-  bool computePath(
-    const std::shared_ptr<OccupancyGrid> & occupancy, const Point & goal, const Point & start);
+  bool computePath(const Point & goal, const Point & start);
 
   Path getPath() { return path_; }
 
@@ -42,6 +43,7 @@ public:
   void disableLogging();
 
 private:
+  std::shared_ptr<World> world_;
   std::shared_ptr<Motion> motion_;
   std::shared_ptr<Logger> logger_;
 

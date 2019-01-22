@@ -47,6 +47,7 @@ add_library(${library_name} SHARED
   src/astar_planner_ros.cpp
   src/astar_planner.cpp
   src/planner.cpp
+  src/world.cpp
 )
 
 ament_target_dependencies(${library_name}

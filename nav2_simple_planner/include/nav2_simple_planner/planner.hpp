@@ -18,6 +18,7 @@
 #include <memory>
 #include <functional>
 
+#include "nav2_simple_planner/world.hpp"
 #include "nav2_simple_planner/motion.hpp"
 #include "nav2_simple_planner/occupancy_grid.hpp"
 #include "nav2_simple_planner/point.hpp"
@@ -29,7 +30,10 @@ namespace nav2_simple_planner
 class Planner
 {
 public:
-  Planner(const std::shared_ptr<Motion> & motion, const std::shared_ptr<Logger> & logger);
+  Planner(
+    const std::shared_ptr<World> world,
+    const std::shared_ptr<Motion> & motion,
+    const std::shared_ptr<Logger> & logger);
 
   Planner() = delete;
 
@@ -39,8 +43,7 @@ public:
 
   // Provide parameters to the search problem
   // returns true if the problem is well-posed (goal or start are not invalid), false otherwise
-  bool setSearchProblem(
-    std::shared_ptr<OccupancyGrid> occupancy, const Point & goal, const Point & start);
+  bool setSearchProblem(const Point & goal, const Point & start);
 
   void setHeuristic(const std::function<double (const Point &, const Point &)> & heuristic)
   {
@@ -54,13 +57,13 @@ public:
   Path getPath(const ConnectedGrid & connections);
 
 private:
+  std::shared_ptr<World> world_;
   std::shared_ptr<Motion> motion_;
   std::shared_ptr<Logger> logger_;
 
   // Search input variables
   Point goal_;
   Point start_;
-  std::shared_ptr<OccupancyGrid> occupancy_;
 
   // The path found
   Path path_;
@@ -69,8 +72,7 @@ private:
   double step_cost_;
   std::function<double(const Point &, const Point &)> heuristic_;
 
-  bool areInvalidArguments(
-    const OccupancyGrid & occupancy, const Point & goal, const Point & start) const;
+  bool areValidArguments(const Point & goal, const Point & start) const;
 
   void reset();
 

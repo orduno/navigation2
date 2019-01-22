@@ -17,7 +17,6 @@
 
 #include "nav2_simple_planner/planner.hpp"
 #include "nav2_simple_planner/motion.hpp"
-#include "nav2_simple_planner/occupancy_grid.hpp"
 #include "nav2_simple_planner/point.hpp"
 #include "nav2_simple_planner/connected_grid.hpp"
 #include "nav2_simple_planner/char_grid.hpp"
@@ -26,23 +25,25 @@
 namespace nav2_simple_planner
 {
 
-Planner::Planner(const std::shared_ptr<Motion> & motion, const std::shared_ptr<Logger> & logger)
-: motion_(motion),
+Planner::Planner(
+  const std::shared_ptr<World> world,
+  const std::shared_ptr<Motion> & motion,
+  const std::shared_ptr<Logger> & logger)
+: world_(world),
+  motion_(motion),
   logger_(logger),
   step_cost_(0.5)
 {
 }
 
-bool Planner::setSearchProblem(
-    std::shared_ptr<OccupancyGrid> occupancy, const Point &goal, const Point &start)
+bool Planner::setSearchProblem(const Point &goal, const Point &start)
 {
-  if (areInvalidArguments(*occupancy, goal, start))
+  if (!areValidArguments(goal, start))
   {
     reset();
     return false;
   }
 
-  occupancy_ = occupancy;
   goal_ = goal;
   start_ = start;
 
@@ -51,13 +52,19 @@ bool Planner::setSearchProblem(
 
 bool Planner::searchForGoal(ConnectedGrid & connections)
 {
-  SearchMemory<double> memory(occupancy_->num_rows(), occupancy_->num_cols());
+  SearchMemory<double> memory(world_->numCellsY(), world_->numCellsX());
   memory.addUnexpanded(start_, getCellValues(start_, 0));
   memory.addVisited(start_);
+
+  // memory.addVisitedandUnexpanded(start_, getCellValues(start_, 0));
 
   bool found_path = false;
   bool resign = false;
 
+  // while (memory.hasMoreToExplore() && memory.current().location != goal) {
+  // // keep looking
+  //   continueExpanding(memory);
+  // }
   while (!found_path && !resign)
   {
     // Keep looking
@@ -74,8 +81,8 @@ bool Planner::searchForGoal(ConnectedGrid & connections)
       else
       {
         // Add cells reachable from this cell.
-        auto reachable_points = motion_->reachableLocations(occupancy_, memory.current().location);
-        for (const auto &p : reachable_points)
+        auto reachable = motion_->reachableLocations(world_, memory.current().location);
+        for (const auto & p : reachable)
         {
           // Go over each point
           if (!memory.wasVisited(p))
@@ -97,7 +104,7 @@ bool Planner::searchForGoal(ConnectedGrid & connections)
   }
 
   logger_->debug() << "Expansion Order: " << *memory.expansionOrder();
-  logger_->debug() << "Connections: " << connections;
+  logger_->debug() << "Connections: " << connections << std::endl;
 
   return found_path;
 }
@@ -112,7 +119,7 @@ Path Planner::getPath(const ConnectedGrid & connections)
   connection.isConnected = true;
 
   // Grid for visualization
-  CharGrid viz_grid(occupancy_->num_rows(), occupancy_->num_cols());
+  CharGrid viz_grid(world_->numCellsY(), world_->numCellsX());
 
   while (connection.isConnected)
   {
@@ -121,49 +128,52 @@ Path Planner::getPath(const ConnectedGrid & connections)
     connection = connections.getConnection(connection.from);
   }
 
+  // TODO(orduno) broken for now given the recent refactor
   // Mask with the occupancy gid to add obstacles
-  viz_grid *= *occupancy_;
-  viz_grid.set(start_, Marker::Start);
-  viz_grid.set(goal_, Marker::Goal);
+  // viz_grid *= *occupancy_;
+  // viz_grid.set(start_, Marker::Start);
+  // viz_grid.set(goal_, Marker::Goal);
 
-  logger_->debug() << "Path Graph: " << viz_grid;
+  // logger_->debug() << "Path Graph: " << viz_grid;
 
   return path;
 }
 
-bool Planner::areInvalidArguments(
-  const OccupancyGrid &occupancy, const Point &goal, const Point &start) const
+bool Planner::areValidArguments(const Point &goal, const Point &start) const
 {
-  if (occupancy.isEmpty())
+  if (world_->isEmpty())
   {
-    logger_->error("The provided occupancy grid is empty");
-    return true;
+    logger_->error("The provided world is empty");
+    return false;
   }
 
-  if (occupancy.isOutOfBounds(goal))
+  if (!world_->isWithinBounds(
+    static_cast<unsigned int>(goal.column),
+    static_cast<unsigned int>(goal.row)))
   {
-    logger_->error("The provided goal is outside of occupancy grid");
-    return true;
+    logger_->error("The provided goal is outside of world");
+    return false;
   }
 
-  if (occupancy.isOutOfBounds(start))
+  if (!world_->isWithinBounds(
+    static_cast<unsigned int>(start.column),
+    static_cast<unsigned int>(start.row)))
   {
-    logger_->error("The provided start is outside of occupancy grid");
-    return true;
+    logger_->error("The provided start is outside of world");
+    return false;
   }
 
-  return false;
+  return true;
 }
 
 void Planner::reset()
 {
   goal_ = Point{};
   start_ = Point{};
-  occupancy_.reset();
   path_ = Path{};
 }
 
-std::vector<double> Planner::getCellValues(const Point &p, const double g_value) const
+std::vector<double> Planner::getCellValues(const Point & p, const double g_value) const
 {
   double h_value = heuristic_(p, goal_);
   double f_value = g_value + h_value;

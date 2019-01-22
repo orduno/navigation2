@@ -47,13 +47,15 @@ public:
   }
 
   std::vector<Point> reachableLocations(
-    const std::shared_ptr<OccupancyGrid> & og, const Point & point) override
+    const std::shared_ptr<World> & world, const Point & point) override
   {
     std::vector<Point> points;
 
     for (const auto & action : possible_actions) {
       auto possible_location = getNextPoint(point, action);
-      if (!og->isOutOfBounds(possible_location) && !og->isOccupied(possible_location)) {
+      if (
+        world->isWithinBounds(possible_location.column, possible_location.row) &&
+        !world->isOccupiedCell(possible_location.column, possible_location.row)) {
         points.push_back(possible_location);
       }
     }

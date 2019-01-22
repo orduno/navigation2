@@ -22,6 +22,7 @@
 #include "nav2_simple_planner/point.hpp"
 #include "nav2_simple_planner/occupancy_grid.hpp"
 #include "nav2_simple_planner/logger.hpp"
+#include "nav2_simple_planner/world.hpp"
 
 namespace nav2_simple_planner
 {
@@ -36,7 +37,7 @@ public:
   virtual ~Motion() = default;
 
   virtual std::vector<Point> reachableLocations(
-    const std::shared_ptr<OccupancyGrid> & og, const Point & point) = 0;
+    const std::shared_ptr<World> & world, const Point & point) = 0;
 };
 
 }  // namespace nav2_simple_planner
