@@ -23,6 +23,8 @@
 namespace nav2_simple_planner
 {
 
+typedef uint8_t CostValue;
+
 class World
 {
 public:
@@ -39,13 +41,14 @@ public:
   void mapToWorld(double mx, double my, double & wx, double & wy);
 
   bool isOccupiedCell(const unsigned int mx, const unsigned my);
+  bool isOccupiedCell(const unsigned int index);
 
   bool isEmpty();
 
   bool isWithinBounds(const unsigned int mx, const unsigned int my);
 
   // TODO(orduno)
-  // unsigned char getCost(const unsigned int mx, const unsigned int my);
+  // CostValue getCost(const unsigned int mx, const unsigned int my);
 
   unsigned int numCellsX() { return costmap_.metadata.size_x; }
 
@@ -58,9 +61,6 @@ private:
   // Using a costmap to represent the world
   nav2_msgs::msg::Costmap costmap_;
   bool hasCostmap_;
-
-  // TODO(orduno) remove after testing
-  OccupancyGrid occupancy_;
 
   // Service client for getting the costmap
   nav2_tasks::CostmapServiceClient costmap_client_;

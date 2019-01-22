@@ -103,8 +103,8 @@ bool Planner::searchForGoal(ConnectedGrid & connections)
     }
   }
 
-  logger_->debug() << "Expansion Order: " << *memory.expansionOrder();
-  logger_->debug() << "Connections: " << connections << std::endl;
+  // logger_->debug() << "Expansion Order: " << *memory.expansionOrder();
+  // logger_->debug() << "Connections: " << connections << std::endl;
 
   return found_path;
 }

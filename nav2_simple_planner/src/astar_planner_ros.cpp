@@ -32,13 +32,9 @@ AStarPlannerROS::AStarPlannerROS()
 {
   RCLCPP_INFO(get_logger(), "Initializing...");
 
-  // Initialize ROS interface
   auto temp_node = std::shared_ptr<rclcpp::Node>(this, [](auto) {});
-
   robot_ = std::make_unique<nav2_robot::Robot>(temp_node);
-
   world_ = std::make_shared<World>(temp_node);
-
   astar_planner_ = std::make_unique<AStarPlanner>(world_);
 
   plan_publisher_ = this->create_publisher<nav_msgs::msg::Path>("simple_planner_plan", 1);
@@ -71,10 +67,6 @@ AStarPlannerROS::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::S
     if (!getPose(start)){
       return TaskStatus::FAILED;
     }
-
-    // TODO(orduno)
-    command->pose.position.x = 9.0;
-    command->pose.position.y = 9.0;
 
     RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
       "(%.2f, %.2f).", start->pose.pose.position.x, start->pose.pose.position.y,
@@ -117,17 +109,10 @@ AStarPlannerROS::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::S
 
 bool
 AStarPlannerROS::getPose(std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> & pose){
-
-  // TODO(orduno) Should get the actual robot pose
-  // if (!robot_->getCurrentPose(start)) {
-  //   RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-  //   return false;
-  // }
-
-  // TODO(orduno) remove, just for testing
-  pose->pose.pose.position.x = 0.0;
-  pose->pose.pose.position.y = 0.0;
-
+  if (!robot_->getCurrentPose(pose)) {
+    RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
+    return false;
+  }
   return true;
 }
 
