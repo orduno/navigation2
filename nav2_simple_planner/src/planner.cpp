@@ -88,7 +88,11 @@ bool Planner::searchForGoal(ConnectedGrid & connections)
           if (!memory.wasVisited(p))
           {
             // Location hasn't been expanded, let's calculate costs and add it
-            memory.addUnexpanded(p, getCellValues(p, memory.current().values[1] + step_cost_));
+            memory.addUnexpanded(p, getCellValues(p,
+              // cost of parent cell + cost of taking stepping + cost of child cell
+              // TODO(orduno) scale the cell cost correctly
+              memory.current().values[1] + step_cost_ + 0.05 * world_->getCost(
+                static_cast<unsigned int>(p.column), static_cast<unsigned int>(p.row))));
             memory.addVisited(p);
             connections.add(p, memory.current().location);
           }

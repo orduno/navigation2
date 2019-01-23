@@ -30,6 +30,11 @@ World::update()
   hasCostmap_ = true;
 }
 
+unsigned int World::getIndex(const unsigned int mx, const unsigned my)
+{
+  return my * costmap_.metadata.size_x + mx;
+}
+
 void World::getCostmap(
   nav2_msgs::msg::Costmap & costmap, const std::string /*layer*/,
   const std::chrono::milliseconds /*waitTime*/)
@@ -78,15 +83,14 @@ void World::mapToWorld(double mx, double my, double & wx, double & wy)
   wy = costmap_.metadata.origin.position.y + my * costmap_.metadata.resolution;
 }
 
-bool World::isOccupiedCell(const unsigned int mx, const unsigned my)
+bool World::isOccupiedCell(const unsigned int mx, const unsigned int my)
 {
-  unsigned int index = my * costmap_.metadata.size_x + mx;
-  return isOccupiedCell(index);
+  return isOccupiedCell(getIndex(mx, my));
 }
 
 bool World::isOccupiedCell(const unsigned int index)
 {
-  // TODO(orduno)
+  // TODO(orduno) define as static variable within the class
   CostValue inscribed_inflated_obstacle = 253;
 
   if (costmap_.data[index] < inscribed_inflated_obstacle) {
@@ -104,10 +108,15 @@ bool World::isEmpty()
   return true;
 }
 
-bool
-World::isWithinBounds(const unsigned int mx, const unsigned int my)
+bool World::isWithinBounds(const unsigned int mx, const unsigned int my)
 {
   return !(my >= numCellsY() || mx >= numCellsX());
+}
+
+CostValue World::getCost(const unsigned int mx, const unsigned int my)
+{
+  return static_cast<CostValue>(costmap_.data[getIndex(mx, my)]);
+
 }
 
 }  // namespace nav2_simple_planner

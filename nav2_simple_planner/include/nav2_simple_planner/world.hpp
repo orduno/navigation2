@@ -34,6 +34,8 @@ public:
 
   void update();
 
+  unsigned int getIndex(const unsigned int mx, const unsigned my);
+
   // Transform a point from world to map frame
   bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
 
@@ -47,8 +49,7 @@ public:
 
   bool isWithinBounds(const unsigned int mx, const unsigned int my);
 
-  // TODO(orduno)
-  // CostValue getCost(const unsigned int mx, const unsigned int my);
+  CostValue getCost(const unsigned int mx, const unsigned int my);
 
   unsigned int numCellsX() { return costmap_.metadata.size_x; }
 
