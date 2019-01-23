@@ -90,10 +90,10 @@ bool World::isOccupiedCell(const unsigned int index)
   CostValue inscribed_inflated_obstacle = 253;
 
   if (costmap_.data[index] < inscribed_inflated_obstacle) {
-    return true;
+    return false;
   }
 
-  return false;
+  return true;
 }
 
 bool World::isEmpty()
