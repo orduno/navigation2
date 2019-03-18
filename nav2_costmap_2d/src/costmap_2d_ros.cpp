@@ -138,7 +138,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     !tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(0.1), &tf_error))
   {
-    if (last_error + nav2_util::duration_from_seconds(5.0) < rclcpp_node_->now()) {
+    if (last_error + nav2_util::duration_from_seconds(1.0) < rclcpp_node_->now()) {
       RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
         " to become available, tf error: %s",
         robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());

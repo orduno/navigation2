@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2012, Willow Garage, Inc.
+ * Copyright (c) 2017, Open Source Robotics Foundation, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef RVIZ_COMMON__VIEWS_PANEL_HPP_
+#define RVIZ_COMMON__VIEWS_PANEL_HPP_
+
+#include "nav2_controller/nav2_controller_client.hpp"
+#include "rviz_common/panel.hpp"
+#include "std_msgs/msg/empty.hpp"
+
+class QPushButton;
+
+namespace nav2_rviz_plugins
+{
+
+/// Panel for choosing the view controller and saving and restoring viewpoints.
+class Nav2Panel : public rviz_common::Panel
+{
+  Q_OBJECT
+
+public:
+  explicit Nav2Panel(QWidget * parent = 0);
+  virtual ~Nav2Panel() {}
+
+  void onInitialize() override;
+
+  /// Load and save configuration data
+  void load(const rviz_common::Config & config) override;
+  void save(rviz_common::Config config) const override;
+
+private Q_SLOTS:
+  void onStartupClicked();
+  void onShutdownClicked();
+  void onCancelClicked();
+
+private:
+  nav2_controller::Nav2ControllerClient client_;
+  rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr cancel_pub_;
+};
+
+}  // namespace nav2_rviz_plugins
+
+#endif  // RVIZ_COMMON__VIEWS_PANEL_HPP_

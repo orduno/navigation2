@@ -50,16 +50,16 @@ Nav2Controller::Nav2Controller()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  startup_srv_ = create_service<std_srvs::srv::Empty>("startup",
+  startup_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/startup",
       std::bind(&Nav2Controller::startupCallback, this, _1, _2, _3));
 
-  shutdown_srv_ = create_service<std_srvs::srv::Empty>("shutdown",
+  shutdown_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/shutdown",
       std::bind(&Nav2Controller::shutdownCallback, this, _1, _2, _3));
 
-  pause_srv_ = create_service<std_srvs::srv::Empty>("pause",
+  pause_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/pause",
       std::bind(&Nav2Controller::pauseCallback, this, _1, _2, _3));
 
-  resume_srv_ = create_service<std_srvs::srv::Empty>("resume",
+  resume_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/resume",
       std::bind(&Nav2Controller::resumeCallback, this, _1, _2, _3));
 
   client_ = std::make_shared<rclcpp::Node>("nav2_controller_lifecycle_client_node");

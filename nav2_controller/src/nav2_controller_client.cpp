@@ -28,34 +28,34 @@ Nav2ControllerClient::Nav2ControllerClient()
   request_ = std::make_shared<Srv::Request>();
 
   // Create the service clients
-  startup_client_ = node_->create_client<Srv>("startup");
-  pause_client_ = node_->create_client<Srv>("pause");
-  resume_client_ = node_->create_client<Srv>("resume");
-  shutdown_client_ = node_->create_client<Srv>("shutdown");
+  startup_client_ = node_->create_client<Srv>("nav2_controller/startup");
+  pause_client_ = node_->create_client<Srv>("nav2_controller/pause");
+  resume_client_ = node_->create_client<Srv>("nav2_controller/resume");
+  shutdown_client_ = node_->create_client<Srv>("nav2_controller/shutdown");
 }
 
 void
 Nav2ControllerClient::startup()
 {
-  callService(startup_client_, "startup");
+  callService(startup_client_, "nav2_controller/startup");
 }
 
 void
 Nav2ControllerClient::shutdown()
 {
-  callService(shutdown_client_, "shutdown");
+  callService(shutdown_client_, "nav2_controller/shutdown");
 }
 
 void
 Nav2ControllerClient::pause()
 {
-  callService(pause_client_, "pause");
+  callService(pause_client_, "nav2_controller/pause");
 }
 
 void
 Nav2ControllerClient::resume()
 {
-  callService(resume_client_, "resume");
+  callService(resume_client_, "nav2_controller/resume");
 }
 
 void
