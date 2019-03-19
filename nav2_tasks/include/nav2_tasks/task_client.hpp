@@ -149,6 +149,27 @@ public:
     cancelPub_->publish(msg);
   }
 
+  bool waitForServer(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
+  {
+    std::string taskName = getTaskName<CommandMsg, ResultMsg>();
+    taskName += "_command";
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+
+    while (node_->count_subscribers(taskName) < 1) {
+      auto t1 = std::chrono::high_resolution_clock::now();
+      auto elapsedTime = t1 - t0;
+
+      if (elapsedTime > timeout) {
+        return false;
+      }
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    return true;
+  }
+
   // The client can wait for a result with a timeout
   TaskStatus waitForResult(
     typename ResultMsg::SharedPtr & result,

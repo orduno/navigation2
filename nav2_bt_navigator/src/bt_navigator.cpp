@@ -141,8 +141,7 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   // TODO(mjeronimo): Move creation of BT to on_configure state (#611)
 
   // Create and run the behavior tree
-  std::unique_ptr<NavigateToPoseBehaviorTree> bt_ =
-    std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
+  auto bt_ = std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
 
   TaskStatus result = bt_->run(blackboard_, xml_string_,
       std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));

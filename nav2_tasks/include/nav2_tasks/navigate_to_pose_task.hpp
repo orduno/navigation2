@@ -103,6 +103,7 @@ protected:
   {
     self_client_->sendCommand(pose);
   }
+
   void onInitialPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr /*msg*/)
   {
     initial_pose_received_ = true;

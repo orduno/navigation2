@@ -60,7 +60,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 void
 Nav2Panel::onInitialize()
 {
-  printf("Nav2Panel::onInitialize\n");
   auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
   cancel_pub_ = node->create_publisher<std_msgs::msg::Empty>("NavigateToPoseTask_cancel");
 }
@@ -87,17 +86,15 @@ Nav2Panel::onCancelClicked()
 }
 
 void
-Nav2Panel::save(rviz_common::Config /*config*/) const
+Nav2Panel::save(rviz_common::Config config) const
 {
-  printf("Nav2Panel::save\n");
-  //Panel::save(config);
+  Panel::save(config);
 }
 
 void
-Nav2Panel::load(const rviz_common::Config & /*config*/)
+Nav2Panel::load(const rviz_common::Config & config)
 {
-  printf("Nav2Panel::load\n");
-  //Panel::load(config);
+  Panel::load(config);
 }
 
 }  // namespace nav2_rviz_plugins

@@ -55,7 +55,6 @@ TaskStatus BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-      tree.root_node->halt();
       return TaskStatus::CANCELED;
     }
 

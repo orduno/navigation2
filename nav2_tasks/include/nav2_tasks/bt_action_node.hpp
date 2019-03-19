@@ -47,6 +47,7 @@ public:
 
   virtual ~BtActionNode()
   {
+    halt();
   }
 
   // This is a callback from the BT library invoked after the node is created and after the
@@ -66,6 +67,10 @@ public:
     // and activate.
     //
     task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_, true);
+
+    // Make sure the server is there before continuing, because we will quickly send a command
+    // message in the tick() method
+	task_client_->waitForServer();
 
     // Give the derived class a chance to do some initialization
     onConfigure();
@@ -111,12 +116,14 @@ public:
 
   void halt() override
   {
-    // Send a cancel message to the task server
-    task_client_->cancel();
-
-    // Then wait for the response before continuing
-    std::unique_lock<std::mutex> lock(cancel_mutex_);
-    cv_cancel_.wait(lock);
+    // Shut the node down if it is currently running
+    if (status() == BT::NodeStatus::RUNNING) {
+      task_client_->cancel();
+      nav2_tasks::TaskStatus result;
+      do {
+        result = task_client_->waitForResult(result_, node_loop_timeout_);
+      } while (result != nav2_tasks::TaskStatus::CANCELED);
+    }
 
     CoroActionNode::halt();
   }
