@@ -50,14 +50,20 @@ private:
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
+  // The goal (on the blackboard) to be passed to ComputePath
+  std::shared_ptr<nav2_tasks::ComputePathToPoseCommand> goal_;
+
   // The path (on the blackboard) to be returned from ComputePath and sent to the FollowPath task
   std::shared_ptr<nav2_tasks::ComputePathToPoseResult> path_;
 
   // The XML string that defines the Behavior Tree to create
   std::string xml_string_;
 
-  // The Behavior Tree that is built from the XML input file
+  // The wrapper class for the BT functionality
   std::unique_ptr<NavigateToPoseBehaviorTree> bt_;
+
+  // The complete behavior tree that results from parsing the incoming XML
+  BT::Tree tree_;
 };
 
 }  // namespace nav2_bt_navigator

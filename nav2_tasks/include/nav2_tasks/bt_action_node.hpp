@@ -47,7 +47,6 @@ public:
 
   virtual ~BtActionNode()
   {
-    halt();
   }
 
   // This is a callback from the BT library invoked after the node is created and after the
@@ -70,7 +69,7 @@ public:
 
     // Make sure the server is there before continuing, because we will quickly send a command
     // message in the tick() method
-	task_client_->waitForServer();
+    task_client_->waitForServer();
 
     // Give the derived class a chance to do some initialization
     onConfigure();
@@ -98,7 +97,6 @@ public:
           return BT::NodeStatus::FAILURE;
 
         case nav2_tasks::TaskStatus::CANCELED:
-          cv_cancel_.notify_one();
           return BT::NodeStatus::SUCCESS;
 
         case nav2_tasks::TaskStatus::RUNNING:
@@ -140,10 +138,6 @@ protected:
 
   typename CommandMsg::SharedPtr command_;
   typename ResultMsg::SharedPtr result_;
-
-  // Allow for signaling receipt of the cancel message
-  std::mutex cancel_mutex_;
-  std::condition_variable cv_cancel_;
 };
 
 }  // namespace nav2_tasks

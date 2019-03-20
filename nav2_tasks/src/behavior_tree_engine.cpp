@@ -32,7 +32,8 @@ BehaviorTreeEngine::BehaviorTreeEngine(nav2_lifecycle::LifecycleNode::SharedPtr 
 {
 }
 
-TaskStatus BehaviorTreeEngine::run(
+TaskStatus
+BehaviorTreeEngine::run(
   BT::Blackboard::Ptr & blackboard,
   const std::string & behavior_tree_xml,
   std::function<bool()> cancelRequested,
@@ -64,5 +65,37 @@ TaskStatus BehaviorTreeEngine::run(
   return (result == BT::NodeStatus::SUCCESS) ?
          TaskStatus::SUCCEEDED : TaskStatus::FAILED;
 }
+
+TaskStatus
+BehaviorTreeEngine::run(
+  BT::Tree & tree,
+  std::function<bool()> cancelRequested,
+  std::chrono::milliseconds loopTimeout)
+{
+  rclcpp::WallRate loopRate(loopTimeout);
+  BT::NodeStatus result = BT::NodeStatus::RUNNING;
+
+  // Loop until something happens with ROS or the node completes w/ success or failure
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
+    result = tree.root_node->executeTick();
+
+    // Check if we've received a cancel message
+    if (cancelRequested()) {
+      return TaskStatus::CANCELED;
+    }
+
+    loopRate.sleep();
+  }
+
+  return (result == BT::NodeStatus::SUCCESS) ?
+         TaskStatus::SUCCEEDED : TaskStatus::FAILED;
+}
+
+BT::Tree
+BehaviorTreeEngine::buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard)
+{
+  return BT::buildTreeFromText(factory_, xml_string, blackboard);
+}
+
 
 }  // namespace nav2_tasks

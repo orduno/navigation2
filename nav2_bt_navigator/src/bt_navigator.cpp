@@ -42,28 +42,35 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "on_configure");
 
-  // Create the NavigateToPose task server for this node
+  // Create the NavigateToPose task server for this node and set the callback
   task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(shared_from_this());
   task_server_->on_configure(state);
   task_server_->setExecuteCallback(
     std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 
-  // Create the path to be returned from ComputePath and sent to the FollowPath task
+  // Create the class that registers our custom nodes and executes the BT
+  bt_ = std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
+
+  // Create the path that will be returned from ComputePath and sent to FollowPath
+  goal_ = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
   path_ = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
   // Create the blackboard that will be shared by all of the nodes in the tree
   blackboard_ = BT::Blackboard::create<BT::BlackboardLocal>();
 
   // Put items on the blackboard
+  blackboard_->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", goal_);  // NOLINT
   blackboard_->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path_);  // NOLINT
-  blackboard_->set<bool>("initial_pose_received", false);
+  blackboard_->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", shared_from_this());  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
+  blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
 
   // Get the BT filename to use from the node parameter
   std::string bt_xml_filename;
   get_parameter_or<std::string>(std::string("bt_xml_filename"), bt_xml_filename,
     std::string("bt_navigator.xml"));
 
-  // Read the input BT XML file into a string
+  // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(bt_xml_filename);
 
   if (!xml_file.good()) {
@@ -77,7 +84,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
 
-  bt_ = std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
+  // Create the Behavior Tree from the XML input (after registering our own node types)
+  tree_ = bt_->buildTreeFromText(xml_string_, blackboard_);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -137,10 +145,25 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
   RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     command->pose.position.x, command->pose.position.y);
 
-  blackboard_->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command); // NOLINT
+  // Get the goal pointer off of the blackboard...
+  auto goal = blackboard_->get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal");
 
-  TaskStatus result = bt_->run(blackboard_, xml_string_,
+  // and update it with the incoming command
+  *goal = *command;
+
+  // Execute the BT that was previously created in the configure step
+  TaskStatus result = bt_->run(tree_,
       std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));
+
+  if (result == TaskStatus::CANCELED) {
+    // Even though the BT is no longer running, remote actions may still be executing. So,
+    // an explicit canceling of all actions allows the task clients to send cancel messages
+    // to their corresponding task servers
+    bt_->cancelAllActions(tree_.root_node);
+
+    // Reset the BT so that it can be run again in the future
+    bt_->resetTree(tree_.root_node);
+  }
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);
   return result;

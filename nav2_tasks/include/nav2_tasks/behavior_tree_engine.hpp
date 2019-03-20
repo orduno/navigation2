@@ -40,6 +40,32 @@ public:
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
+  TaskStatus run(
+    BT::Tree & tree,
+    std::function<bool()> cancelRequested,
+    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
+
+  BT::Tree buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard);
+
+  void cancelAllActions(BT::TreeNode * root_node)
+  {
+    auto visitor = [](BT::TreeNode * node) {
+        if (auto action = dynamic_cast<BT::CoroActionNode *>(node)) {
+          action->halt();
+        }
+      };
+    BT::applyRecursiveVisitor(root_node, visitor);
+  }
+
+  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
+  void resetTree(BT::TreeNode * root_node)
+  {
+    auto visitor = [](BT::TreeNode * node) {
+        node->setStatus(BT::NodeStatus::IDLE);
+      };
+    BT::applyRecursiveVisitor(root_node, visitor);
+  }
+
 protected:
   // The ROS node to use for any task clients
   nav2_lifecycle::LifecycleNode::SharedPtr node_;
