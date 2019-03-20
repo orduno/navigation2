@@ -42,7 +42,7 @@ namespace nav2_controller
 static void
 message(const char * msg)
 {
-  fprintf(stderr, ANSI_COLOR_BLUE "\33[1m%s\33[0m" ANSI_COLOR_BLUE "\n" ANSI_COLOR_RESET, msg);
+  fprintf(stderr, ANSI_COLOR_BLUE "\33[1m%s\33[0m" ANSI_COLOR_RESET "\n", msg);
 }
 
 Nav2Controller::Nav2Controller()
