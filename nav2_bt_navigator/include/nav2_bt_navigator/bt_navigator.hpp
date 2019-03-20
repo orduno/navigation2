@@ -19,6 +19,7 @@
 #include <string>
 
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
+#include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/navigate_to_pose_task.hpp"
@@ -54,6 +55,9 @@ private:
 
   // The XML string that defines the Behavior Tree to create
   std::string xml_string_;
+
+  // The Behavior Tree that is built from the XML input file
+  std::unique_ptr<NavigateToPoseBehaviorTree> bt_;
 };
 
 }  // namespace nav2_bt_navigator

@@ -13,16 +13,18 @@
 // limitations under the License.
 
 #include "nav2_util/lifecycle_service_client.hpp"
+
 #include <string>
 #include <chrono>
 #include <memory>
+
 #include "lifecycle_msgs/srv/change_state.hpp"
 #include "lifecycle_msgs/srv/get_state.hpp"
 
 using nav2_util::generate_internal_node;
-using std::string;
 using std::chrono::seconds;
 using std::make_shared;
+using std::string;
 
 namespace nav2_util
 {
@@ -56,6 +58,7 @@ void LifecycleServiceClient::change_state(
 bool LifecycleServiceClient::change_state(
   std::uint8_t transition)
 {
+  change_state_.wait_for_service();
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   auto response = std::make_shared<lifecycle_msgs::srv::ChangeState::Response>();
   request->transition.id = transition;

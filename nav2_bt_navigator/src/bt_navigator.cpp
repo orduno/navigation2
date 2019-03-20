@@ -19,7 +19,6 @@
 #include <streambuf>
 #include <string>
 
-#include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
 
 using nav2_tasks::TaskStatus;
@@ -77,6 +76,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
+
+  bt_ = std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -137,11 +138,6 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
     command->pose.position.x, command->pose.position.y);
 
   blackboard_->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", command); // NOLINT
-
-  // TODO(mjeronimo): Move creation of BT to on_configure state (#611)
-
-  // Create and run the behavior tree
-  auto bt_ = std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
 
   TaskStatus result = bt_->run(blackboard_, xml_string_,
       std::bind(&nav2_tasks::NavigateToPoseTaskServer::cancelRequested, task_server_.get()));
