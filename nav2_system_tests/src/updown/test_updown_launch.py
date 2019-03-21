@@ -32,7 +32,7 @@ def generate_launch_description():
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
             'world',
-            default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3.world'),
+            default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3_worlds/burger.model'),
             description='Full path to world file to load')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
