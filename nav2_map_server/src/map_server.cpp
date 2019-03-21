@@ -73,10 +73,7 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
     throw std::runtime_error(msg);
   }
 
-  nav2_lifecycle::CallbackReturn rc;
-  if ((rc = map_loader_->on_configure(state)) != CallbackReturn::SUCCESS) {
-    return rc;
-  }
+  map_loader_->on_configure(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -85,12 +82,7 @@ nav2_lifecycle::CallbackReturn
 MapServer::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "on_activate");
-
-  nav2_lifecycle::CallbackReturn rc;
-  if ((rc = map_loader_->on_activate(state)) != CallbackReturn::SUCCESS) {
-    return rc;
-  }
-
+  map_loader_->on_activate(state);
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
@@ -98,12 +90,7 @@ nav2_lifecycle::CallbackReturn
 MapServer::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "on_deactivate");
-
-  nav2_lifecycle::CallbackReturn rc;
-  if ((rc = map_loader_->on_deactivate(state)) != CallbackReturn::SUCCESS) {
-    return rc;
-  }
-
+  map_loader_->on_deactivate(state);
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
@@ -112,11 +99,7 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "on_cleanup");
 
-  nav2_lifecycle::CallbackReturn rc;
-  if ((rc = map_loader_->on_cleanup(state)) != CallbackReturn::SUCCESS) {
-    return rc;
-  }
-
+  map_loader_->on_cleanup(state);
   map_loader_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
