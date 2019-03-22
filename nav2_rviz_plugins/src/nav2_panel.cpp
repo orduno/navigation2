@@ -18,13 +18,13 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrent>
-#include <QtCharts/QChartView>
-#include <QtCharts/QLineSeries>
+//#include <QtCharts/QChartView>
+//#include <QtCharts/QLineSeries>
 
 #include "rviz_common/display_context.hpp"
 
 using namespace QtConcurrent;
-using namespace QtCharts;
+//using namespace QtCharts;
 
 namespace nav2_rviz_plugins
 {
@@ -44,6 +44,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   shutdown_button->setToolTip("TODO");
   cancel_button->setToolTip("TODO");
 
+#if 0
   ////////
 
   QLineSeries *series = new QLineSeries();
@@ -66,6 +67,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   chartView->setMinimumHeight(250);
 
   ////////
+#endif
 
   QHBoxLayout * top_layout = new QHBoxLayout;
   top_layout->addWidget(cancel_button);
@@ -79,7 +81,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QVBoxLayout * main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->addLayout(top_layout);
-  main_layout->addWidget(chartView);
+  //main_layout->addWidget(chartView);
   main_layout->addLayout(button_layout);
   setLayout(main_layout);
 }

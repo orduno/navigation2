@@ -140,7 +140,7 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 NavfnPlanner::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "Handling error state");
+  RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
