@@ -67,7 +67,7 @@ Costmap2DROS::~Costmap2DROS()
 nav2_lifecycle::CallbackReturn
 Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "on_configure");
+  RCLCPP_INFO(get_logger(), "Configuring");
   getParameters();
 
   // Create the costmap itself
@@ -122,7 +122,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "on_activate");
+  RCLCPP_INFO(get_logger(), "Activating");
 
   costmap_publisher_->on_activate();
   footprint_pub_->on_activate();
@@ -133,7 +133,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   rclcpp::Time last_error = rclcpp_node_->now();
   std::string tf_error;
 
-  RCLCPP_INFO(get_logger(), "on_activate: checking transform");
+  RCLCPP_INFO(get_logger(), "Checking transform");
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
     tf2::durationFromSec(0.1), &tf_error))
@@ -168,7 +168,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "on_deactivate");
+  RCLCPP_INFO(get_logger(), "Deactivating");
 
   costmap_publisher_->on_deactivate();
   footprint_pub_->on_deactivate();
@@ -188,7 +188,7 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "on_cleanup");
+  RCLCPP_INFO(get_logger(), "Cleaning up");
 
   tf_buffer_.reset();
   tf_listener_.reset();
@@ -212,14 +212,14 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 Costmap2DROS::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_error");
+  RCLCPP_INFO(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
 Costmap2DROS::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_shutdown");
+  RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 

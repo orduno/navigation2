@@ -41,7 +41,7 @@ MapServer::~MapServer()
 nav2_lifecycle::CallbackReturn
 MapServer::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_configure");
+  RCLCPP_INFO(get_logger(), "Configuring");
 
   // Get the name of the YAML file to use
   std::string yaml_filename;
@@ -81,7 +81,7 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 MapServer::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_activate");
+  RCLCPP_INFO(get_logger(), "Activating");
   map_loader_->on_activate(state);
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -89,7 +89,7 @@ MapServer::on_activate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 MapServer::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_deactivate");
+  RCLCPP_INFO(get_logger(), "Deactivating");
   map_loader_->on_deactivate(state);
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -97,7 +97,7 @@ MapServer::on_deactivate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 MapServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_cleanup");
+  RCLCPP_INFO(get_logger(), "Cleaning up");
 
   map_loader_->on_cleanup(state);
   map_loader_.reset();
@@ -108,14 +108,14 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 MapServer::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_error");
+  RCLCPP_INFO(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
 MapServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_shutdown");
+  RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 

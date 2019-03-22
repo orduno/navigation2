@@ -63,7 +63,7 @@ OccGridLoader::~OccGridLoader()
 nav2_lifecycle::CallbackReturn
 OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: on_configure");
+  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Configuring");
 
   msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
@@ -180,7 +180,7 @@ OccGridLoader::on_configure(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 OccGridLoader::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: on_activate");
+  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Activating");
 
   // Publish the map using the latched topic
   occ_pub_->on_activate();
@@ -192,7 +192,7 @@ OccGridLoader::on_activate(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 OccGridLoader::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: on_deactivate");
+  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Deactivating");
 
   occ_pub_->on_deactivate();
 
@@ -202,7 +202,7 @@ OccGridLoader::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 OccGridLoader::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: on_cleanup");
+  RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Cleaning up");
 
   occ_pub_.reset();
   occ_service_.reset();

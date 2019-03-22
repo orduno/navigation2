@@ -47,7 +47,7 @@ DwbController::~DwbController()
 nav2_lifecycle::CallbackReturn
 DwbController::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_configure");
+  RCLCPP_INFO(get_logger(), "Configuring");
 
   costmap_ros_->on_configure(state);
 
@@ -69,7 +69,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 DwbController::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_activate");
+  RCLCPP_INFO(get_logger(), "Activating");
 
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
@@ -82,7 +82,7 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_deactivate");
+  RCLCPP_INFO(get_logger(), "Deactivating");
 
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
@@ -95,7 +95,7 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_cleanup");
+  RCLCPP_INFO(get_logger(), "Cleaning up");
 
   // Cleanup the helper classes
   planner_->on_cleanup(state);
@@ -114,14 +114,14 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 DwbController::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_error");
+  RCLCPP_INFO(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
 DwbController::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_shutdown");
+  RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 

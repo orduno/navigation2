@@ -40,7 +40,7 @@ BtNavigator::~BtNavigator()
 nav2_lifecycle::CallbackReturn
 BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_configure");
+  RCLCPP_INFO(get_logger(), "Configuring");
 
   // Create the NavigateToPose task server for this node and set the callback
   task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(shared_from_this());
@@ -93,7 +93,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 BtNavigator::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_activate");
+  RCLCPP_INFO(get_logger(), "Activating");
 
   task_server_->on_activate(state);
 
@@ -103,7 +103,7 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 BtNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_deactivate");
+  RCLCPP_INFO(get_logger(), "Deactivating");
 
   task_server_->on_deactivate(state);
 
@@ -113,7 +113,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 BtNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_cleanup");
+  RCLCPP_INFO(get_logger(), "Cleaning up");
 
   task_server_->on_cleanup(state);
   task_server_.reset();
@@ -128,14 +128,14 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 BtNavigator::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_error");
+  RCLCPP_INFO(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
 BtNavigator::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_shutdown");
+  RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 

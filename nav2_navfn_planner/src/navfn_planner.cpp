@@ -59,7 +59,7 @@ NavfnPlanner::~NavfnPlanner()
 nav2_lifecycle::CallbackReturn
 NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_configure");
+  RCLCPP_INFO(get_logger(), "Configuring");
 
   // Initialize parameters
   get_parameter_or("tolerance", tolerance_, 0.0);
@@ -97,7 +97,7 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 NavfnPlanner::on_activate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_activate");
+  RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
   plan_marker_publisher_->on_activate();
@@ -110,7 +110,7 @@ NavfnPlanner::on_activate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_deactivate");
+  RCLCPP_INFO(get_logger(), "Deactivating");
 
   plan_publisher_->on_deactivate();
   plan_marker_publisher_->on_deactivate();
@@ -123,7 +123,7 @@ NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-  RCLCPP_INFO(get_logger(), "on_cleanup");
+  RCLCPP_INFO(get_logger(), "Cleaning up");
 
   robot_->on_cleanup(state);
   task_server_->on_cleanup(state);
@@ -140,14 +140,14 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
 nav2_lifecycle::CallbackReturn
 NavfnPlanner::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_error");
+  RCLCPP_INFO(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
 NavfnPlanner::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_shutdown");
+  RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 

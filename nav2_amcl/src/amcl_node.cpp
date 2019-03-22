@@ -67,7 +67,7 @@ AmclNode::~AmclNode()
 nav2_lifecycle::CallbackReturn
 AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "on_configure");
+  RCLCPP_INFO(get_logger(), "Configuring");
 
   initParameters();
   initMap();
@@ -114,7 +114,7 @@ AmclNode::waitForTransforms()
 nav2_lifecycle::CallbackReturn
 AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "on_activate");
+  RCLCPP_INFO(get_logger(), "Activating");
 
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
@@ -142,7 +142,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "on_deactivate");
+  RCLCPP_INFO(get_logger(), "Deactivating");
 
   active = false;
 
@@ -156,7 +156,7 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
-  RCLCPP_INFO(get_logger(), "on_cleanup");
+  RCLCPP_INFO(get_logger(), "Cleaning up");
 
   // Get rid of the inputs first (services and message filter input), so we
   // don't continue to process incoming messages
@@ -199,14 +199,14 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 nav2_lifecycle::CallbackReturn
 AmclNode::on_error(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_error");
+  RCLCPP_INFO(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
 AmclNode::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "on_shutdown");
+  RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
