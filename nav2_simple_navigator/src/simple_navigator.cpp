@@ -120,13 +120,13 @@ SimpleNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedP
   auto path = std::make_shared<nav2_tasks::ComputePathToPoseResult>();
 
   RCLCPP_DEBUG(get_logger(), "Getting the path from the planner for goal pose:");
-  RCLCPP_DEBUG(get_logger(), "  position.x: %f", command->pose.position.x);
-  RCLCPP_DEBUG(get_logger(), "  position.y: %f", command->pose.position.y);
-  RCLCPP_DEBUG(get_logger(), "  position.z: %f", command->pose.position.z);
-  RCLCPP_DEBUG(get_logger(), "  orientation.x: %f", command->pose.orientation.x);
-  RCLCPP_DEBUG(get_logger(), "  orientation.y: %f", command->pose.orientation.y);
-  RCLCPP_DEBUG(get_logger(), "  orientation.z: %f", command->pose.orientation.z);
-  RCLCPP_DEBUG(get_logger(), "  orientation.w: %f", command->pose.orientation.w);
+  RCLCPP_DEBUG(get_logger(), "position.x: %f", command->pose.position.x);
+  RCLCPP_DEBUG(get_logger(), "position.y: %f", command->pose.position.y);
+  RCLCPP_DEBUG(get_logger(), "position.z: %f", command->pose.position.z);
+  RCLCPP_DEBUG(get_logger(), "orientation.x: %f", command->pose.orientation.x);
+  RCLCPP_DEBUG(get_logger(), "orientation.y: %f", command->pose.orientation.y);
+  RCLCPP_DEBUG(get_logger(), "orientation.z: %f", command->pose.orientation.z);
+  RCLCPP_DEBUG(get_logger(), "orientation.w: %f", command->pose.orientation.w);
 
   planner_client_->sendCommand(command);
 
