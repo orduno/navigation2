@@ -14,7 +14,7 @@
 
 #include <memory>
 
-#include "action_server.hpp"
+#include "simple_action_server.hpp"
 #include "test_msgs/action/fibonacci.hpp"
 
 using Fibonacci = test_msgs::action::Fibonacci;
@@ -67,9 +67,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   auto node = std::make_shared<rclcpp::Node>("test_server_node");
-  auto action_server = std::make_shared<nav2_util::ActionServer<Fibonacci>>(node, "fibonacci");
-
-  action_server->set_execute_callback(execute);
+  auto action_server = std::make_shared<nav2_util::SimpleActionServer<Fibonacci>>(node, "fibonacci", execute);
 
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();

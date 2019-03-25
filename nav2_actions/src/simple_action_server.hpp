@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__ACTION_SERVER_HPP_
-#define NAV2_UTIL__ACTION_SERVER_HPP_
+#ifndef NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
+#define NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
 
 #include <memory>
 #include <string>
@@ -25,28 +25,31 @@ namespace nav2_util
 {
 
 template<typename ActionT>
-class ActionServer
+class SimpleActionServer
 {
 public:
-  explicit ActionServer(rclcpp::Node::SharedPtr node, const std::string & action_name)
-  : node_(node)
+  typedef std::function<
+      void (const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>)> ExecuteCallback;
+
+  explicit SimpleActionServer(rclcpp::Node::SharedPtr node, const std::string & action_name, ExecuteCallback execute_callback)
+  : node_(node), execute_callback_(execute_callback)
   {
     auto handle_goal =
       [](const rclcpp_action::GoalID &, std::shared_ptr<const typename ActionT::Goal>)
       {
-        printf("ActionServer::on_configure: handle_goal\n");
+        printf("SimpleActionServer::on_configure: handle_goal\n");
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
       };
 
     auto handle_cancel = [](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>)
       {
-        printf("ActionServer::on_configure: handle_cancel\n");
+        printf("SimpleActionServer::on_configure: handle_cancel\n");
         return rclcpp_action::CancelResponse::ACCEPT;
       };
 
     auto handle_accepted = [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
       {
-        printf("ActionServer::on_configure: handle_accepted\n");
+        printf("SimpleActionServer::on_configure: handle_accepted\n");
         received_handle_ = handle;
 
         // TODO(mjeronimo): set_execute_callback must have been called (put in constructor)
@@ -61,16 +64,8 @@ public:
       handle_accepted);
   }
 
-  typedef std::function<
-      void (const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>)> ExecuteCallback;
-
-  void set_execute_callback(ExecuteCallback execute_callback)
-  {
-    execute_callback_ = execute_callback;
-  }
-
 protected:
-  // The ActionClient isn't itself a node, so needs to know which one to use
+  // The SimpleActionServer isn't itself a node, so needs to know which one to use
   rclcpp::Node::SharedPtr node_;
 
   ExecuteCallback execute_callback_;
@@ -82,4 +77,4 @@ protected:
 
 }  // namespace nav2_util
 
-#endif   // NAV2_UTIL__ACTION_CLIENT_HPP_
+#endif   // NAV2_UTIL__SIMPLE_ACTION_CLIENT_HPP_

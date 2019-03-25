@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_actions)
 
+find_package(action_msgs REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(test_msgs REQUIRED)
 
 nav2_package()
@@ -24,10 +25,11 @@ add_executable(test_server
 )
 
 set(dependencies
-  rclcpp
-  rclcpp_action
-  std_msgs
+  action_msgs
   nav2_msgs
+  rclcpp_action
+  rclcpp
+  std_msgs
   test_msgs
 )
 

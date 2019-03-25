@@ -12,32 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__ACTION_CLIENT_HPP_
-#define NAV2_UTIL__ACTION_CLIENT_HPP_
+#ifndef NAV2_UTIL__SIMPLE_ACTION_CLIENT_HPP_
+#define NAV2_UTIL__SIMPLE_ACTION_CLIENT_HPP_
 
 #include <chrono>
+#include <stdexcept>
 #include <string>
 
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "rclcpp_action/client_goal_handle.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "action_msgs/msg/goal_status.hpp"
 
 namespace nav2_util
 {
 
+typedef enum
+{
+  SUCCEEDED,
+  FAILED,
+  RUNNING,
+  CANCELED
+} ActionStatus;
+
 template<typename ActionT>
-class ActionClient
+class SimpleActionClient
 {
 public:
-  explicit ActionClient(rclcpp::Node::SharedPtr node, const std::string & action_name)
+  explicit SimpleActionClient(rclcpp::Node::SharedPtr node, const std::string & action_name)
   : node_(node)
   {
     action_client_ = rclcpp_action::create_client<ActionT>(node, action_name);
   }
 
-  void send_goal(const typename ActionT::GoalRequestService::Request & goal)
+  void send_goal(const typename ActionT::GoalRequestService::Request & goal, typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr /*ignore_result*/)
   {
-    auto future_goal_handle = action_client_->async_send_goal(goal
-        /*FeedbackCallback callback = nullptr, bool ignore_result = false*/);
+    auto future_goal_handle = action_client_->async_send_goal(goal, callback /*ignore_result*/);
 
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
@@ -57,17 +67,14 @@ public:
     auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
     return rclcpp::spin_until_future_complete(node_, future_cancel) ==
            rclcpp::executor::FutureReturnCode::SUCCESS;
+    //goal_handle_.reset();
+    //return result;
   }
 
-  void send_goal_update(const typename ActionT::GoalRequestService::Request & goal)
+  typename rclcpp_action::ClientGoalHandle<ActionT>::Result
+  get_result()
   {
-    cancel();
-    send_goal(goal);
-  }
-
-  void cancel_all_goals()
-  {
-    // async_cancel_all_goals
+    return result_;
   }
 
   bool wait_for_server(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
@@ -75,46 +82,54 @@ public:
     return action_client_->wait_for_action_server(timeout);
   }
 
-  bool wait_for_result(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
+  ActionStatus
+  wait_for_result(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
   {
     auto future_result = action_client_->async_get_result(goal_handle_);
     auto wait_result = rclcpp::spin_until_future_complete(node_, future_result, timeout);
 
     if (wait_result == rclcpp::executor::FutureReturnCode::TIMEOUT) {
-      return false;
+      //RCLCPP_INFO(node_->get_logger(), "Action is executing");
+      return RUNNING;
     } else if (wait_result != rclcpp::executor::FutureReturnCode::SUCCESS) {
       throw std::runtime_error("get result failed");
     }
 
-    auto result = future_result.get();
+    result_ = future_result.get();
 
-    switch (result.code) {
+    switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
-        break;
+        RCLCPP_INFO(node_->get_logger(), "Goal was achieved");
+        //goal_handle_.reset();
+        return SUCCEEDED;
 
       case rclcpp_action::ResultCode::ABORTED:
         RCLCPP_ERROR(node_->get_logger(), "Goal was aborted");
-        return;
+        //goal_handle_.reset();
+        return FAILED;
 
       case rclcpp_action::ResultCode::CANCELED:
         RCLCPP_ERROR(node_->get_logger(), "Goal was canceled");
-        return;
+        //goal_handle_.reset();
+        return CANCELED;
 
       default:
-        RCLCPP_ERROR(node_->get_logger(), "Unknown result code");
-        return;
+        throw std::runtime_error("Unknown result code");
     }
   }
 
 protected:
-  // The ActionClient isn't itself a node, so needs to know which one to use
+  // The SimpleActionClient isn't itself a node, so needs to know which one to use
   rclcpp::Node::SharedPtr node_;
 
   typename rclcpp_action::Client<ActionT>::SharedPtr action_client_;
 
   typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
+
+  typename rclcpp_action::ClientGoalHandle<ActionT>::Result result_;
+
 };
 
 }  // namespace nav2_util
 
-#endif   // NAV2_UTIL__ACTION_CLIENT_HPP_
+#endif   // NAV2_UTIL__SIMPLE_ACTION_CLIENT_HPP_
