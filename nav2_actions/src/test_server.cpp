@@ -20,6 +20,8 @@
 using Fibonacci = test_msgs::action::Fibonacci;
 using GoalHandle = rclcpp_action::ServerGoalHandle<Fibonacci>;
 
+std::shared_ptr<nav2_util::SimpleActionServer<Fibonacci>> action_server;
+
 void execute(const std::shared_ptr<GoalHandle> goal_handle)
 {
   RCLCPP_INFO(rclcpp::get_logger("server"), "Executing goal");
@@ -36,12 +38,17 @@ void execute(const std::shared_ptr<GoalHandle> goal_handle)
   auto result_response = std::make_shared<Fibonacci::Result>();
 
   for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
-    // Check if there is a cancel request
+    // Check if this action has been canceled
     if (goal_handle->is_canceling()) {
       result_response->sequence = sequence;
       goal_handle->set_canceled(result_response);
       RCLCPP_INFO(rclcpp::get_logger("server"), "Goal Canceled");
       return;
+    }
+
+    // Check if we've gotten an new goal, pre-empting the current one
+    if (action_server->update_requested()) {
+      // goal_handle = action_server->get_updated_goal_handle();
     }
 
     // Update sequence
@@ -67,7 +74,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   auto node = std::make_shared<rclcpp::Node>("test_server_node");
-  auto action_server = std::make_shared<nav2_util::SimpleActionServer<Fibonacci>>(node, "fibonacci", execute);
+  action_server = std::make_shared<nav2_util::SimpleActionServer<Fibonacci>>(node, "fibonacci", execute);
 
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();

@@ -46,19 +46,20 @@ int main(int argc, char ** argv)
     printf("Press ENTER to send goal request..."); getchar();
     action_client->send_goal(goal, feedback_callback);
 
+int i = 0;
     for (bool done=false; !done; ) {
       auto result = action_client->wait_for_result(std::chrono::milliseconds(250));
       switch (result)
       {
         case nav2_util::ActionStatus::SUCCEEDED:
-		    {
+            {
           RCLCPP_INFO(node->get_logger(), "Action succeeded");
-		      auto rc = action_client->get_result();
+              auto rc = action_client->get_result();
 
           for (auto number : rc.response->sequence) {
             printf("%d ", number);
           }
-
+          printf("\n");
           done = true;
           break;
         }
@@ -78,6 +79,14 @@ int main(int argc, char ** argv)
 
         default:
           throw std::logic_error("Invalid status value");
+      }
+
+      i++;
+
+      if (i == 10) {
+       goal.order = 12;
+       printf("i==5\n");
+       //action_client->send_goal(goal, feedback_callback);
       }
     }
 

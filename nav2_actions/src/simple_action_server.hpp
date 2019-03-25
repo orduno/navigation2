@@ -50,10 +50,18 @@ public:
     auto handle_accepted = [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
       {
         printf("SimpleActionServer::on_configure: handle_accepted\n");
-        received_handle_ = handle;
 
-        // TODO(mjeronimo): set_execute_callback must have been called (put in constructor)
-        std::thread{execute_callback_, handle}.detach();
+        // If we're currently working on a task, set a flag so that the
+        // action server can grab the pre-empting request in its loop
+        if (received_handle_ != nullptr && received_handle_->is_active()) {
+          printf("SimpleActionServer: received a goal update\n");
+          update_requested_ = true;
+          received_handle_ = handle;
+        } else {
+          // Otherwise, safe to start a new task
+          received_handle_ = handle;
+          std::thread{execute_callback_, handle}.detach();
+        }
       };
 
     action_server_ = rclcpp_action::create_server<ActionT>(
@@ -62,6 +70,20 @@ public:
       handle_goal,
       handle_cancel,
       handle_accepted);
+
+   printf("received_handle_: %p\n", static_cast<void *>(received_handle_.get()));
+  }
+
+  bool update_requested()
+  {
+    return update_requested_;
+  }
+
+  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>
+  get_updated_goal_handle()
+  { 
+    // assert(update_requested_);
+    return received_handle_;
   }
 
 protected:
@@ -69,6 +91,8 @@ protected:
   rclcpp::Node::SharedPtr node_;
 
   ExecuteCallback execute_callback_;
+
+  bool update_requested_{false};
 
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
 
