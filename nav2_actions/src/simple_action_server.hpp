@@ -70,8 +70,6 @@ public:
       handle_goal,
       handle_cancel,
       handle_accepted);
-
-   printf("received_handle_: %p\n", static_cast<void *>(received_handle_.get()));
   }
 
   bool update_requested()

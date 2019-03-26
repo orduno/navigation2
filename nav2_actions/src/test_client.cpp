@@ -38,62 +38,65 @@ int main(int argc, char ** argv)
   // Create a SimpleActionClient
   auto action_client = std::make_shared<nav2_util::SimpleActionClient<Fibonacci>>(node, "fibonacci");
 
-  //for (;; ) {
-    auto goal = Fibonacci::Goal();
-    goal.order = 10;
+  auto goal = Fibonacci::Goal();
+  goal.order = 10;
 
-    //printf("Press ENTER to send goal request..."); getchar();
-    action_client->send_goal(goal, feedback_callback);
+  printf("Press ENTER to send goal request..."); getchar();
+  action_client->send_goal(goal, feedback_callback);
 
-int i = 0;
-    for (bool done=false; !done; ) {
-      auto result = action_client->wait_for_result(std::chrono::milliseconds(250));
-      switch (result)
+  int i = 0;
+  for (bool done=false; !done; ) {
+    auto result = action_client->wait_for_result(std::chrono::milliseconds(250));
+    switch (result)
+    {
+      case nav2_util::ActionStatus::SUCCEEDED:
       {
-        case nav2_util::ActionStatus::SUCCEEDED:
-            {
-          RCLCPP_INFO(node->get_logger(), "Action succeeded");
-              auto rc = action_client->get_result();
-
-          for (auto number : rc.result->sequence) {
-            printf("%d ", number);
-          }
-          printf("\n");
-          done = true;
-          break;
+        RCLCPP_INFO(node->get_logger(), "Action succeeded");
+        auto rc = action_client->get_result();
+        for (auto number : rc.result->sequence) {
+          printf("%d ", number);
         }
-
-        case nav2_util::ActionStatus::FAILED:
-          RCLCPP_INFO(node->get_logger(), "Action failed");
-          done = true;
-          break;
-
-        case nav2_util::ActionStatus::CANCELED:
-          RCLCPP_INFO(node->get_logger(), "Action canceled");
-          done = true;
-          break;
-
-        case nav2_util::ActionStatus::RUNNING:
-          break;
-
-        default:
-          throw std::logic_error("Invalid status value");
+        printf("\n");
+        done = true;
+        break;
       }
 
-      i++;
+      case nav2_util::ActionStatus::FAILED:
+        RCLCPP_INFO(node->get_logger(), "Action failed");
+        done = true;
+        break;
 
+      case nav2_util::ActionStatus::CANCELED:
+        RCLCPP_INFO(node->get_logger(), "Action canceled");
+        done = true;
+        break;
+
+      case nav2_util::ActionStatus::RUNNING:
+        break;
+
+      default:
+        throw std::logic_error("Invalid status value");
+    }
+    
+    if (!done) {
+      i++;
       if (i == 10) {
-        goal.order = 12;
-        printf("i==5\n");
-        //action_client->send_goal(goal, feedback_callback);
+        RCLCPP_INFO(node->get_logger(), "Pre-empting current action with new goal");
+        goal.order = 13;
+        action_client->send_goal(goal, feedback_callback);
+      } else if (i == 20) {
+        RCLCPP_INFO(node->get_logger(), "Canceling");
+        action_client->cancel();
+
+        RCLCPP_INFO(node->get_logger(), "Sending another goal");
+	    std::this_thread::sleep_for(std::chrono::seconds(2));
+		i = 0;
+        goal.order = 10;
+        action_client->send_goal(goal, feedback_callback);
       }
     }
-
-    //printf("Press ENTER to send cancel..."); getchar();
-    //action_client->cancel();
-  //}
-
+  }
+  
   rclcpp::shutdown();
-
   return 0;
 }

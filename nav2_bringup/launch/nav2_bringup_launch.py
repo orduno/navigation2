@@ -72,10 +72,10 @@ def generate_launch_description():
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),],
         cwd=[launch_dir], output='screen')
 
-    exit_event_handler = launch.actions.RegisterEventHandler(
-        event_handler = launch.event_handlers.OnProcessExit(
-            target_action=start_rviz_cmd,
-            on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
+    #exit_event_handler = launch.actions.RegisterEventHandler(
+    #    event_handler = launch.event_handlers.OnProcessExit(
+    #        target_action=start_rviz_cmd,
+    #        on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
     start_map_server_cmd = launch.actions.ExecuteProcess(
         cmd=[
@@ -142,18 +142,18 @@ def generate_launch_description():
     ld.add_action(declare_world_cmd)
 
     # Then, add the actions to launch the simulator-related nodes (conditioned on 'use_simulation')
-    ld.add_action(start_gazebo_cmd)
-    ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(start_rviz_cmd)
-    ld.add_action(exit_event_handler)
+    #ld.add_action(start_gazebo_cmd)
+    #ld.add_action(start_robot_state_publisher_cmd)
+    #ld.add_action(start_rviz_cmd)
+    #ld.add_action(exit_event_handler)
 
     # Next, add the actions to launch all of the navigation nodes
-    ld.add_action(start_controller_cmd)
+    #ld.add_action(start_controller_cmd)
     ld.add_action(start_map_server_cmd)
-    ld.add_action(start_localizer_cmd)
-    ld.add_action(start_world_model_cmd)
-    ld.add_action(start_dwb_cmd)
-    ld.add_action(start_planner_cmd)
+    #ld.add_action(start_localizer_cmd)
+    #ld.add_action(start_world_model_cmd)
+    #ld.add_action(start_dwb_cmd)
+    #ld.add_action(start_planner_cmd)
     ld.add_action(start_navigator_cmd)
 
     return ld

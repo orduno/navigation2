@@ -49,9 +49,9 @@ void execute(const std::shared_ptr<GoalHandle> goal_handle)
 
     // Check if we've gotten an new goal, pre-empting the current one
     if (action_server->update_requested()) {
-      //goal_handle = action_server->get_updated_goal_handle();
-      //execute(action_server->get_updated_goal_handle());
-      printf("test_server: update requested\n");
+      RCLCPP_INFO(rclcpp::get_logger("server"), "Update requested, pre-empt current goal");
+      execute(action_server->get_updated_goal_handle());
+      return;
     }
 
     // Update sequence
