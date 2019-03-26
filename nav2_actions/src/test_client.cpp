@@ -38,11 +38,11 @@ int main(int argc, char ** argv)
   // Create a SimpleActionClient
   auto action_client = std::make_shared<nav2_util::SimpleActionClient<Fibonacci>>(node, "fibonacci");
 
-  for (;; ) {
+  //for (;; ) {
     auto goal = Fibonacci::Goal();
     goal.order = 10;
 
-    printf("Press ENTER to send goal request..."); getchar();
+    //printf("Press ENTER to send goal request..."); getchar();
     action_client->send_goal(goal, feedback_callback);
 
 int i = 0;
@@ -55,7 +55,7 @@ int i = 0;
           RCLCPP_INFO(node->get_logger(), "Action succeeded");
               auto rc = action_client->get_result();
 
-          for (auto number : rc.response->sequence) {
+          for (auto number : rc.result->sequence) {
             printf("%d ", number);
           }
           printf("\n");
@@ -83,15 +83,15 @@ int i = 0;
       i++;
 
       if (i == 10) {
-       goal.order = 12;
-       printf("i==5\n");
-       //action_client->send_goal(goal, feedback_callback);
+        goal.order = 12;
+        printf("i==5\n");
+        //action_client->send_goal(goal, feedback_callback);
       }
     }
 
     //printf("Press ENTER to send cancel..."); getchar();
     //action_client->cancel();
-  }
+  //}
 
   rclcpp::shutdown();
 

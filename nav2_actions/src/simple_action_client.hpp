@@ -45,7 +45,7 @@ public:
     action_client_ = rclcpp_action::create_client<ActionT>(node, action_name);
   }
 
-  void send_goal(const typename ActionT::GoalRequestService::Request & goal, typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr /*ignore_result*/)
+  void send_goal(const typename ActionT::Goal & goal, typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr /*ignore_result*/)
   {
     auto future_goal_handle = action_client_->async_send_goal(goal, callback /*ignore_result*/);
 
@@ -71,7 +71,7 @@ public:
     //return result;
   }
 
-  typename rclcpp_action::ClientGoalHandle<ActionT>::Result
+  typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult
   get_result()
   {
     return result_;
@@ -128,7 +128,7 @@ protected:
 
   typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
 
-  typename rclcpp_action::ClientGoalHandle<ActionT>::Result result_;
+  typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult result_;
 
 };
 

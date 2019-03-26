@@ -79,10 +79,11 @@ public:
     return update_requested_;
   }
 
-  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>
   get_updated_goal_handle()
   { 
     // assert(update_requested_);
+    update_requested_ = false;
     return received_handle_;
   }
 
