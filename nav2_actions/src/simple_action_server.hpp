@@ -35,7 +35,7 @@ public:
   : node_(node), execute_callback_(execute_callback)
   {
     auto handle_goal =
-      [](const rclcpp_action::GoalID &, std::shared_ptr<const typename ActionT::Goal>)
+      [](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
       {
         printf("SimpleActionServer::on_configure: handle_goal\n");
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;

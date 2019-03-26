@@ -20,7 +20,6 @@
 #include "test_msgs/action/fibonacci.hpp"
 
 using Fibonacci = test_msgs::action::Fibonacci;
-using Goal = Fibonacci::Goal;
 
 void feedback_callback(
   rclcpp_action::ClientGoalHandle<Fibonacci>::SharedPtr,
@@ -40,7 +39,7 @@ int main(int argc, char ** argv)
   auto action_client = std::make_shared<nav2_util::SimpleActionClient<Fibonacci>>(node, "fibonacci");
 
   for (;; ) {
-    auto goal = Goal();
+    auto goal = Fibonacci::Goal();
     goal.order = 10;
 
     printf("Press ENTER to send goal request..."); getchar();

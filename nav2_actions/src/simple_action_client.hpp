@@ -116,6 +116,8 @@ public:
       default:
         throw std::runtime_error("Unknown result code");
     }
+
+	throw std::runtime_error("Unreachable code");
   }
 
 protected:
