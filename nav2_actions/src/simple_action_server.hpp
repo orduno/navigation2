@@ -35,7 +35,7 @@ public:
   : node_(node), execute_callback_(execute_callback)
   {
     auto handle_goal =
-      [](const rclcpp_action::GoalID &, std::shared_ptr<const typename ActionT::Goal>)
+      [](const rclcpp_action::GoalUUID &, std::shared_ptr<const typename ActionT::Goal>)
       {
         printf("SimpleActionServer::on_configure: handle_goal\n");
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -70,8 +70,6 @@ public:
       handle_goal,
       handle_cancel,
       handle_accepted);
-
-   printf("received_handle_: %p\n", static_cast<void *>(received_handle_.get()));
   }
 
   bool update_requested()
@@ -79,10 +77,11 @@ public:
     return update_requested_;
   }
 
-  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>
   get_updated_goal_handle()
   { 
     // assert(update_requested_);
+    update_requested_ = false;
     return received_handle_;
   }
 

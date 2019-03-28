@@ -91,12 +91,15 @@ public:
 
       switch (status) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
+          setStatus(BT::NodeStatus::IDLE);
           return BT::NodeStatus::SUCCESS;
 
         case nav2_tasks::TaskStatus::FAILED:
+          setStatus(BT::NodeStatus::IDLE);
           return BT::NodeStatus::FAILURE;
 
         case nav2_tasks::TaskStatus::CANCELED:
+          setStatus(BT::NodeStatus::IDLE);
           return BT::NodeStatus::SUCCESS;
 
         case nav2_tasks::TaskStatus::RUNNING:

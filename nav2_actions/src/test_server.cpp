@@ -38,6 +38,7 @@ void execute(const std::shared_ptr<GoalHandle> goal_handle)
   auto result_response = std::make_shared<Fibonacci::Result>();
 
   for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
+
     // Check if this action has been canceled
     if (goal_handle->is_canceling()) {
       result_response->sequence = sequence;
@@ -48,7 +49,9 @@ void execute(const std::shared_ptr<GoalHandle> goal_handle)
 
     // Check if we've gotten an new goal, pre-empting the current one
     if (action_server->update_requested()) {
-      // goal_handle = action_server->get_updated_goal_handle();
+      RCLCPP_INFO(rclcpp::get_logger("server"), "Update requested, pre-empt current goal");
+      execute(action_server->get_updated_goal_handle());
+      return;
     }
 
     // Update sequence
