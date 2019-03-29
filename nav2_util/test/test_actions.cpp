@@ -32,33 +32,35 @@ class FibonacciServerNode : public rclcpp::Node
 {
 public:
   FibonacciServerNode()
-  : rclcpp::Node("test_server_node")
+  : rclcpp::Node("fibonacci_server_node")
   {
   }
-  
+
   void on_init()
   {
     action_server_ = std::make_shared<nav2_util::SimpleActionServer<Fibonacci>>(
-      shared_from_this(), "fibonacci", std::bind(&FibonacciServerNode::execute, this, std::placeholders::_1));
+      shared_from_this(),
+      "fibonacci",
+      std::bind(&FibonacciServerNode::execute, this, std::placeholders::_1));
   }
 
   void execute(const std::shared_ptr<GoalHandle> goal_handle)
   {
     // The goal may be pre-empted, so keep a pointer to the current goal
     std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
-  
-  preempted:
+
+preempted:
     // Initialize the goal, feedback, and result
     auto goal = current_goal_handle->get_goal();
     auto feedback = std::make_shared<Fibonacci::Feedback>();
     auto result = std::make_shared<Fibonacci::Result>();
-  
+
     // Fibonacci-specific initialization
     rclcpp::Rate loop_rate(5);
     auto & sequence = feedback->sequence;
     sequence.push_back(0);
     sequence.push_back(1);
-  
+
     for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
       // Check if this action has been canceled
       if (current_goal_handle->is_canceling()) {
@@ -66,21 +68,21 @@ public:
         current_goal_handle->set_canceled(result);
         return;
       }
-  
+
       // Check if we've gotten an new goal, pre-empting the current one
       if (action_server_->update_requested()) {
         current_goal_handle = action_server_->get_updated_goal_handle();
         goto preempted;
       }
-  
+
       // Update the sequence
       sequence.push_back(sequence[i] + sequence[i - 1]);
-  
+
       // Publish feedback
       current_goal_handle->publish_feedback(feedback);
       loop_rate.sleep();
     }
-  
+
     // Check if goal is done
     if (rclcpp::ok()) {
       result->sequence = sequence;
@@ -95,10 +97,11 @@ private:
 class RclCppFixture
 {
 public:
-  RclCppFixture() 
+  RclCppFixture()
   {
     rclcpp::init(0, nullptr);
-    server_thread_ = std::make_unique<std::thread>(std::bind(&RclCppFixture::server_thread_func, this));
+    server_thread_ =
+      std::make_unique<std::thread>(std::bind(&RclCppFixture::server_thread_func, this));
   }
 
   ~RclCppFixture()
@@ -119,11 +122,11 @@ public:
 
 RclCppFixture g_rclcppfixture;
 
-class FibonacciTestNode : public rclcpp::Node
+class ActionTestNode : public rclcpp::Node
 {
 public:
-  FibonacciTestNode()
-  : rclcpp::Node(nav2_util::generate_internal_node_name("fibonacci_test_node"))
+  ActionTestNode()
+  : rclcpp::Node(nav2_util::generate_internal_node_name("action_test_node"))
   {
   }
 
@@ -131,29 +134,49 @@ public:
   {
     action_client_ =
       std::make_shared<nav2_util::SimpleActionClient<Fibonacci>>(shared_from_this(), "fibonacci");
-	action_client_->wait_for_server();
+    action_client_->wait_for_server();
   }
 
   std::shared_ptr<nav2_util::SimpleActionClient<Fibonacci>> action_client_;
 };
 
-class FibonacciTest : public ::testing::Test
+class ActionTest : public ::testing::Test
 {
 protected:
-  std::shared_ptr<FibonacciTestNode> node_;
-
   virtual void SetUp()
   {
-    node_ = std::make_shared<FibonacciTestNode>();
+    node_ = std::make_shared<ActionTestNode>();
     node_->on_init();
-  };
-
-  virtual void TearDown()
-  {
   }
+
+  std::shared_ptr<ActionTestNode> node_;
 };
 
-TEST_F(FibonacciTest, test_synchronous_interface)
+TEST_F(ActionTest, test_synchronous_interface_no_feedback)
+{
+  // The goal for this invocation
+  auto goal = Fibonacci::Goal();
+  goal.order = 12;
+
+  // The final result
+  rclcpp_action::ClientGoalHandle<Fibonacci>::Result result;
+
+  // Call the synchronous version of the client interface
+  auto status = node_->action_client_->invoke(goal, result);
+
+  // Sum all of the values in the requested fibonacci series
+  int sum = 0;
+  if (status == nav2_util::ActionStatus::SUCCEEDED) {
+    for (auto number : result.response->sequence) {
+      sum += number;
+    }
+  }
+
+  ASSERT_EQ(status, nav2_util::ActionStatus::SUCCEEDED);
+  ASSERT_EQ(sum, 376);
+}
+
+TEST_F(ActionTest, test_synchronous_interface_with_feedback)
 {
   int feedback_sum = 0;
 
@@ -179,16 +202,16 @@ TEST_F(FibonacciTest, test_synchronous_interface)
   int sum = 0;
   if (status == nav2_util::ActionStatus::SUCCEEDED) {
     for (auto number : result.response->sequence) {
-	    sum += number;
+      sum += number;
     }
   }
 
   ASSERT_EQ(status, nav2_util::ActionStatus::SUCCEEDED);
   ASSERT_EQ(sum, 143);
-  ASSERT_GE(feedback_sum, 0); // We should have received some feedback
+  ASSERT_GE(feedback_sum, 0);  // We should have received some feedback
 }
 
-TEST_F(FibonacciTest, test_async_goal_and_feedback)
+TEST_F(ActionTest, test_async_goal_and_feedback)
 {
   int feedback_sum = 0;
 
@@ -240,23 +263,14 @@ TEST_F(FibonacciTest, test_async_goal_and_feedback)
   ASSERT_GE(feedback_sum, 0);
 }
 
-TEST_F(FibonacciTest, test_async_cancel)
+TEST_F(ActionTest, test_async_cancel_no_feedback)
 {
-  int feedback_sum = 0;
-
-  auto feedback_callback = [&feedback_sum](
-    rclcpp_action::ClientGoalHandle<Fibonacci>::SharedPtr /*goal_handle*/,
-    const std::shared_ptr<const Fibonacci::Feedback> feedback)
-    {
-      feedback_sum += feedback->sequence.back();
-    };
-
   auto goal = Fibonacci::Goal();
   goal.order = 10;
 
   int sum = 0;
 
-  node_->action_client_->send_goal(goal, feedback_callback);
+  node_->action_client_->send_goal(goal);
 
   bool cancel_received = false;
 
