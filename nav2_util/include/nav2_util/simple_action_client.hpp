@@ -45,6 +45,59 @@ public:
     action_client_ = rclcpp_action::create_client<ActionT>(node, action_name);
   }
 
+  bool wait_for_server(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
+  {
+    return action_client_->wait_for_action_server(timeout);
+  }
+
+  ActionStatus invoke(
+    const typename ActionT::GoalRequestService::Request & goal,
+    typename rclcpp_action::ClientGoalHandle<ActionT>::Result & result,
+    typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr)
+  {
+    // Send the goal
+
+    auto future_goal_handle = action_client_->async_send_goal(goal, callback /*ignore_result*/);
+
+    if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+      throw std::runtime_error("send_goal failed");
+    }
+
+    auto goal_handle = future_goal_handle.get();
+
+    if (!goal_handle) {
+      throw std::runtime_error("Goal was rejected by the server");
+    }
+
+    // Wait for the result
+
+    auto future_result = action_client_->async_get_result(goal_handle);
+
+    if (rclcpp::spin_until_future_complete(node_, future_result) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+      throw std::runtime_error("spin_until_future_complete failed");
+    }
+
+    result = future_result.get();
+
+    switch (result.code) {
+      case rclcpp_action::ResultCode::SUCCEEDED:
+        return SUCCEEDED;
+
+      case rclcpp_action::ResultCode::ABORTED:
+        return FAILED;
+
+      case rclcpp_action::ResultCode::CANCELED:
+        return CANCELED;
+
+      default:
+        throw std::runtime_error("Unknown result code");
+    }
+  }
+
   void send_goal(
     const typename ActionT::GoalRequestService::Request & goal,
     typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr
@@ -70,17 +123,6 @@ public:
     auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
     return rclcpp::spin_until_future_complete(node_, future_cancel) ==
            rclcpp::executor::FutureReturnCode::SUCCESS;
-  }
-
-  typename rclcpp_action::ClientGoalHandle<ActionT>::Result
-  get_result()
-  {
-    return result_;
-  }
-
-  bool wait_for_server(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
-  {
-    return action_client_->wait_for_action_server(timeout);
   }
 
   ActionStatus
@@ -110,6 +152,12 @@ public:
       default:
         throw std::runtime_error("Unknown result code");
     }
+  }
+
+  typename rclcpp_action::ClientGoalHandle<ActionT>::Result
+  get_result()
+  {
+    return result_;
   }
 
 protected:

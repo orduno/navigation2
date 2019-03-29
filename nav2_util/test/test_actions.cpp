@@ -153,12 +153,43 @@ protected:
   }
 };
 
-TEST_F(FibonacciTest, test_goal_and_feedback)
+TEST_F(FibonacciTest, test_synchronous_interface)
 {
+  int feedback_sum = 0;
+
+  // A callback to accumulate the intermediate values
+  auto feedback_callback = [&feedback_sum](
+    rclcpp_action::ClientGoalHandle<Fibonacci>::SharedPtr /*goal_handle*/,
+    const std::shared_ptr<const Fibonacci::Feedback> feedback)
+    {
+      feedback_sum += feedback->sequence.back();
+    };
+
+  // The goal for this invocation
   auto goal = Fibonacci::Goal();
   goal.order = 10;
 
+  // The final result
+  rclcpp_action::ClientGoalHandle<Fibonacci>::Result result;
+
+  // Call the synchronous version of the client interface
+  auto status = node_->action_client_->invoke(goal, result, feedback_callback);
+
+  // Sum all of the values in the requested fibonacci series
   int sum = 0;
+  if (status == nav2_util::ActionStatus::SUCCEEDED) {
+    for (auto number : result.response->sequence) {
+	    sum += number;
+    }
+  }
+
+  ASSERT_EQ(status, nav2_util::ActionStatus::SUCCEEDED);
+  ASSERT_EQ(sum, 143);
+  ASSERT_GE(feedback_sum, 0); // We should have received some feedback
+}
+
+TEST_F(FibonacciTest, test_async_goal_and_feedback)
+{
   int feedback_sum = 0;
 
   auto feedback_callback = [&feedback_sum](
@@ -167,6 +198,11 @@ TEST_F(FibonacciTest, test_goal_and_feedback)
     {
       feedback_sum += feedback->sequence.back();
     };
+
+  auto goal = Fibonacci::Goal();
+  goal.order = 10;
+
+  int sum = 0;
 
   node_->action_client_->send_goal(goal, feedback_callback);
 
@@ -204,12 +240,8 @@ TEST_F(FibonacciTest, test_goal_and_feedback)
   ASSERT_GE(feedback_sum, 0);
 }
 
-TEST_F(FibonacciTest, test_cancel)
+TEST_F(FibonacciTest, test_async_cancel)
 {
-  auto goal = Fibonacci::Goal();
-  goal.order = 10;
-
-  int sum = 0;
   int feedback_sum = 0;
 
   auto feedback_callback = [&feedback_sum](
@@ -218,6 +250,11 @@ TEST_F(FibonacciTest, test_cancel)
     {
       feedback_sum += feedback->sequence.back();
     };
+
+  auto goal = Fibonacci::Goal();
+  goal.order = 10;
+
+  int sum = 0;
 
   node_->action_client_->send_goal(goal, feedback_callback);
 
@@ -258,6 +295,6 @@ TEST_F(FibonacciTest, test_cancel)
 
   ASSERT_EQ(cancel_received, true);
 
-  // We should not have SUCCEEDED so the sum is zero
+  // We should not have succeeded so the sum should be zero
   ASSERT_EQ(sum, 0);
 }
