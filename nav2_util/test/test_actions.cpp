@@ -106,6 +106,7 @@ public:
 
   ~RclCppFixture()
   {
+	  printf("~RclCppFixture\n");
     rclcpp::shutdown();
     server_thread_->join();
   }
@@ -128,6 +129,11 @@ public:
   ActionTestNode()
   : rclcpp::Node(nav2_util::generate_internal_node_name("action_test_node"))
   {
+  }
+
+  ~ActionTestNode()
+  {
+    printf("~ActionTestNode\n");
   }
 
   void on_init()
@@ -159,7 +165,7 @@ TEST_F(ActionTest, test_synchronous_interface_no_feedback)
   goal.order = 12;
 
   // The final result
-  rclcpp_action::ClientGoalHandle<Fibonacci>::Result result;
+  rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result;
 
   // Call the synchronous version of the client interface
   auto status = node_->action_client_->invoke(goal, result);
@@ -167,7 +173,7 @@ TEST_F(ActionTest, test_synchronous_interface_no_feedback)
   // Sum all of the values in the requested fibonacci series
   int sum = 0;
   if (status == nav2_util::ActionStatus::SUCCEEDED) {
-    for (auto number : result.response->sequence) {
+    for (auto number : result.result->sequence) {
       sum += number;
     }
   }
@@ -193,7 +199,7 @@ TEST_F(ActionTest, test_synchronous_interface_with_feedback)
   goal.order = 10;
 
   // The final result
-  rclcpp_action::ClientGoalHandle<Fibonacci>::Result result;
+  rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result;
 
   // Call the synchronous version of the client interface
   auto status = node_->action_client_->invoke(goal, result, feedback_callback);
@@ -201,7 +207,7 @@ TEST_F(ActionTest, test_synchronous_interface_with_feedback)
   // Sum all of the values in the requested fibonacci series
   int sum = 0;
   if (status == nav2_util::ActionStatus::SUCCEEDED) {
-    for (auto number : result.response->sequence) {
+    for (auto number : result.result->sequence) {
       sum += number;
     }
   }
@@ -236,7 +242,7 @@ TEST_F(ActionTest, test_async_goal_and_feedback)
         {
           auto rc = node_->action_client_->get_result();
 
-          for (auto number : rc.response->sequence) {
+          for (auto number : rc.result->sequence) {
             sum += number;
           }
 
@@ -281,7 +287,7 @@ TEST_F(ActionTest, test_async_cancel_no_feedback)
         {
           auto rc = node_->action_client_->get_result();
 
-          for (auto number : rc.response->sequence) {
+          for (auto number : rc.result->sequence) {
             sum += number;
           }
 

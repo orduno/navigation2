@@ -51,8 +51,9 @@ public:
   }
 
   ActionStatus invoke(
-    const typename ActionT::GoalRequestService::Request & goal,
-    typename rclcpp_action::ClientGoalHandle<ActionT>::Result & result,
+    //const typename ActionT::GoalRequestService::Request & goal,
+    const typename ActionT::Goal & goal,
+    typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result,
     typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr)
   {
     // Send the goal
@@ -99,7 +100,7 @@ public:
   }
 
   void send_goal(
-    const typename ActionT::GoalRequestService::Request & goal,
+    const typename ActionT::Goal & goal,
     typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr
     /*ignore_result*/)
   {
@@ -154,7 +155,7 @@ public:
     }
   }
 
-  typename rclcpp_action::ClientGoalHandle<ActionT>::Result
+  typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult
   get_result()
   {
     return result_;
@@ -171,7 +172,7 @@ protected:
   typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
 
   // The result of the action
-  typename rclcpp_action::ClientGoalHandle<ActionT>::Result result_;
+  typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult result_;
 };
 
 }  // namespace nav2_util
