@@ -81,12 +81,14 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
   plan_marker_publisher_ = create_publisher<visualization_msgs::msg::Marker>(
     "endpoints", 1);
 
+  auto node = shared_from_this();
+
   // Initialize supporting objects
-  robot_ = std::make_unique<nav2_robot::Robot>(shared_from_this());
+  robot_ = std::make_unique<nav2_robot::Robot>(node);
   robot_->on_configure(state);
 
   // Initialize action servers and action clients
-  task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(shared_from_this()),
+  task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(node);
   task_server_->on_configure(state);
   task_server_->setExecuteCallback(
     std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));

@@ -18,6 +18,7 @@
 #include <memory>
 #include <streambuf>
 #include <string>
+#include <utility>
 
 #include "nav2_tasks/bt_conversions.hpp"
 
@@ -41,15 +42,16 @@ nav2_lifecycle::CallbackReturn
 BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
+  auto node = shared_from_this();
 
   // Create the NavigateToPose task server for this node and set the callback
-  task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(shared_from_this());
+  task_server_ = std::make_unique<nav2_tasks::NavigateToPoseTaskServer>(node);
   task_server_->on_configure(state);
   task_server_->setExecuteCallback(
     std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 
   // Create the class that registers our custom nodes and executes the BT
-  bt_ = std::make_unique<NavigateToPoseBehaviorTree>(shared_from_this());
+  bt_ = std::make_unique<NavigateToPoseBehaviorTree>(node);
 
   // Create the path that will be returned from ComputePath and sent to FollowPath
   goal_ = std::make_shared<nav2_tasks::ComputePathToPoseCommand>();
@@ -61,7 +63,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   // Put items on the blackboard
   blackboard_->set<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal", goal_);  // NOLINT
   blackboard_->set<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path", path_);  // NOLINT
-  blackboard_->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", shared_from_this());  // NOLINT
+  blackboard_->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", node);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
 
@@ -85,7 +87,14 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
 
   // Create the Behavior Tree from the XML input (after registering our own node types)
-  tree_ = bt_->buildTreeFromText(xml_string_, blackboard_);
+  BT::Tree temp_tree = bt_->buildTreeFromText(xml_string_, blackboard_);
+
+  // Unfortunately, the BT library provides the tree as a struct instead of a pointer. So, we will
+  // createa new BT::Tree ourselves and move the data over
+  tree_ = std::make_unique<BT::Tree>();
+  tree_->root_node = temp_tree.root_node;
+  tree_->nodes = std::move(temp_tree.nodes);
+  temp_tree.root_node = nullptr;
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -119,8 +128,11 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
   task_server_.reset();
 
   path_.reset();
-  blackboard_.reset();
   xml_string_.clear();
+
+  tree_.reset();
+  blackboard_.reset();
+  bt_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -159,10 +171,10 @@ BtNavigator::navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr c
     // Even though the BT is no longer running, remote actions may still be executing. So,
     // an explicit canceling of all actions allows the task clients to send cancel messages
     // to their corresponding task servers
-    bt_->cancelAllActions(tree_.root_node);
+    bt_->cancelAllActions(tree_->root_node);
 
     // Reset the BT so that it can be run again in the future
-    bt_->resetTree(tree_.root_node);
+    bt_->resetTree(tree_->root_node);
   }
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", result);

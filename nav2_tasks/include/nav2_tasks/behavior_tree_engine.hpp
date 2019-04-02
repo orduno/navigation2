@@ -15,6 +15,7 @@
 #ifndef NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
 #define NAV2_TASKS__BEHAVIOR_TREE_ENGINE_HPP_
 
+#include <memory>
 #include <string>
 
 #include "behaviortree_cpp/behavior_tree.h"
@@ -33,6 +34,7 @@ class BehaviorTreeEngine
 public:
   explicit BehaviorTreeEngine(nav2_lifecycle::LifecycleNode::SharedPtr node);
   BehaviorTreeEngine() = delete;
+  virtual ~BehaviorTreeEngine() {}
 
   TaskStatus run(
     BT::Blackboard::Ptr & blackboard,
@@ -41,7 +43,7 @@ public:
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
   TaskStatus run(
-    BT::Tree & tree,
+    std::unique_ptr<BT::Tree> & tree,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 

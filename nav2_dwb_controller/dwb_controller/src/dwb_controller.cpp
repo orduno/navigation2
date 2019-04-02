@@ -51,14 +51,16 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_configure(state);
 
+  auto node = shared_from_this();
+
   planner_ = std::make_unique<dwb_core::DWBLocalPlanner>(
-    shared_from_this(), costmap_ros_->getTfBuffer(), costmap_ros_);
+    node, costmap_ros_->getTfBuffer(), costmap_ros_);
   planner_->on_configure(state);
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
-  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(shared_from_this());
+  task_server_ = std::make_unique<nav2_tasks::FollowPathTaskServer>(node);
   task_server_->on_configure(state);
   task_server_->setExecuteCallback(
     std::bind(&DwbController::followPath, this, std::placeholders::_1));

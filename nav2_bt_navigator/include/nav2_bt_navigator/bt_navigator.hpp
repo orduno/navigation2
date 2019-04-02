@@ -63,7 +63,7 @@ private:
   std::unique_ptr<NavigateToPoseBehaviorTree> bt_;
 
   // The complete behavior tree that results from parsing the incoming XML
-  BT::Tree tree_;
+  std::unique_ptr<BT::Tree> tree_;
 };
 
 }  // namespace nav2_bt_navigator

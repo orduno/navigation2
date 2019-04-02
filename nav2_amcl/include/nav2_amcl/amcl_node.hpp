@@ -22,8 +22,10 @@
 #define NAV2_AMCL__AMCL_NODE_HPP_
 
 #include <atomic>
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "geometry_msgs/msg/pose_array.hpp"
@@ -67,7 +69,7 @@ protected:
 
   // Since the sensor data from gazebo or the robot is not lifecycle enabled, we won't
   // respond until we're in the active state
-  std::atomic<bool> active{false};
+  std::atomic<bool> active_{false};
 
   // Map-related
   void initMap();
@@ -96,8 +98,10 @@ protected:
 
   // Publishers and subscribers
   void initPubSub();
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr initial_pose_sub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_pub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
+    initial_pose_sub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+    pose_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_;
   void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
   void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
@@ -110,21 +114,25 @@ protected:
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr nomotion_update_srv_;  // to let amcl update samples without requiring motion
+  // Let amcl update samples without requiring motion
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr nomotion_update_srv_;
   void nomotionUpdateCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
-  bool force_update_{false}; // Nomotion update control. Used to temporarily let amcl update samples even when no motion occurs
+
+  // Nomotion update control. Used to temporarily let amcl update samples even when no motion occurs
+  bool force_update_{false};
 
   // Odometry
   void initOdometry();
   std::unique_ptr<nav2_util::MotionModel> motion_model_;
   geometry_msgs::msg::PoseStamped latest_odom_pose_;
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose_;
-  double init_pose_[3]; // Initial robot pose
+  double init_pose_[3];  // Initial robot pose
   double init_cov_[3];
-  bool getOdomPose(     // Helper to get odometric pose from transform system
+  bool getOdomPose(
+    // Helper to get odometric pose from transform system
     geometry_msgs::msg::PoseStamped & pose,
     double & x, double & y, double & yaw,
     const rclcpp::Time & t, const std::string & f);
@@ -132,7 +140,8 @@ protected:
 
   // Particle filter
   void initParticleFilter();
-  static pf_vector_t uniformPoseGenerator(void * arg); // Pose-generating function used to uniformly distribute particles over the map
+  // Pose-generating function used to uniformly distribute particles over the map
+  static pf_vector_t uniformPoseGenerator(void * arg);
   pf_t * pf_{nullptr};
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
@@ -148,48 +157,48 @@ protected:
   std::map<std::string, int> frame_to_laser_;
   rclcpp::Time last_laser_received_ts_;
   void checkLaserReceived();
-  std::chrono::seconds laser_check_interval_; // TODO: not initialized
+  std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
 
   // Node parameters (initialized via initParameters)
   void initParameters();
-  double        alpha1_;
-  double        alpha2_;
-  double        alpha3_;
-  double        alpha4_;
-  double        alpha5_;
-  std::string   base_frame_id_;
-  double        beam_skip_distance_;
-  double        beam_skip_error_threshold_;
-  double        beam_skip_threshold_;
-  bool          do_beamskip_;
-  std::string   global_frame_id_;
-  double        lambda_short_;
-  double        laser_likelihood_max_dist_;
-  double        laser_max_range_;
-  double        laser_min_range_;
-  //TODO: need both?
-    std::string laser_model_type_;
-    std::string sensor_model_type_;
-  int           max_beams_;
-  int           max_particles_;
-  int           min_particles_;
-  std::string   odom_frame_id_;
-  double        pf_err_;
-  double        pf_z_;
-  double        alpha_fast_;
-  double        alpha_slow_;
-  int           resample_interval_;
-  std::string   robot_model_type_;
+  double alpha1_;
+  double alpha2_;
+  double alpha3_;
+  double alpha4_;
+  double alpha5_;
+  std::string base_frame_id_;
+  double beam_skip_distance_;
+  double beam_skip_error_threshold_;
+  double beam_skip_threshold_;
+  bool do_beamskip_;
+  std::string global_frame_id_;
+  double lambda_short_;
+  double laser_likelihood_max_dist_;
+  double laser_max_range_;
+  double laser_min_range_;
+  // TODO(mjeronimo): need both?
+  std::string laser_model_type_;
+  std::string sensor_model_type_;
+  int max_beams_;
+  int max_particles_;
+  int min_particles_;
+  std::string odom_frame_id_;
+  double pf_err_;
+  double pf_z_;
+  double alpha_fast_;
+  double alpha_slow_;
+  int resample_interval_;
+  std::string robot_model_type_;
   tf2::Duration save_pose_period;
-  double        sigma_hit_;
-  bool          tf_broadcast_;
+  double sigma_hit_;
+  bool tf_broadcast_;
   tf2::Duration transform_tolerance_;
-  double        a_thresh_;
-  double        d_thresh_;
-  double        z_hit_;
-  double        z_max_;
-  double        z_short_;
-  double        z_rand_;
+  double a_thresh_;
+  double d_thresh_;
+  double z_hit_;
+  double z_max_;
+  double z_short_;
+  double z_rand_;
 };
 
 }  // namespace nav2_amcl

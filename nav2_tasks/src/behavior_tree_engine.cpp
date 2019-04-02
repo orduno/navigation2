@@ -14,13 +14,15 @@
 
 #include "nav2_tasks/behavior_tree_engine.hpp"
 
+#include <memory>
 #include <string>
-#include "geometry_msgs/msg/pose2_d.hpp"
+
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
-#include "nav2_tasks/navigate_to_pose_action.hpp"
+#include "geometry_msgs/msg/pose2_d.hpp"
+#include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/compute_path_to_pose_action.hpp"
 #include "nav2_tasks/follow_path_action.hpp"
-#include "nav2_tasks/bt_conversions.hpp"
+#include "nav2_tasks/navigate_to_pose_action.hpp"
 
 using namespace std::chrono_literals;
 
@@ -68,7 +70,7 @@ BehaviorTreeEngine::run(
 
 TaskStatus
 BehaviorTreeEngine::run(
-  BT::Tree & tree,
+  std::unique_ptr<BT::Tree> & tree,
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
@@ -77,7 +79,7 @@ BehaviorTreeEngine::run(
 
   // Loop until something happens with ROS or the node completes w/ success or failure
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    result = tree.root_node->executeTick();
+    result = tree->root_node->executeTick();
 
     // Check if we've received a cancel message
     if (cancelRequested()) {

@@ -124,7 +124,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Keep track of whether we're in the active state. We won't
   // process incoming callbacks until we are
-  active = true;
+  active_ = true;
 
   // Wait until the transform listener thread has had a chance to spin up and get the
   // transforms that it needs
@@ -144,7 +144,7 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  active = false;
+  active_ = false;
 
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
@@ -334,7 +334,7 @@ AmclNode::nomotionUpdateCallback(
 void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  if (!active) {return;}
+  if (!active_) {return;}
 
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
@@ -420,7 +420,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
   // Since the sensor data is continually being published by the simulator or robot,
   // we don't want our callbacks to fire until we're in the active state
-  if (!active) {return;}
+  if (!active_) {return;}
 
   std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
   last_laser_received_ts_ = rclcpp_node_->now();
