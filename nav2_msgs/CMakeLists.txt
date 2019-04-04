@@ -14,8 +14,9 @@ nav2_package()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
-  "msg/Path.msg"
+  "msg/LoopTime.msg"
   "msg/MissionPlan.msg"
+  "msg/Path.msg"
   "msg/TaskStatus.msg"
   "msg/VoxelGrid.msg"
   "srv/GetCostmap.srv"
