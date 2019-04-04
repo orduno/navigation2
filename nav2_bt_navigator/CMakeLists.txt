@@ -4,6 +4,7 @@ project(nav2_bt_navigator)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -34,6 +35,7 @@ add_library(${library_name} SHARED
 
 set(dependencies
   rclcpp
+  rclcpp_action
   std_msgs
   nav2_tasks
   nav_msgs

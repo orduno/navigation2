@@ -19,10 +19,12 @@
 #include <string>
 
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_bt_navigator/navigate_to_pose_behavior_tree.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/msg/path.hpp"
+#include "nav2_util/simple_action_server.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -42,19 +44,21 @@ protected:
   nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // The NavigateToPose interface (a task server that implements the NavigateToPose command)
-  std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
-  nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
+  // An action server that implements the NavigateToPose action
+  std::unique_ptr<nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>> action_server_;
+
+  // The method invoked by the action server
+  void navigateToPose(const std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>> goal_handle);
 
 private:
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
   // The goal (on the blackboard) to be passed to ComputePath
-  std::shared_ptr<nav2_tasks::ComputePathToPoseCommand> goal_;
+  std::shared_ptr<geometry_msgs::msg::PoseStamped> goal_;
 
   // The path (on the blackboard) to be returned from ComputePath and sent to the FollowPath task
-  std::shared_ptr<nav2_tasks::ComputePathToPoseResult> path_;
+  std::shared_ptr<nav2_msgs::msg::Path> path_;
 
   // The XML string that defines the Behavior Tree to create
   std::string xml_string_;

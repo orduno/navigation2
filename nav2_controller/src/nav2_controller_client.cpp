@@ -14,6 +14,7 @@
 
 #include "nav2_controller/nav2_controller_client.hpp"
 
+#include <cmath>
 #include <memory>
 
 namespace nav2_controller
@@ -32,6 +33,10 @@ Nav2ControllerClient::Nav2ControllerClient()
   pause_client_ = node_->create_client<Srv>("nav2_controller/pause");
   resume_client_ = node_->create_client<Srv>("nav2_controller/resume");
   shutdown_client_ = node_->create_client<Srv>("nav2_controller/shutdown");
+
+  navigate_action_client_ = std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(node_, "navigate_to_pose");
+
+  initial_pose_publisher_ = node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose");
 }
 
 void
@@ -56,6 +61,56 @@ void
 Nav2ControllerClient::resume()
 {
   callService(resume_client_, "nav2_controller/resume");
+}
+
+geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
+{
+  auto orientation = geometry_msgs::msg::Quaternion();
+
+  orientation.x = 0.0;
+  orientation.y = 0.0;
+  orientation.z = sin(angle) / (2 * cos(angle / 2));
+  orientation.w = cos(angle / 2);
+
+  return orientation;
+}
+
+void
+Nav2ControllerClient::set_initial_pose(double x, double y, double theta)
+{
+  const double PI = 3.141592653589793238463;
+  geometry_msgs::msg::PoseWithCovarianceStamped pose;
+
+  pose.header.frame_id = "map";
+  pose.header.stamp = node_->now();
+  pose.pose.pose.position.x = x;
+  pose.pose.pose.position.y = y;
+  pose.pose.pose.position.z = 0.0;
+  pose.pose.pose.orientation = orientationAroundZAxis(theta);
+  pose.pose.covariance[6 * 0 + 0] = 0.5 * 0.5;
+  pose.pose.covariance[6 * 1 + 1] = 0.5 * 0.5;
+  pose.pose.covariance[6 * 5 + 5] = PI / 12.0 * PI / 12.0;
+
+  initial_pose_publisher_->publish(pose);
+}
+
+bool
+Nav2ControllerClient::navigate_to_pose(double x, double y, double theta)
+{
+  geometry_msgs::msg::PoseStamped target_pose;
+  target_pose.pose.position.x = x;
+  target_pose.pose.position.y = y;
+  target_pose.pose.position.z = 0;
+  target_pose.pose.orientation = orientationAroundZAxis(theta);
+
+  auto goal = nav2_msgs::action::NavigateToPose::Goal();
+  goal.pose = target_pose;
+
+  rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult result;
+
+  auto status = navigate_action_client_->invoke(goal, result);
+
+  return status == nav2_util::ActionStatus::SUCCEEDED;
 }
 
 void

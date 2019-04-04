@@ -17,6 +17,9 @@
 
 #include <memory>
 
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav2_util/simple_action_client.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 
@@ -33,6 +36,9 @@ public:
   void pause();
   void resume();
 
+  void set_initial_pose(double x, double y, double theta);
+  bool navigate_to_pose(double x, double y, double theta);
+
 protected:
   using Srv = std_srvs::srv::Empty;
 
@@ -46,6 +52,10 @@ protected:
   rclcpp::Client<Srv>::SharedPtr pause_client_;
   rclcpp::Client<Srv>::SharedPtr resume_client_;
   rclcpp::Client<Srv>::SharedPtr shutdown_client_;
+
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_publisher_;
+
+  std::unique_ptr<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>> navigate_action_client_;
 };
 
 }  // namespace nav2_controller
