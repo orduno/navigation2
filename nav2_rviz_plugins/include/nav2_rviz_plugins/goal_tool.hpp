@@ -18,8 +18,8 @@
 #include <memory>
 #include <QObject>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_util/simple_action_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rviz_default_plugins/tools/pose/pose_tool.hpp"
 #include "rviz_default_plugins/visibility_control.hpp"
@@ -28,6 +28,7 @@ namespace rviz_common
 {
 
 class DisplayContext;
+
 namespace properties
 {
 class StringProperty;
@@ -49,14 +50,13 @@ public:
 
 protected:
   void onPoseSet(double x, double y, double theta) override;
-
-private Q_SLOTS:
-  void updateTopic();
+  void invokeAction(double x, double y, double theta);
 
 private:
-  rviz_common::properties::StringProperty * topic_property_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_;
+  rclcpp::Node::SharedPtr client_node_;
+  std::shared_ptr<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>> action_client_;
 
+  nav2_msgs::action::NavigateToPose::Goal goal_;
 };
 
 }  // namespace nav2_rviz_plugins

@@ -16,10 +16,14 @@
 
 #include <string>
 
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_util/simple_action_client.hpp"
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
-#include "rviz_common/properties/string_property.hpp"
+
+using std::placeholders::_1;
+using std::placeholders::_2;
+using std::placeholders::_3;
 
 namespace nav2_rviz_plugins
 {
@@ -28,10 +32,6 @@ GoalTool::GoalTool()
 : rviz_default_plugins::tools::PoseTool()
 {
   shortcut_key_ = 'g';
-
-  topic_property_ = new rviz_common::properties::StringProperty("Topic", "goal",
-      "The topic on which to publish navigation goals.",
-      getPropertyContainer(), SLOT(updateTopic()), this);
 }
 
 GoalTool::~GoalTool() = default;
@@ -43,30 +43,38 @@ void GoalTool::onInitialize()
   setName("2D Nav2 Goal");
   setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
 
-  updateTopic();
-  publisher_ = context_->getRosNodeAbstraction().lock()->get_raw_node()->create_publisher<geometry_msgs::msg::PoseStamped>("NavigateToPoseTask_command");
+  client_node_ = std::make_shared<rclcpp::Node>("nav_to_pose_client");
+  action_client_ = std::make_shared<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(client_node_, "navigate_to_pose");
+
+  goal_ = nav2_msgs::action::NavigateToPose::Goal();
 }
 
-void GoalTool::updateTopic()
-{
-}
-
-void GoalTool::onPoseSet(double x, double y, double theta)
+void GoalTool::invokeAction(double x, double y, double theta)
 {
   std::string fixed_frame = context_->getFixedFrame().toStdString();
 
-printf("onPoseSet\n");
+  auto pose = std::make_shared<geometry_msgs::msg::PoseStamped>();
 
-  auto goal = std::make_shared<geometry_msgs::msg::PoseStamped>();
+  pose->header.stamp = rclcpp::Clock().now();
+  pose->header.frame_id = fixed_frame;
+  pose->pose.position.x = x;
+  pose->pose.position.y = y;
+  pose->pose.position.z = 0.0;
+  pose->pose.orientation = orientationAroundZAxis(theta);
 
-  goal->header.stamp = rclcpp::Clock().now();
-  goal->header.frame_id = fixed_frame;
-  goal->pose.position.x = x;
-  goal->pose.position.y = y;
-  goal->pose.position.z = 0.0;
-  goal->pose.orientation = orientationAroundZAxis(theta);
+  action_client_->wait_for_server();
 
-  publisher_->publish(goal);
+  rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult result;
+  goal_.pose = *pose;
+
+  /*auto status =*/ action_client_->invoke(goal_, result);
+}
+
+static std::future<void> future_result;
+
+void GoalTool::onPoseSet(double x, double y, double theta)
+{
+  future_result = std::async([this](double x, double y, double theta) -> void { invokeAction(x, y, theta); }, x, y, theta);
 }
 
 }  // namespace nav2_rviz_plugins
