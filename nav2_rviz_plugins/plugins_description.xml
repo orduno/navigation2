@@ -1,9 +1,9 @@
 <library path="nav2_rviz_plugins">
 
-  <class name="nav2_rviz_plugins/NavTool"
-         type="nav2_rviz_plugins::NavTool"
+  <class name="nav2_rviz_plugins/GoalTool"
+         type="nav2_rviz_plugins::GoalTool"
          base_class_type="rviz_common::Tool">
-    <description>A tool to interface to the Navigation2 software.</description>
+    <description>A tool used to specify the navigation goal pose.</description>
   </class>
 
   <class name="nav2_rviz_plugins/Navigation 2"

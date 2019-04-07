@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_rviz_plugins/nav_tool.hpp"
+#include "nav2_rviz_plugins/goal_tool.hpp"
 
 #include <string>
 
 #include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "rviz_common/display_context.hpp"
+#include "rviz_common/load_resource.hpp"
 #include "rviz_common/properties/string_property.hpp"
 
 namespace nav2_rviz_plugins
 {
 
-NavTool::NavTool()
+GoalTool::GoalTool()
 : rviz_default_plugins::tools::PoseTool()
 {
   shortcut_key_ = 'g';
@@ -33,24 +34,28 @@ NavTool::NavTool()
       getPropertyContainer(), SLOT(updateTopic()), this);
 }
 
-NavTool::~NavTool() = default;
+GoalTool::~GoalTool() = default;
 
-void NavTool::onInitialize()
+void GoalTool::onInitialize()
 {
   PoseTool::onInitialize();
-  setName("Nav2 Tool");
-  updateTopic();
 
+  setName("2D Nav2 Goal");
+  setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
+
+  updateTopic();
   publisher_ = context_->getRosNodeAbstraction().lock()->get_raw_node()->create_publisher<geometry_msgs::msg::PoseStamped>("NavigateToPoseTask_command");
 }
 
-void NavTool::updateTopic()
+void GoalTool::updateTopic()
 {
 }
 
-void NavTool::onPoseSet(double x, double y, double theta)
+void GoalTool::onPoseSet(double x, double y, double theta)
 {
   std::string fixed_frame = context_->getFixedFrame().toStdString();
+
+printf("onPoseSet\n");
 
   auto goal = std::make_shared<geometry_msgs::msg::PoseStamped>();
 
@@ -67,4 +72,4 @@ void NavTool::onPoseSet(double x, double y, double theta)
 }  // namespace nav2_rviz_plugins
 
 #include <pluginlib/class_list_macros.hpp>  // NOLINT
-PLUGINLIB_EXPORT_CLASS(nav2_rviz_plugins::NavTool, rviz_common::Tool)
+PLUGINLIB_EXPORT_CLASS(nav2_rviz_plugins::GoalTool, rviz_common::Tool)

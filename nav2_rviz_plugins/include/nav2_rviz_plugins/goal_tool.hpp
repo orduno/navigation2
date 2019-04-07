@@ -37,13 +37,13 @@ class StringProperty;
 namespace nav2_rviz_plugins
 {
 
-class RVIZ_DEFAULT_PLUGINS_PUBLIC NavTool : public rviz_default_plugins::tools::PoseTool
+class RVIZ_DEFAULT_PLUGINS_PUBLIC GoalTool : public rviz_default_plugins::tools::PoseTool
 {
   Q_OBJECT
 
 public:
-  NavTool();
-  ~NavTool() override;
+  GoalTool();
+  ~GoalTool() override;
 
   void onInitialize() override;
 
