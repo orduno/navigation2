@@ -15,6 +15,7 @@
 #ifndef NAV2_RVIZ_PLUGINS__NAV_TOOL_HPP_
 #define NAV2_RVIZ_PLUGINS__NAV_TOOL_HPP_
 
+#include <atomic>
 #include <memory>
 #include <QObject>
 
@@ -46,7 +47,9 @@ public:
   GoalTool();
   ~GoalTool() override;
 
+  void activate() override;
   void onInitialize() override;
+  int processMouseEvent(rviz_common::ViewportMouseEvent & event) override;
 
 protected:
   void onPoseSet(double x, double y, double theta) override;
@@ -57,6 +60,8 @@ private:
   std::shared_ptr<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>> action_client_;
 
   nav2_msgs::action::NavigateToPose::Goal goal_;
+
+  std::atomic<bool> running_{false};
 };
 
 }  // namespace nav2_rviz_plugins

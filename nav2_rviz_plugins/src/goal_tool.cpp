@@ -20,6 +20,8 @@
 #include "nav2_util/simple_action_client.hpp"
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
+#include "rviz_common/viewport_mouse_event.hpp"
+#include "/home/mjeronimo/src/ros2/src/ros2/rviz/rviz_common/src/rviz_common/tool_manager.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -67,13 +69,45 @@ void GoalTool::invokeAction(double x, double y, double theta)
   rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult result;
   goal_.pose = *pose;
 
+  running_ = true;
   /*auto status =*/ action_client_->invoke(goal_, result);
+  running_ = false;
+
+  setName("2D Nav2 Goal");
+  setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
+  context_->getToolManager()->refreshTool(this);
+}
+
+void GoalTool::activate()
+{
+  setStatus("Foobar: Click and drag mouse to set position/orientation.");
+  state_ = Position;
+}
+
+int GoalTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
+{
+  if (event.leftDown() && running_) {
+    printf("Execute Cancel***********************************\n");
+
+    setName("2D Nav2 Goal");
+    setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
+    context_->getToolManager()->refreshTool(this);
+
+	running_ = false;
+    return 0;
+  }
+
+  return PoseTool::processMouseEvent(event);
 }
 
 static std::future<void> future_result;
 
 void GoalTool::onPoseSet(double x, double y, double theta)
 {
+  setName("Cancel Navigation");
+  setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/Time.svg"));
+  context_->getToolManager()->refreshTool(this);
+
   future_result = std::async([this](double x, double y, double theta) -> void { invokeAction(x, y, theta); }, x, y, theta);
 }
 
