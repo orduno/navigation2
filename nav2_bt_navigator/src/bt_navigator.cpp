@@ -45,11 +45,18 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring");
   auto node = shared_from_this();
 
-  // Create the NavigateToPose task server for this node and set the callback
+  // A subscription to the goal pose from rviz2
+printf("BtNavigator: on_configure: create goal_sub\n");
+
+  goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>("goal",
+      std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+
+  client_node_ = std::make_shared<rclcpp::Node>("bt_navigator_client_node");
+  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_, "navigate_to_pose");
   action_server_ = std::make_unique<nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>>(
-      rclcpp_node_,
-      "navigate_to_pose",
-      std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
+    rclcpp_node_,
+    "navigate_to_pose",
+    std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<NavigateToPoseBehaviorTree>(node);
@@ -121,6 +128,10 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  goal_sub_.reset();
+  client_node_.reset();
+  self_client_.reset();
+
   action_server_.reset();
 
   path_.reset();
@@ -177,11 +188,25 @@ BtNavigator::navigateToPose(const std::shared_ptr<rclcpp_action::ServerGoalHandl
 
     // Reset the BT so that it can be run again in the future
     bt_->resetTree(tree_->root_node);
+	goal_handle->set_canceled(result);
+
   } else if (rc == TaskStatus::SUCCEEDED) {
     goal_handle->set_succeeded(result);
   }
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", rc);
 }
+
+void
+BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
+{
+  RCLCPP_INFO(get_logger(), "onGoalPoseReceived");
+
+  nav2_msgs::action::NavigateToPose::Goal goal;
+  goal.pose = *pose;
+
+  self_client_->async_send_goal(goal);
+}
+
 
 }  // namespace nav2_bt_navigator

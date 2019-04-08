@@ -34,6 +34,7 @@ find_package(std_msgs REQUIRED)
 
 set(nav2_rviz_plugins_headers_to_moc
   include/nav2_rviz_plugins/goal_tool.hpp
+  include/nav2_rviz_plugins/navigation_dialog.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
 )
 
@@ -44,6 +45,7 @@ include_directories(
 set(library_name ${PROJECT_NAME})
 
 add_library(${library_name} SHARED
+  src/navigation_dialog.cpp
   src/goal_tool.cpp
   src/nav2_panel.cpp
   ${nav2_rviz_plugins_headers_to_moc}

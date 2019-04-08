@@ -1,4 +1,4 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,15 +41,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 {
   QPushButton * startup_button = new QPushButton("Startup");
   QPushButton * shutdown_button = new QPushButton("Shutdown");
-  QPushButton * cancel_button = new QPushButton("Cancel Navigation");
 
   connect(startup_button, SIGNAL(clicked()), this, SLOT(onStartupClicked()));
   connect(shutdown_button, SIGNAL(clicked()), this, SLOT(onShutdownClicked()));
-  connect(cancel_button, SIGNAL(clicked()), this, SLOT(onCancelClicked()));
 
   startup_button->setToolTip("TODO");
   shutdown_button->setToolTip("TODO");
-  cancel_button->setToolTip("TODO");
 
   ////
     QChart * chart = new QChart();
@@ -150,10 +147,6 @@ QCandlestickSeries  QPieSeries
 
   ////
 
-  QHBoxLayout * top_layout = new QHBoxLayout;
-  top_layout->addWidget(cancel_button);
-  top_layout->setContentsMargins(2, 6, 2, 2);
-
   QHBoxLayout * button_layout = new QHBoxLayout;
   button_layout->addWidget(startup_button);
   button_layout->addWidget(shutdown_button);
@@ -161,7 +154,6 @@ QCandlestickSeries  QPieSeries
 
   QVBoxLayout * main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->addLayout(top_layout);
   main_layout->addWidget(chartView);
   main_layout->addLayout(button_layout);
   setLayout(main_layout);
@@ -171,7 +163,6 @@ void
 Nav2Panel::onInitialize()
 {
   auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
-  cancel_pub_ = node->create_publisher<std_msgs::msg::Empty>("NavigateToPoseTask_cancel");
 }
 
 void
@@ -186,13 +177,6 @@ Nav2Panel::onShutdownClicked()
 {
   QFuture<void> future = QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
   // TODO: start a timer to check on result(?)
-}
-
-void
-Nav2Panel::onCancelClicked()
-{
-  auto msg = std::make_shared<std_msgs::msg::Empty>();
-  cancel_pub_->publish(msg);
 }
 
 void

@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RVIZ_PLUGINS__NAV_TOOL_HPP_
-#define NAV2_RVIZ_PLUGINS__NAV_TOOL_HPP_
+#ifndef NAV2_RVIZ_PLUGINS__GOAL_TOOL_HPP_
+#define NAV2_RVIZ_PLUGINS__GOAL_TOOL_HPP_
 
-#include <atomic>
 #include <memory>
 #include <QObject>
 
-#include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_util/simple_action_client.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "rviz_default_plugins/tools/pose/pose_tool.hpp"
 #include "rviz_default_plugins/visibility_control.hpp"
+#include "nav2_rviz_plugins/navigation_dialog.hpp"
 
 namespace rviz_common
 {
@@ -47,23 +44,15 @@ public:
   GoalTool();
   ~GoalTool() override;
 
-  void activate() override;
   void onInitialize() override;
-  int processMouseEvent(rviz_common::ViewportMouseEvent & event) override;
 
 protected:
   void onPoseSet(double x, double y, double theta) override;
-  void invokeAction(double x, double y, double theta);
 
 private:
-  rclcpp::Node::SharedPtr client_node_;
-  std::shared_ptr<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>> action_client_;
-
-  nav2_msgs::action::NavigateToPose::Goal goal_;
-
-  std::atomic<bool> running_{false};
+  std::unique_ptr<NavigationDialog> navigation_dialog_;
 };
 
 }  // namespace nav2_rviz_plugins
 
-#endif  // NAV2_RVIZ_PLUGINS__NAV_TOOL_HPP_
+#endif  // NAV2_RVIZ_PLUGINS__GOAL_TOOL_HPP_

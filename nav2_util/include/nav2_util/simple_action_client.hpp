@@ -51,7 +51,6 @@ public:
   }
 
   ActionStatus invoke(
-    //const typename ActionT::GoalRequestService::Request & goal,
     const typename ActionT::Goal & goal,
     typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result,
     typename rclcpp_action::ClientGoalHandle<ActionT>::FeedbackCallback callback = nullptr)

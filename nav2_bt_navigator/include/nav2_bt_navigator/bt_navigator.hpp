@@ -24,6 +24,7 @@
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/msg/path.hpp"
+#include "nav2_util/simple_action_client.hpp"
 #include "nav2_util/simple_action_server.hpp"
 
 namespace nav2_bt_navigator
@@ -50,6 +51,8 @@ protected:
   // The method invoked by the action server
   void navigateToPose(const std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>> goal_handle);
 
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+
 private:
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
@@ -68,6 +71,14 @@ private:
 
   // The complete behavior tree that results from parsing the incoming XML
   std::unique_ptr<BT::Tree> tree_;
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+
+  // A client that we'll use to send a command message to our own task server
+  //std::unique_ptr<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>> self_client_;
+  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
+
+  rclcpp::Node::SharedPtr client_node_;
 };
 
 }  // namespace nav2_bt_navigator

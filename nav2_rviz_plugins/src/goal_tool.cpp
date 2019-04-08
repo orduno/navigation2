@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,16 +16,8 @@
 
 #include <string>
 
-#include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_util/simple_action_client.hpp"
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
-#include "rviz_common/viewport_mouse_event.hpp"
-#include "/home/mjeronimo/src/ros2/src/ros2/rviz/rviz_common/src/rviz_common/tool_manager.hpp"
-
-using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
 
 namespace nav2_rviz_plugins
 {
@@ -34,81 +26,31 @@ GoalTool::GoalTool()
 : rviz_default_plugins::tools::PoseTool()
 {
   shortcut_key_ = 'g';
+
+  navigation_dialog_ = std::make_unique<NavigationDialog>();
+  navigation_dialog_->move(0,0);
 }
 
-GoalTool::~GoalTool() = default;
+GoalTool::~GoalTool()
+{
+}
 
 void GoalTool::onInitialize()
 {
   PoseTool::onInitialize();
-
   setName("2D Nav2 Goal");
   setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
-
-  client_node_ = std::make_shared<rclcpp::Node>("nav_to_pose_client");
-  action_client_ = std::make_shared<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(client_node_, "navigate_to_pose");
-
-  goal_ = nav2_msgs::action::NavigateToPose::Goal();
 }
 
-void GoalTool::invokeAction(double x, double y, double theta)
+void
+GoalTool::onPoseSet(double x, double y, double theta)
 {
   std::string fixed_frame = context_->getFixedFrame().toStdString();
 
-  auto pose = std::make_shared<geometry_msgs::msg::PoseStamped>();
-
-  pose->header.stamp = rclcpp::Clock().now();
-  pose->header.frame_id = fixed_frame;
-  pose->pose.position.x = x;
-  pose->pose.position.y = y;
-  pose->pose.position.z = 0.0;
-  pose->pose.orientation = orientationAroundZAxis(theta);
-
-  action_client_->wait_for_server();
-
-  rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult result;
-  goal_.pose = *pose;
-
-  running_ = true;
-  /*auto status =*/ action_client_->invoke(goal_, result);
-  running_ = false;
-
-  setName("2D Nav2 Goal");
-  setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
-  context_->getToolManager()->refreshTool(this);
-}
-
-void GoalTool::activate()
-{
-  setStatus("Foobar: Click and drag mouse to set position/orientation.");
-  state_ = Position;
-}
-
-int GoalTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
-{
-  if (event.leftDown() && running_) {
-    printf("Execute Cancel***********************************\n");
-
-    setName("2D Nav2 Goal");
-    setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
-    context_->getToolManager()->refreshTool(this);
-
-	running_ = false;
-    return 0;
-  }
-
-  return PoseTool::processMouseEvent(event);
-}
-
-static std::future<void> future_result;
-
-void GoalTool::onPoseSet(double x, double y, double theta)
-{
-  setName("Cancel Navigation");
-  setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/Time.svg"));
-  context_->getToolManager()->refreshTool(this);
-
-  future_result = std::async([this](double x, double y, double theta) -> void { invokeAction(x, y, theta); }, x, y, theta);
+  navigation_dialog_->startNavigation(x, y, theta, fixed_frame);
+  navigation_dialog_->show();
+  navigation_dialog_->raise();
+  navigation_dialog_->activateWindow();
 }
 
 }  // namespace nav2_rviz_plugins
