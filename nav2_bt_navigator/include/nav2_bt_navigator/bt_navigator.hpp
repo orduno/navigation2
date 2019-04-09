@@ -48,12 +48,16 @@ protected:
   // An action server that implements the NavigateToPose action
   std::unique_ptr<nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>> action_server_;
 
+  using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
+
   // The method invoked by the action server
-  void navigateToPose(const std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>> goal_handle);
+  void navigateToPose(const std::shared_ptr<GoalHandle> goal_handle);
 
+  // A subscription and callback to handle the topic-based goal published from rviz
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
-private:
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
@@ -72,12 +76,10 @@ private:
   // The complete behavior tree that results from parsing the incoming XML
   std::unique_ptr<BT::Tree> tree_;
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-
   // A client that we'll use to send a command message to our own task server
-  //std::unique_ptr<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>> self_client_;
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
 
+  // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
 };
 

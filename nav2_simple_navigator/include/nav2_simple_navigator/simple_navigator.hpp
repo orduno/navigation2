@@ -19,9 +19,10 @@
 #include <string>
 
 #include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_tasks/compute_path_to_pose_task.hpp"
 #include "nav2_tasks/follow_path_task.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
+#include "nav2_util/simple_action_server.hpp"
 
 namespace nav2_simple_navigator
 {
@@ -41,9 +42,14 @@ protected:
   nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // The task server receives the NavigateToPose commands, invoking navigateToPose()
-  nav2_tasks::TaskStatus navigateToPose(const nav2_tasks::NavigateToPoseCommand::SharedPtr command);
-  std::unique_ptr<nav2_tasks::NavigateToPoseTaskServer> task_server_;
+  // An action server that implements the NavigateToPose action
+  std::unique_ptr<nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>> action_server_;
+
+  using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
+
+  // The action server callback
+  void navigateToPose(const std::shared_ptr<GoalHandle> goal_handle);
 
   // The SimpleNavigator uses the planner and controller to carry out the task
   std::unique_ptr<nav2_tasks::ComputePathToPoseTaskClient> planner_client_;

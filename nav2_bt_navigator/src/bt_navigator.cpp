@@ -45,18 +45,18 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring");
   auto node = shared_from_this();
 
-  // A subscription to the goal pose from rviz2
-printf("BtNavigator: on_configure: create goal_sub\n");
+  // Support for handling the topic-based goal pose from rviz
+  client_node_ = std::make_shared<rclcpp::Node>("bt_navigator_client_node");
+
+  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
+    client_node_, "navigate_to_pose");
 
   goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>("goal",
       std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
-  client_node_ = std::make_shared<rclcpp::Node>("bt_navigator_client_node");
-  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_, "navigate_to_pose");
-  action_server_ = std::make_unique<nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>>(
-    rclcpp_node_,
-    "navigate_to_pose",
-    std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
+  // Create an action server that we implement with our navigateToPose method
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "navigate_to_pose",
+      std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<NavigateToPoseBehaviorTree>(node);
@@ -131,12 +131,9 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State &)
   goal_sub_.reset();
   client_node_.reset();
   self_client_.reset();
-
   action_server_.reset();
-
   path_.reset();
   xml_string_.clear();
-
   tree_.reset();
   blackboard_.reset();
   bt_.reset();
@@ -159,7 +156,7 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void
-BtNavigator::navigateToPose(const std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>> goal_handle)
+BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
 {
   // Initialize the goal and result
   auto goal = goal_handle->get_goal();
@@ -177,21 +174,31 @@ BtNavigator::navigateToPose(const std::shared_ptr<rclcpp_action::ServerGoalHandl
   *bb_goal = goal->pose;
 
   // Execute the BT that was previously created in the configure step
-  auto is_canceling = [goal_handle]() -> bool { return goal_handle->is_canceling(); };
+  auto is_canceling = [goal_handle]() -> bool {return goal_handle->is_canceling();};
   TaskStatus rc = bt_->run(tree_, is_canceling);
 
-  if (rc == TaskStatus::CANCELED) {
-    // Even though the BT is no longer running, remote actions may still be executing. So,
-    // an explicit canceling of all actions allows the task clients to send cancel messages
-    // to their corresponding task servers
-    bt_->cancelAllActions(tree_->root_node);
+  switch (rc) {
+    case TaskStatus::CANCELED:
+      // Even though the BT is no longer running, remote actions may still be executing. So,
+      // an explicit canceling of all actions allows the task clients to send cancel messages
+      // to their corresponding task servers
+      bt_->cancelAllActions(tree_->root_node);
 
-    // Reset the BT so that it can be run again in the future
-    bt_->resetTree(tree_->root_node);
-	goal_handle->set_canceled(result);
+      // Reset the BT so that it can be run again in the future
+      bt_->resetTree(tree_->root_node);
+      goal_handle->set_canceled(result);
+      break;
 
-  } else if (rc == TaskStatus::SUCCEEDED) {
-    goal_handle->set_succeeded(result);
+    case TaskStatus::SUCCEEDED:
+      goal_handle->set_succeeded(result);
+      break;
+
+    case TaskStatus::FAILED:
+      goal_handle->set_aborted(result);
+      break;
+
+    default:
+      throw std::logic_error("Invalid status return from BT");
   }
 
   RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", rc);
@@ -207,6 +214,5 @@ BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr
 
   self_client_->async_send_goal(goal);
 }
-
 
 }  // namespace nav2_bt_navigator
