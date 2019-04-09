@@ -40,6 +40,15 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
+  // Support for handling the topic-based goal pose from rviz
+  client_node_ = std::make_shared<rclcpp::Node>("simple_navigator_client_node");
+
+  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
+    client_node_, "navigate_to_pose");
+
+  goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>("goal",
+      std::bind(&SimpleNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+
   // Create our two task clients
   auto node = shared_from_this();
   planner_client_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskClient>(node);
@@ -229,6 +238,17 @@ planning_succeeded:
         throw std::logic_error("Invalid status value");
     }
   }
+}
+
+void
+SimpleNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
+{
+  RCLCPP_INFO(get_logger(), "onGoalPoseReceived");
+
+  nav2_msgs::action::NavigateToPose::Goal goal;
+  goal.pose = *pose;
+
+  self_client_->async_send_goal(goal);
 }
 
 }  // namespace nav2_simple_navigator
