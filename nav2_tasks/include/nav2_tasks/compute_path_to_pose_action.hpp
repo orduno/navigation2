@@ -17,30 +17,34 @@
 
 #include <string>
 #include <memory>
-#include "nav2_tasks/bt_conversions.hpp"
+
+#include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
-#include "nav2_tasks/compute_path_to_pose_task.hpp"
-#include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
 
 namespace nav2_tasks
 {
 
-class ComputePathToPoseAction
-  : public BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>
+class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
 {
 public:
   explicit ComputePathToPoseAction(const std::string & action_name)
-  : BtActionNode<ComputePathToPoseCommand, ComputePathToPoseResult>(action_name)
+  : BtActionNode<nav2_msgs::action::ComputePathToPose>(action_name)
   {
   }
 
   void onConfigure() override
   {
-    command_ =
-      blackboard()->template get<nav2_tasks::ComputePathToPoseCommand::SharedPtr>("goal");
+  //blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
+  //blackboard_->set<nav2_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
 
-    result_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
+  // TODO: Fix this (and others like it)
+    // Set up the input and output messages
+    //goal_.pose = blackboard()->template get<nav2_msgs::action::ComputePathToPose::Goal>("goal");
+
+    //auto bb_goal_ = blackboard()->template get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal");
+    //goal_.pose = *bb_goal;
+
+    //result_ = blackboard()->template get<rclcpp_action::ClientGoalHandle<nav2_msgs::action::ComputePathToPose>::WrappedResult>("path");
   }
 };
 

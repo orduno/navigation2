@@ -49,17 +49,17 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   client_node_ = std::make_shared<rclcpp::Node>("bt_navigator_client_node");
 
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "navigate_to_pose");
+    client_node_, "NavigateToPose");
 
   goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>("goal",
       std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   // Create an action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "navigate_to_pose",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "NavigateToPose",
       std::bind(&BtNavigator::navigateToPose, this, std::placeholders::_1));
 
   // Create the class that registers our custom nodes and executes the BT
-  bt_ = std::make_unique<NavigateToPoseBehaviorTree>(node);
+  bt_ = std::make_unique<NavigateToPoseBehaviorTree>();
 
   // Create the path that will be returned from ComputePath and sent to FollowPath
   goal_ = std::make_shared<geometry_msgs::msg::PoseStamped>();
@@ -71,7 +71,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Put items on the blackboard
   blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
   blackboard_->set<nav2_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
-  blackboard_->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", node);  // NOLINT
+  blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
 
@@ -168,6 +168,7 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
     goal->pose.pose.position.x, goal->pose.pose.position.y);
 
   // Get the goal pointer off of the blackboard...
+//HERE: too(?)
   auto bb_goal = blackboard_->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal");
 
   // and update it with the incoming command

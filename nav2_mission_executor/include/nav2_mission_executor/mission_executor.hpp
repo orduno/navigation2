@@ -47,6 +47,9 @@ protected:
 
   // The action server callback
   void executeMission(const std::shared_ptr<GoalHandle> goal_handle);
+
+  // A regular, non-spinning ROS node that we can use for the Behavior Tree
+  rclcpp::Node::SharedPtr client_node_;
 };
 
 }  // namespace nav2_mission_executor

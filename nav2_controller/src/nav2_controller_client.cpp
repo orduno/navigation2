@@ -34,7 +34,7 @@ Nav2ControllerClient::Nav2ControllerClient()
   resume_client_ = node_->create_client<Srv>("nav2_controller/resume");
   shutdown_client_ = node_->create_client<Srv>("nav2_controller/shutdown");
 
-  navigate_action_client_ = std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(node_, "navigate_to_pose");
+  navigate_action_client_ = std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(node_, "NavigateToPose");
 
   initial_pose_publisher_ = node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose");
 }

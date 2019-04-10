@@ -19,23 +19,23 @@
 #include <memory>
 
 #include "behaviortree_cpp/action_node.h"
-#include "nav2_tasks/task_client.hpp"
+#include "nav2_util/simple_action_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_tasks
 {
 
-template<class CommandMsg, class ResultMsg>
+template<class ActionT>
 class BtActionNode : public BT::CoroActionNode
 {
 public:
   explicit BtActionNode(const std::string & action_name)
-  : BT::CoroActionNode(action_name), task_client_(nullptr)
+  : BT::CoroActionNode(action_name), action_name_(action_name), action_client_(nullptr)
   {
   }
 
   BtActionNode(const std::string & action_name, const BT::NodeParameters & params)
-  : BT::CoroActionNode(action_name, params), task_client_(nullptr)
+  : BT::CoroActionNode(action_name, params), action_name_(action_name), action_client_(nullptr)
   {
   }
 
@@ -51,21 +51,15 @@ public:
   void onInit() final
   {
     // Get the required items from the blackboard
-    node_ = blackboard()->template get<nav2_lifecycle::LifecycleNode::SharedPtr>("node");
+    node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_loop_timeout_ =
       blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
 
-    // Now that we have the ROS node to use, create the task client for this action
-    //
-    // TODO(mjeronimo): There is not currently a way for Behavior Trees to track with the
-    // lifecycle states. So, instance the task client here, having it automatically configure
-    // and activate.
-    //
-    task_client_ = std::make_unique<nav2_tasks::TaskClient<CommandMsg, ResultMsg>>(node_, true);
+    // Now that we have the ROS node to use, create the action client for this BT action
+    action_client_ = std::make_unique<nav2_util::SimpleActionClient<ActionT>>(node_, action_name_);
 
-    // Make sure the server is there before continuing, because we will quickly send a command
-    // message in the tick() method
-    task_client_->waitForServer();
+    // Make sure the server is actually there before continuing
+    action_client_->wait_for_server();
 
     // Give the derived class a chance to do some initialization
     onConfigure();
@@ -79,14 +73,13 @@ public:
 
   BT::NodeStatus tick() override
   {
-    task_client_->sendCommand(command_);
-
-    // Loop until the task has completed
+    action_client_->send_goal(goal_);
     for (;; ) {
-      nav2_tasks::TaskStatus status = task_client_->waitForResult(result_, node_loop_timeout_);
+      auto rc = action_client_->wait_for_result(node_loop_timeout_);
 
-      switch (status) {
+      switch (rc) {
         case nav2_tasks::TaskStatus::SUCCEEDED:
+		      result_ = action_client_->get_result();
           setStatus(BT::NodeStatus::IDLE);
           return BT::NodeStatus::SUCCESS;
 
@@ -106,37 +99,31 @@ public:
           throw std::logic_error("BtActionNode::Tick: invalid status value");
       }
     }
-
-    // Should never get here. Return statement added to avoid compiler warning.
-    return BT::NodeStatus::SUCCESS;
   }
 
   void halt() override
   {
     // Shut the node down if it is currently running
     if (status() == BT::NodeStatus::RUNNING) {
-      task_client_->cancel();
-      nav2_tasks::TaskStatus result;
-      do {
-        result = task_client_->waitForResult(result_, node_loop_timeout_);
-      } while (result != nav2_tasks::TaskStatus::CANCELED);
+      action_client_->cancel();
     }
 
     CoroActionNode::halt();
   }
 
 protected:
-  typename std::unique_ptr<nav2_tasks::TaskClient<CommandMsg, ResultMsg>> task_client_;
+  const std::string & action_name_;
+  typename std::unique_ptr<nav2_util::SimpleActionClient<ActionT>> action_client_;
+
+  typename ActionT::Goal goal_;
+  typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult result_;
 
   // The node that will be used for any ROS operations
-  nav2_lifecycle::LifecycleNode::SharedPtr node_;
+  rclcpp::Node::SharedPtr node_;
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
   std::chrono::milliseconds node_loop_timeout_;
-
-  typename CommandMsg::SharedPtr command_;
-  typename ResultMsg::SharedPtr result_;
 };
 
 }  // namespace nav2_tasks

@@ -18,19 +18,20 @@
 #include <string>
 
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
-#include "geometry_msgs/msg/pose2_d.hpp"
+//#include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
-#include "nav2_tasks/compute_path_to_pose_action.hpp"
-#include "nav2_tasks/follow_path_action.hpp"
-#include "nav2_tasks/navigate_to_pose_action.hpp"
+#include "rclcpp/rclcpp.hpp"
+
+//#include "nav2_tasks/compute_path_to_pose_action.hpp"
+//#include "nav2_tasks/follow_path_action.hpp"
+//#include "nav2_tasks/navigate_to_pose_action.hpp"
 
 using namespace std::chrono_literals;
 
 namespace nav2_tasks
 {
 
-BehaviorTreeEngine::BehaviorTreeEngine(nav2_lifecycle::LifecycleNode::SharedPtr node)
-: node_(node)
+BehaviorTreeEngine::BehaviorTreeEngine()
 {
 }
 

@@ -30,7 +30,7 @@ NavigationDialog::NavigationDialog(QWidget *parent)
  : QDialog(parent)
 {
   client_node_ = std::make_shared<rclcpp::Node>("nav_to_pose_client");
-  action_client_ = std::make_shared<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(client_node_, "navigate_to_pose");
+  action_client_ = std::make_shared<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(client_node_, "NavigateToPose");
   goal_ = nav2_msgs::action::NavigateToPose::Goal();
 
   cancelButton = new QPushButton(tr("&Cancel"));

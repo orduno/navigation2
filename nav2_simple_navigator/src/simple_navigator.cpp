@@ -43,7 +43,7 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State &)
   client_node_ = std::make_shared<rclcpp::Node>("simple_navigator_client_node");
 
   self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "navigate_to_pose");
+    client_node_, "NavigateToPose");
 
   goal_sub_ = rclcpp_node_->create_subscription<geometry_msgs::msg::PoseStamped>("goal",
       std::bind(&SimpleNavigator::onGoalPoseReceived, this, std::placeholders::_1));
@@ -51,14 +51,14 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State &)
   // Create our two task clients
   planner_client_ =
     std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::ComputePathToPose>>(
-    client_node_, "compute_path_to_pose");
+    client_node_, "ComputePathToPose");
 
   controller_client_ =
     std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::FollowPath>>(
-    client_node_, "follow_path");
+    client_node_, "FollowPath");
 
   // Create the action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "navigate_to_pose",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "NavigateToPose",
       std::bind(&SimpleNavigator::navigateToPose, this, std::placeholders::_1));
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;

@@ -34,7 +34,7 @@ int main(int argc, char **argv)
   rclcpp::init(argc, argv);
 
   auto node = std::make_shared<rclcpp::Node>("mission_executor_test_node");
-  auto action_client = std::make_shared<nav2_util::SimpleActionClient<nav2_msgs::action::ExecuteMission>>(node, "execute_mission");
+  auto action_client = std::make_shared<nav2_util::SimpleActionClient<nav2_msgs::action::ExecuteMission>>(node, "ExecuteMission");
 
   action_client->wait_for_server();
 

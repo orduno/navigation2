@@ -87,7 +87,7 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
   robot_->on_configure(state);
 
   // Create the action server that we implement with our navigateToPose method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "compute_path_to_pose",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ComputePathToPose",
       std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;

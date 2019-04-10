@@ -38,8 +38,10 @@ MissionExecutor::on_configure(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
+  client_node_ = std::make_shared<rclcpp::Node>("mission_executor_client_node");
+
   // Create the action server that we implement with our executeMission method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "execute_mission",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "ExecuteMission",
       std::bind(&MissionExecutor::executeMission, this, std::placeholders::_1));
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -63,6 +65,8 @@ nav2_lifecycle::CallbackReturn
 MissionExecutor::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
+
+  client_node_.reset();
   action_server_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -97,11 +101,11 @@ MissionExecutor::executeMission(const std::shared_ptr<GoalHandle> goal_handle)
   BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
 
   // Set a couple values on the blackboard that all of the nodes require
-  blackboard->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", shared_from_this());  // NOLINT
+  blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
 
   // Create the Behavior Tree for this mission
-  ExecuteMissionBehaviorTree bt(shared_from_this());
+  ExecuteMissionBehaviorTree bt;
 
   // Run the Behavior Tree
   auto is_canceling = [goal_handle]() -> bool {return goal_handle->is_canceling();};

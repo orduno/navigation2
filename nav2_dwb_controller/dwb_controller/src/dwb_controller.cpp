@@ -60,7 +60,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
 
   // Create the action server that we implement with our followPath method
-  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "follow_path",
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
       std::bind(&DwbController::followPath, this, std::placeholders::_1));
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;

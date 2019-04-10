@@ -17,28 +17,26 @@
 
 #include <string>
 #include <memory>
-#include "nav2_tasks/bt_conversions.hpp"
+
+#include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
-#include "nav2_tasks/follow_path_task.hpp"
-#include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
 
 namespace nav2_tasks
 {
 
-class FollowPathAction : public BtActionNode<FollowPathCommand, FollowPathResult>
+class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
 public:
   explicit FollowPathAction(const std::string & action_name)
-  : BtActionNode<FollowPathCommand, FollowPathResult>(action_name)
+  : BtActionNode<nav2_msgs::action::FollowPath>(action_name)
   {
   }
 
   void onConfigure() override
   {
     // Set up the input and output messages
-    command_ = blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>("path");
-    result_ = std::make_shared<nav2_tasks::FollowPathResult>();
+    //goal_ = blackboard()->template get<nav2_msgs::action::FollowPath::Goal>("path");
+    //result_ = rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowPath>::WrappedResult();
   }
 };
 

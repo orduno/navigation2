@@ -17,20 +17,21 @@
 
 #include <string>
 #include <memory>
+
+#include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
-#include "nav2_tasks/navigate_to_pose_task.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
 namespace nav2_tasks
 {
 
-class NavigateToPoseAction : public BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>
+class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
 {
 public:
   NavigateToPoseAction(const std::string & action_name, const BT::NodeParameters & params)
-  : BtActionNode<NavigateToPoseCommand, NavigateToPoseResult>(action_name, params)
+  : BtActionNode<nav2_msgs::action::NavigateToPose>(action_name, params)
   {
   }
 
@@ -49,12 +50,12 @@ public:
     }
 
     // Create the command message for this task
-    command_ = std::make_shared<nav2_tasks::NavigateToPoseCommand>();
-    command_->pose.position = position;
-    command_->pose.orientation = orientation;
+    goal_ = nav2_msgs::action::NavigateToPose::Goal();
+    goal_.pose.pose.position = position;
+    goal_.pose.pose.orientation = orientation;
 
     // Create the result message
-    result_ = std::make_shared<nav2_tasks::NavigateToPoseResult>();
+    //result_ = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult();
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
