@@ -178,40 +178,33 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   TaskStatus rc = bt_->run(tree_, is_canceling);
 
   switch (rc) {
-    case TaskStatus::CANCELED:
-      // Even though the BT is no longer running, remote actions may still be executing. So,
-      // an explicit canceling of all actions allows the task clients to send cancel messages
-      // to their corresponding task servers
-      bt_->cancelAllActions(tree_->root_node);
-
-      // Reset the BT so that it can be run again in the future
-      bt_->resetTree(tree_->root_node);
-      goal_handle->set_canceled(result);
-      break;
-
     case TaskStatus::SUCCEEDED:
+      RCLCPP_INFO(get_logger(), "Navigation succeeded");
       goal_handle->set_succeeded(result);
       break;
 
     case TaskStatus::FAILED:
+      RCLCPP_ERROR(get_logger(), "Navigation failed");
       goal_handle->set_aborted(result);
+      break;
+
+    case TaskStatus::CANCELED:
+      RCLCPP_INFO(get_logger(), "Navigation canceled");
+      goal_handle->set_canceled(result);
+      // Reset the BT so that it can be run again in the future
+      bt_->resetTree(tree_->root_node);
       break;
 
     default:
       throw std::logic_error("Invalid status return from BT");
   }
-
-  RCLCPP_INFO(get_logger(), "Completed navigation: result: %d", rc);
 }
 
 void
 BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
 {
-  RCLCPP_INFO(get_logger(), "onGoalPoseReceived");
-
   nav2_msgs::action::NavigateToPose::Goal goal;
   goal.pose = *pose;
-
   self_client_->async_send_goal(goal);
 }
 

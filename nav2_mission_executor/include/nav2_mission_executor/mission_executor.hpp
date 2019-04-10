@@ -18,7 +18,8 @@
 #include <memory>
 
 #include "nav2_lifecycle/lifecycle_node.hpp"
-#include "nav2_tasks/execute_mission_task.hpp"
+#include "nav2_msgs/action/execute_mission.hpp"
+#include "nav2_util/simple_action_server.hpp"
 
 namespace nav2_mission_executor
 {
@@ -38,9 +39,14 @@ protected:
   nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // The task server receives the ExecuteMission commands, invoking executeMission()
-  nav2_tasks::TaskStatus executeMission(const nav2_tasks::ExecuteMissionCommand::SharedPtr command);
-  std::unique_ptr<nav2_tasks::ExecuteMissionTaskServer> task_server_;
+  using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::ExecuteMission>;
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ExecuteMission>;
+
+  // An action server that implements the NavigateToPose action
+  std::unique_ptr<ActionServer> action_server_;
+
+  // The action server callback
+  void executeMission(const std::shared_ptr<GoalHandle> goal_handle);
 };
 
 }  // namespace nav2_mission_executor

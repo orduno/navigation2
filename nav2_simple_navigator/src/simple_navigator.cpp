@@ -19,7 +19,6 @@
 #include <stdexcept>
 
 using namespace std::chrono_literals;
-using nav2_tasks::TaskStatus;
 
 namespace nav2_simple_navigator
 {
@@ -36,7 +35,7 @@ SimpleNavigator::~SimpleNavigator()
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_configure(const rclcpp_lifecycle::State & state)
+SimpleNavigator::on_configure(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -50,14 +49,13 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State & state)
       std::bind(&SimpleNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   // Create our two task clients
-  auto node = shared_from_this();
-  controller_client_ = std::make_unique<nav2_tasks::FollowPathTaskClient>(node);
+  planner_client_ =
+    std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::ComputePathToPose>>(
+    client_node_, "compute_path_to_pose");
 
-  planner_client_ = std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::ComputePathToPose>>(client_node_, "compute_path_to_pose");
-  controller_client2_ = std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::FollowPath>>(client_node_, "follow_path");
-
-  // Configure them
-  controller_client_->on_configure(state);
+  controller_client_ =
+    std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::FollowPath>>(
+    client_node_, "follow_path");
 
   // Create the action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "navigate_to_pose",
@@ -67,32 +65,25 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_activate(const rclcpp_lifecycle::State & state)
+SimpleNavigator::on_activate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-
-  controller_client_->on_activate(state);
-
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_deactivate(const rclcpp_lifecycle::State & state)
+SimpleNavigator::on_deactivate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
-
-  controller_client_->on_deactivate(state);
-
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State & state)
+SimpleNavigator::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  controller_client_->on_cleanup(state);
-
+  planner_client_.reset();
   controller_client_.reset();
   action_server_.reset();
 
@@ -116,16 +107,18 @@ SimpleNavigator::on_shutdown(const rclcpp_lifecycle::State &)
 void
 SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
 {
-  RCLCPP_INFO(get_logger(), "NEW: navigateToPose");
-
   // Initialize the NavigateToPose goal and result
   auto goal = goal_handle->get_goal();
   auto result = std::make_shared<nav2_msgs::action::NavigateToPose::Result>();
 
-  // TODO(mjeronimo): handle or reject an attempted pre-emption
-
   RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     goal->pose.pose.position.x, goal->pose.pose.position.y);
+
+  // Set up the input and output for the global planner
+  nav2_msgs::action::ComputePathToPose::Goal planner_goal;
+  planner_goal.pose = goal->pose;
+  rclcpp_action::ClientGoalHandle<nav2_msgs::action::ComputePathToPose>::WrappedResult
+    planner_result;
 
   RCLCPP_DEBUG(get_logger(), "Getting the path from the planner for goal pose:");
   RCLCPP_DEBUG(get_logger(), "position.x: %f", goal->pose.pose.position.x);
@@ -136,69 +129,64 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   RCLCPP_DEBUG(get_logger(), "orientation.z: %f", goal->pose.pose.orientation.z);
   RCLCPP_DEBUG(get_logger(), "orientation.w: %f", goal->pose.pose.orientation.w);
 
-  // Input and output for the global planner
-  nav2_msgs::action::ComputePathToPose::Goal planner_goal;
-  planner_goal.pose = goal->pose;
-  rclcpp_action::ClientGoalHandle<nav2_msgs::action::ComputePathToPose>::WrappedResult path;
-
-  // Call the synchronous version of the client interface
-  auto status = planner_client_->invoke(planner_goal, path);
-
+  // Get the path from the global planner
+  auto status = planner_client_->invoke(planner_goal, planner_result);
   if (status != nav2_util::ActionStatus::SUCCEEDED) {
     goal_handle->set_aborted(result);
     return;
   }
 
-  RCLCPP_INFO(get_logger(), "Received path of size %u from planner", path.result->path.poses.size());
+  RCLCPP_INFO(get_logger(), "Received path of size %u from planner",
+    planner_result.result->path.poses.size());
 
+  // Print the path received from the planner
   int index = 0;
-  for (auto pose : path.result->path.poses) {
+  for (auto pose : planner_result.result->path.poses) {
     RCLCPP_DEBUG(get_logger(), "Point %u x: %0.2f, y: %0.2f",
       index, pose.position.x, pose.position.y);
     index++;
   }
 
+  // Set up the input and output for the local planner
+  nav2_msgs::action::FollowPath::Goal controller_goal;
+  rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowPath>::WrappedResult controller_result;
+  controller_goal.path = planner_result.result->path;
+
   RCLCPP_INFO(get_logger(), "Sending path to the controller to execute");
 
-  auto controller_path = std::make_shared<nav2_tasks::FollowPathCommand>();
-  *controller_path = path.result->path;
-  controller_client_->sendCommand(controller_path);
-
-  // Loop until the control task completes
+  // Call the local planner to follow the path
+  controller_client_->send_goal(controller_goal);
   for (;; ) {
-    // Check to see if this action (navigation) has been canceled. If so, cancel any child
-    // tasks and then update this actions's status
-    if (goal_handle->is_canceling()) {
-      RCLCPP_INFO(get_logger(), "Navigation task has been canceled");
-      controller_client_->cancel();
-      goal_handle->set_canceled(result);
-      return;
-    }
+    auto rc = controller_client_->wait_for_result(100ms);
+    switch (rc) {
+      case nav2_util::ActionStatus::SUCCEEDED:
+        RCLCPP_INFO(get_logger(), "Control task completed, navigation successful");
+        goal_handle->set_succeeded(result);
+        return;
 
-    // Check if the control task has completed
-    auto controlResult = std::make_shared<nav2_tasks::FollowPathResult>();
-    TaskStatus status = controller_client_->waitForResult(controlResult, 100ms);
-
-    switch (status) {
-      case TaskStatus::SUCCEEDED:
-        {
-          RCLCPP_INFO(get_logger(), "Control task completed");
-
-          // This is an empty message, so there are no fields to set
-          goal_handle->set_succeeded(result);
-          return;
-        }
-
-      case TaskStatus::FAILED:
-        RCLCPP_ERROR(get_logger(), "Control task failed");
+      case nav2_util::ActionStatus::FAILED:
+        RCLCPP_INFO(get_logger(), "Control task failed, returning");
         goal_handle->set_aborted(result);
         return;
 
-      case TaskStatus::RUNNING:
-        RCLCPP_DEBUG(get_logger(), "Control task still running");
+      case nav2_util::ActionStatus::CANCELED:
+        RCLCPP_INFO(get_logger(), "Control task has been canceled, returning");
+        goal_handle->set_canceled(result);
+        return;
+
+      case nav2_util::ActionStatus::RUNNING:
+        // While the local planner is executing, check to see if this action (navigation) has
+        // been canceled. If so, cancel the child task and then update this actions's status
+        if (goal_handle->is_canceling()) {
+          RCLCPP_INFO(get_logger(), "Navigation task has been canceled");
+          controller_client_->cancel();
+          goal_handle->set_canceled(result);
+          return;
+        }
+
+        // TODO(mjeronimo): handle pre-emption
         break;
 
-      case TaskStatus::CANCELED:
       default:
         throw std::logic_error("Invalid status value");
     }
@@ -208,11 +196,8 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
 void
 SimpleNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
 {
-  RCLCPP_INFO(get_logger(), "onGoalPoseReceived");
-
   nav2_msgs::action::NavigateToPose::Goal goal;
   goal.pose = *pose;
-
   self_client_->async_send_goal(goal);
 }
 

@@ -45,11 +45,11 @@ protected:
   nav2_lifecycle::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  // An action server that implements the NavigateToPose action
-  std::unique_ptr<nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>> action_server_;
-
   using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::NavigateToPose>;
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
+
+  // An action server that implements the NavigateToPose action
+  std::unique_ptr<ActionServer> action_server_;
 
   // The method invoked by the action server
   void navigateToPose(const std::shared_ptr<GoalHandle> goal_handle);

@@ -4,6 +4,7 @@ project(nav2_mission_executor)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
@@ -33,6 +34,7 @@ add_library(${library_name} SHARED
 
 set(dependencies
   rclcpp
+  rclcpp_action
   rclcpp_lifecycle
   std_msgs
   nav2_tasks
@@ -61,6 +63,7 @@ install(TARGETS ${executable_name} ${library_name}
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

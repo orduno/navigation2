@@ -23,7 +23,7 @@ namespace nav2_mission_executor
 {
 
 MissionExecutor::MissionExecutor()
-: nav2_lifecycle::LifecycleNode("MissionExecutor")
+: nav2_lifecycle::LifecycleNode("mission_executor", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 }
@@ -34,45 +34,36 @@ MissionExecutor::~MissionExecutor()
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_configure(const rclcpp_lifecycle::State & state)
+MissionExecutor::on_configure(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  task_server_ = std::make_unique<nav2_tasks::ExecuteMissionTaskServer>(shared_from_this());
-  task_server_->on_configure(state);
-  task_server_->setExecuteCallback(
-    std::bind(&MissionExecutor::executeMission, this, std::placeholders::_1));
+  // Create the action server that we implement with our executeMission method
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "execute_mission",
+      std::bind(&MissionExecutor::executeMission, this, std::placeholders::_1));
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_activate(const rclcpp_lifecycle::State & state)
+MissionExecutor::on_activate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-
-  task_server_->on_activate(state);
-
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_deactivate(const rclcpp_lifecycle::State & state)
+MissionExecutor::on_deactivate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
-
-  task_server_->on_deactivate(state);
-
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_cleanup(const rclcpp_lifecycle::State & state)
+MissionExecutor::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-
-  task_server_->on_cleanup(state);
-  task_server_.reset();
+  action_server_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -91,23 +82,51 @@ MissionExecutor::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
-TaskStatus
-MissionExecutor::executeMission(const nav2_tasks::ExecuteMissionCommand::SharedPtr command)
+void
+MissionExecutor::executeMission(const std::shared_ptr<GoalHandle> goal_handle)
 {
-  RCLCPP_INFO(get_logger(), "Executing mission plan: %s", command->mission_plan.c_str());
+  // Initialize the goal and result
+  auto goal = goal_handle->get_goal();
+  auto result = std::make_shared<nav2_msgs::action::ExecuteMission::Result>();
+
+  // Get a convenient reference to the mission plan string
+  const std::string & xml_string = goal->mission_plan.mission_plan;
+  RCLCPP_INFO(get_logger(), "Executing mission plan: %s", xml_string.c_str());
 
   // Create the blackboard that will be shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard = BT::Blackboard::create<BT::BlackboardLocal>();
 
-  // Create the behavior tree for this mission
+  // Set a couple values on the blackboard that all of the nodes require
+  blackboard->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", shared_from_this());  // NOLINT
+  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
+
+  // Create the Behavior Tree for this mission
   ExecuteMissionBehaviorTree bt(shared_from_this());
 
-  // Run it
-  TaskStatus result = bt.run(blackboard, command->mission_plan,
-      std::bind(&nav2_tasks::ExecuteMissionTaskServer::cancelRequested, task_server_.get()));
+  // Run the Behavior Tree
+  auto is_canceling = [goal_handle]() -> bool {return goal_handle->is_canceling();};
+  TaskStatus rc = bt.run(blackboard, xml_string, is_canceling);
 
-  RCLCPP_INFO(get_logger(), "Completed mission execution: %d", result);
-  return result;
+  // Handle the result
+  switch (rc) {
+    case TaskStatus::SUCCEEDED:
+      RCLCPP_INFO(get_logger(), "Mission succeeded");
+      goal_handle->set_succeeded(result);
+      return;
+
+    case TaskStatus::FAILED:
+      RCLCPP_ERROR(get_logger(), "Mission failed");
+      goal_handle->set_aborted(result);
+      return;
+
+    case TaskStatus::CANCELED:
+      RCLCPP_INFO(get_logger(), "Mission canceled");
+      goal_handle->set_canceled(result);
+      return;
+
+    default:
+      throw std::logic_error("Invalid status return from BT");
+  }
 }
 
 }  // namespace nav2_mission_executor

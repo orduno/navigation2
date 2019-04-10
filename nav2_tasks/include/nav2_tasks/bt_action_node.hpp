@@ -17,12 +17,8 @@
 
 #include <string>
 #include <memory>
-#include <condition_variable>
-#include <mutex>
 
 #include "behaviortree_cpp/action_node.h"
-#include "behaviortree_cpp/bt_factory.h"
-#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_tasks/task_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 

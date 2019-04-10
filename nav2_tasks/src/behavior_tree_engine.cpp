@@ -41,10 +41,6 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  // Set a couple values that all of the action nodes expect/require
-  blackboard->set<nav2_lifecycle::LifecycleNode::SharedPtr>("node", node_);
-  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
-
   // The complete behavior tree that results from parsing the incoming XML. When the tree goes
   // out of scope, all the nodes are destroyed
   BT::Tree tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
@@ -58,6 +54,7 @@ BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
+	  cancelAllActions(tree.root_node);
       return TaskStatus::CANCELED;
     }
 
@@ -83,6 +80,7 @@ BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
+	  cancelAllActions(tree->root_node);
       return TaskStatus::CANCELED;
     }
 
