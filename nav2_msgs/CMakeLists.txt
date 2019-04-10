@@ -23,6 +23,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ClearCostmapExceptRegion.srv"
   "srv/ClearEntireCostmap.srv"
   "action/BackUp.action"
+  "action/ComputePathToPose.action"
   "action/ExecuteMission.action"
   "action/FollowPath.action"
   "action/NavigateToPose.action"

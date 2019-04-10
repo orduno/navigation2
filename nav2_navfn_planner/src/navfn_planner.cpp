@@ -40,13 +40,12 @@
 #include "visualization_msgs/msg/marker.hpp"
 
 using namespace std::chrono_literals;
-using nav2_tasks::TaskStatus;
 
 namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: nav2_lifecycle::LifecycleNode("navfn_planner")
+: nav2_lifecycle::LifecycleNode("navfn_planner", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 }
@@ -87,11 +86,9 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & state)
   robot_ = std::make_unique<nav2_robot::Robot>(node);
   robot_->on_configure(state);
 
-  // Initialize action servers and action clients
-  task_server_ = std::make_unique<nav2_tasks::ComputePathToPoseTaskServer>(node);
-  task_server_->on_configure(state);
-  task_server_->setExecuteCallback(
-    std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
+  // Create the action server that we implement with our navigateToPose method
+  action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "compute_path_to_pose",
+      std::bind(&NavfnPlanner::computePathToPose, this, std::placeholders::_1));
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -104,7 +101,6 @@ NavfnPlanner::on_activate(const rclcpp_lifecycle::State & state)
   plan_publisher_->on_activate();
   plan_marker_publisher_->on_activate();
   robot_->on_activate(state);
-  task_server_->on_activate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -117,7 +113,6 @@ NavfnPlanner::on_deactivate(const rclcpp_lifecycle::State & state)
   plan_publisher_->on_deactivate();
   plan_marker_publisher_->on_deactivate();
   robot_->on_deactivate(state);
-  task_server_->on_deactivate(state);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -128,12 +123,12 @@ NavfnPlanner::on_cleanup(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   robot_->on_cleanup(state);
-  task_server_->on_cleanup(state);
 
   plan_publisher_.reset();
   plan_marker_publisher_.reset();
   robot_.reset();
-  task_server_.reset();
+
+  action_server_.reset();
   planner_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -153,66 +148,77 @@ NavfnPlanner::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
-TaskStatus
-NavfnPlanner::computePathToPose(const nav2_tasks::ComputePathToPoseCommand::SharedPtr command)
+void
+NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
 {
-  nav2_tasks::ComputePathToPoseResult result;
+  RCLCPP_INFO(get_logger(), "computePathToPose");
+
+  // Initialize the ComputePathToPose goal and result
+  auto goal = goal_handle->get_goal();
+  auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
+
+  // TODO(mjeronimo): handle or reject an attempted pre-emption
+
   try {
     // Get the current pose from the robot
     auto start = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     if (!robot_->getCurrentPose(start)) {
       RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-      return TaskStatus::FAILED;
+      goal_handle->set_aborted(result);
+      return;
     }
 
     RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
       "(%.2f, %.2f).", start->pose.pose.position.x, start->pose.pose.position.y,
-      command->pose.position.x, command->pose.position.y);
+      goal->pose.pose.position.x, goal->pose.pose.position.y);
 
     // Make the plan for the provided goal pose
-    bool foundPath = makePlan(start->pose.pose, command->pose, tolerance_, result);
+    bool foundPath = makePlan(start->pose.pose, goal->pose.pose, tolerance_, result->path);
 
     // TODO(orduno): should check for cancel within the makePlan() method?
-    if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Cancelled global planning task");
-      task_server_->setCanceled();
-      return TaskStatus::CANCELED;
+    if (goal_handle->is_canceling()) {
+      RCLCPP_INFO(get_logger(), "Canceling global planning task");
+      goal_handle->set_canceled(result);
+      return;
     }
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
-        " path to (%.2f, %.2f)", command->pose.position.x, command->pose.position.y);
-      return TaskStatus::FAILED;
+        " path to (%.2f, %.2f)", goal->pose.pose.position.x, goal->pose.pose.position.y);
+      goal_handle->set_aborted(result);
+      return;
     }
 
-    RCLCPP_INFO(get_logger(), "Found valid path of size %u", result.poses.size());
+    RCLCPP_INFO(get_logger(), "Found valid path of size %u", result->path.poses.size());
 
     // Publish the plan for visualization purposes
     RCLCPP_INFO(get_logger(), "Publishing the valid path");
-    publishPlan(result);
-    publishEndpoints(start->pose.pose, command->pose);
+    publishPlan(result->path);
+    publishEndpoints(start->pose.pose, goal->pose.pose);
 
     // TODO(orduno): Enable potential visualization
 
     RCLCPP_INFO(get_logger(),
       "Successfully computed a path to (%.2f, %.2f) with tolerance %.2f",
-      command->pose.position.x, command->pose.position.y, tolerance_);
-    task_server_->setResult(result);
-    return TaskStatus::SUCCEEDED;
+      goal->pose.pose.position.x, goal->pose.pose.position.y, tolerance_);
+    goal_handle->set_succeeded(result);
+    return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "Plan calculation to (%.2f, %.2f) failed: \"%s\"",
-      command->pose.position.x, command->pose.position.y, ex.what());
+      goal->pose.pose.position.x, goal->pose.pose.position.y, ex.what());
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
-    return TaskStatus::FAILED;
+    goal_handle->set_aborted(result);
+    return;
   } catch (...) {
     RCLCPP_WARN(get_logger(), "Plan calculation failed");
 
     // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update
-    return TaskStatus::FAILED;
+    goal_handle->set_aborted(result);
+    return;
   }
 }
 

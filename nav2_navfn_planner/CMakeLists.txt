@@ -4,6 +4,7 @@ project(nav2_navfn_planner)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_tasks REQUIRED)
@@ -26,6 +27,7 @@ set(library_name ${executable_name}_core)
 
 set(dependencies
   rclcpp
+  rclcpp_action
   std_msgs
   visualization_msgs
   nav2_util
