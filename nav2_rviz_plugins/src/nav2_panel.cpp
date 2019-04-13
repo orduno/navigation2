@@ -39,8 +39,8 @@ namespace nav2_rviz_plugins
 Nav2Panel::Nav2Panel(QWidget * parent)
 : Panel(parent)
 {
-  QPushButton * startup_button = new QPushButton("Startup");
-  QPushButton * shutdown_button = new QPushButton("Shutdown");
+  startup_button = new QPushButton("Startup");
+  shutdown_button = new QPushButton("Shutdown");
 
   connect(startup_button, SIGNAL(clicked()), this, SLOT(onStartupClicked()));
   connect(shutdown_button, SIGNAL(clicked()), this, SLOT(onShutdownClicked()));
@@ -169,14 +169,14 @@ void
 Nav2Panel::onStartupClicked()
 {
   QFuture<void> future = QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::startup, &client_));
-  // TODO: start a timer to check on result(?)
+  startup_button->setEnabled(false);
 }
 
 void
 Nav2Panel::onShutdownClicked()
 {
   QFuture<void> future = QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
-  // TODO: start a timer to check on result(?)
+  shutdown_button->setEnabled(false);
 }
 
 void

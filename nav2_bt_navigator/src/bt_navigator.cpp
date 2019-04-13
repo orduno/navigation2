@@ -73,6 +73,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<nav2_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
+  blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
 
   // Get the BT filename to use from the node parameter
@@ -162,17 +163,11 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   auto goal = goal_handle->get_goal();
   auto result = std::make_shared<nav2_msgs::action::NavigateToPose::Result>();
 
-  // TODO(mjeronimo): handle or reject an attempted pre-emption
-
   RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     goal->pose.pose.position.x, goal->pose.pose.position.y);
 
-  // Get the goal pointer off of the blackboard...
-//HERE: too(?)
-  auto bb_goal = blackboard_->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal");
-
-  // and update it with the incoming command
-  *bb_goal = goal->pose;
+  // Update the goal pose on the blackboard
+  *(blackboard_->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal")) = goal->pose;
 
   // Execute the BT that was previously created in the configure step
   auto is_canceling = [goal_handle]() -> bool {return goal_handle->is_canceling();};

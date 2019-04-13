@@ -34,10 +34,18 @@ public:
 
   void onConfigure() override
   {
-    // Set up the input and output messages
-    //goal_ = blackboard()->template get<nav2_msgs::action::FollowPath::Goal>("path");
-    //result_ = rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowPath>::WrappedResult();
+	goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
   }
+
+  void onLoopIteration() override
+  {
+	if (blackboard()->get<bool>("path_updated")) {
+	  goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
+	  blackboard()->set<bool>("path_updated", false);
+      //action_client_->send_goal(goal_);
+	}
+  }
+
 };
 
 }  // namespace nav2_tasks

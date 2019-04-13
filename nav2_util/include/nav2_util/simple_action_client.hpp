@@ -40,7 +40,7 @@ class SimpleActionClient
 {
 public:
   explicit SimpleActionClient(rclcpp::Node::SharedPtr node, const std::string & action_name)
-  : node_(node)
+  : node_(node), action_name_(action_name)
   {
     action_client_ = rclcpp_action::create_client<ActionT>(node, action_name);
   }
@@ -129,8 +129,8 @@ public:
   wait_for_result(std::chrono::milliseconds timeout = std::chrono::milliseconds::max())
   {
     auto future_result = action_client_->async_get_result(goal_handle_);
-    auto wait_result = rclcpp::spin_until_future_complete(node_, future_result, timeout);
 
+    auto wait_result = rclcpp::spin_until_future_complete(node_, future_result, timeout);
     if (wait_result == rclcpp::executor::FutureReturnCode::TIMEOUT) {
       return RUNNING;
     } else if (wait_result != rclcpp::executor::FutureReturnCode::SUCCESS) {
@@ -138,7 +138,6 @@ public:
     }
 
     result_ = future_result.get();
-
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
         return SUCCEEDED;
@@ -163,6 +162,8 @@ public:
 protected:
   // The SimpleActionClient isn't itself a node, so it receives one to use
   rclcpp::Node::SharedPtr node_;
+
+  const std::string action_name_;
 
   // The action client to invoke
   typename rclcpp_action::Client<ActionT>::SharedPtr action_client_;

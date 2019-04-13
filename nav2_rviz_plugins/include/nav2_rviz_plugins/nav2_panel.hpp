@@ -18,6 +18,8 @@
 #include "nav2_controller/nav2_controller_client.hpp"
 #include "rviz_common/panel.hpp"
 
+class QPushButton;
+
 namespace nav2_rviz_plugins
 {
 
@@ -42,6 +44,9 @@ private Q_SLOTS:
 
 private:
   nav2_controller::Nav2ControllerClient client_;
+
+  QPushButton * startup_button;
+  QPushButton * shutdown_button;
 };
 
 }  // namespace nav2_rviz_plugins

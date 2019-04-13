@@ -46,7 +46,7 @@ public:
 
   BT::Tree buildTreeFromText(std::string & xml_string, BT::Blackboard::Ptr blackboard);
 
-  void cancelAllActions(BT::TreeNode * root_node)
+  void haltAllActions(BT::TreeNode * root_node)
   {
     auto visitor = [](BT::TreeNode * node) {
         if (auto action = dynamic_cast<BT::CoroActionNode *>(node)) {

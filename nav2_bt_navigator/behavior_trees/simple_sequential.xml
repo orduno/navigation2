@@ -9,7 +9,7 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <SequenceStar name="root">
-      <ComputePathToPose goal="${goal}" path="${path}"/>
+      <ComputePathToPose goal="${goal}"/>
       <FollowPath path="${path}"/>
     </SequenceStar>
   </BehaviorTree>

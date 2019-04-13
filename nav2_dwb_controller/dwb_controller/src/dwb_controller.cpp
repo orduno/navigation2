@@ -126,16 +126,17 @@ void
 DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 {
   RCLCPP_INFO(get_logger(), "Starting controller");
-
-  // Initialize the goal and result
-  auto goal = goal_handle->get_goal();
   auto result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
+
+//preempted:
+  std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
+  auto goal = current_goal_handle->get_goal();
 
   try {
     auto path = nav_2d_utils::pathToPath2D(goal->path);
 
     planner_->setPlan(path);
-    RCLCPP_INFO(get_logger(), "Initialized");
+    RCLCPP_INFO(get_logger(), "Path provided to the planner");
 
     rclcpp::Rate loop_rate(10);
     while (rclcpp::ok()) {
@@ -152,35 +153,25 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
         publishVelocity(cmd_vel_2d);
         RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
 
-        if (goal_handle->is_canceling()) {
+        if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");
-          goal_handle->set_canceled(result);
+          current_goal_handle->set_canceled(result);
           publishZeroVelocity();
           return;
         }
 
-#if 0
-        // TODO(mjeronimo): handle pre-emption
-
         // Check if there is an update to the path to follow
-        if (tsk_server_->updateRequested()) {
-          // Get the new path
-          auto path_cmd = std::make_shared<nav2_tasks::FollowPathCommand>();
-          tsk_server_->getCommandUpdate(path_cmd);
-          tsk_server_->setUpdated();
-
-          // and pass it to the local planner
-          auto path = nav_2d_utils::pathToPath2D(*path_cmd);
-          planner_->setPlan(path);
+        if (action_server_->update_requested()) {
+          //current_goal_handle = action_server_->get_updated_goal_handle();
+          //goto preempted;
         }
-#endif
       }
       loop_rate.sleep();
     }
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_INFO(this->get_logger(), e.what());
     publishZeroVelocity();
-	goal_handle->set_aborted(result);
+    goal_handle->set_aborted(result);
     return;
   }
 

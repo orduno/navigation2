@@ -102,7 +102,7 @@ MissionExecutor::executeMission(const std::shared_ptr<GoalHandle> goal_handle)
 
   // Set a couple values on the blackboard that all of the nodes require
   blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
+  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(100));  // NOLINT
 
   // Create the Behavior Tree for this mission
   ExecuteMissionBehaviorTree bt;

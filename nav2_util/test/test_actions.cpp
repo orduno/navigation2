@@ -106,7 +106,6 @@ public:
 
   ~RclCppFixture()
   {
-	  printf("~RclCppFixture\n");
     rclcpp::shutdown();
     server_thread_->join();
   }
@@ -133,7 +132,6 @@ public:
 
   ~ActionTestNode()
   {
-    printf("~ActionTestNode\n");
   }
 
   void on_init()

@@ -37,7 +37,8 @@ public:
 
   void onConfigure() override
   {
-    // Use the position and orientation fields from the XML attributes
+    // Use the position and orientation fields from the XML attributes to initialize the goal
+
     geometry_msgs::msg::Point position;
     bool have_position = getParam<geometry_msgs::msg::Point>("position", position);
 
@@ -49,13 +50,8 @@ public:
         "NavigateToPoseAction: position or orientation not provided");
     }
 
-    // Create the command message for this task
-    goal_ = nav2_msgs::action::NavigateToPose::Goal();
     goal_.pose.pose.position = position;
     goal_.pose.pose.orientation = orientation;
-
-    // Create the result message
-    //result_ = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult();
   }
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method

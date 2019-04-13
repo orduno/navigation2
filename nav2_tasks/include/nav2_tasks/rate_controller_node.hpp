@@ -47,12 +47,15 @@ private:
   double period_;
 };
 
+static bool first_time{false};
+
 inline BT::NodeStatus RateController::tick()
 {
   if (status() == BT::NodeStatus::IDLE) {
     // Reset the starting point since we're starting a new iteration of
     // the rate controller (moving from IDLE to RUNNING)
     start_ = std::chrono::high_resolution_clock::now();
+	first_time = true;
   }
 
   setStatus(BT::NodeStatus::RUNNING);
@@ -66,16 +69,20 @@ inline BT::NodeStatus RateController::tick()
   auto seconds = std::chrono::duration_cast<float_seconds>(elapsed);
 
   // If we've exceed the specified period, execute the child node
-  if (seconds.count() >= period_) {
+  if (first_time || seconds.count() >= period_) {
+    first_time = false;
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
       case BT::NodeStatus::SUCCESS:
         child_node_->setStatus(BT::NodeStatus::IDLE);
-        RCLCPP_DEBUG(rclcpp::get_logger("RateController"), "seconds.count: %lf", seconds.count());
 
         // Reset the timer
         start_ = std::chrono::high_resolution_clock::now();
+
+        // TODO(mjeronimo): make this an optional variable in the XML (if the variable exists, set it to true)
+		//blackboard()->set<bool>("path_updated", true);
+
         return BT::NodeStatus::SUCCESS;
 
       case BT::NodeStatus::RUNNING:
@@ -83,9 +90,8 @@ inline BT::NodeStatus RateController::tick()
 
       case BT::NodeStatus::FAILURE:
       default:
-        // We'll try again next time
         child_node_->setStatus(BT::NodeStatus::IDLE);
-        return BT::NodeStatus::RUNNING;
+        return BT::NodeStatus::FAILURE;
     }
   }
 

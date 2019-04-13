@@ -32,7 +32,6 @@ public:
 
 private:
   // Methods used to register as (simple action) BT nodes
-  BT::NodeStatus updatePath(BT::TreeNode & tree_node);
   BT::NodeStatus globalLocalizationServiceRequest();
   BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
 

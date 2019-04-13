@@ -50,19 +50,20 @@ public:
   // the blackboard. The derived class does not override this method, but overrides onConfigure
   void onInit() final
   {
+    // Initialize the input and output messages
+    goal_ = typename ActionT::Goal();
+    result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
+
     // Get the required items from the blackboard
     node_ = blackboard()->template get<rclcpp::Node::SharedPtr>("node");
     node_loop_timeout_ =
       blackboard()->template get<std::chrono::milliseconds>("node_loop_timeout");
 
     // Now that we have the ROS node to use, create the action client for this BT action
-    action_client_ = std::make_unique<nav2_util::SimpleActionClient<ActionT>>(node_, action_name_);
+    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name_);
 
     // Make sure the server is actually there before continuing
-    action_client_->wait_for_server();
-
-    // Give the derived class a chance to do some initialization
-    onConfigure();
+    action_client_->wait_for_action_server();
   }
 
   // Derived classes can override this method to perform some local initialization such
@@ -71,33 +72,62 @@ public:
   {
   }
 
+  virtual void onLoopIteration()
+  {
+  }
+
+  virtual void onSuccess()
+  {
+  }
+
   BT::NodeStatus tick() override
   {
-    action_client_->send_goal(goal_);
-    for (;; ) {
-      auto rc = action_client_->wait_for_result(node_loop_timeout_);
+    onConfigure();
 
-      switch (rc) {
-        case nav2_tasks::TaskStatus::SUCCEEDED:
-		      result_ = action_client_->get_result();
-          setStatus(BT::NodeStatus::IDLE);
-          return BT::NodeStatus::SUCCESS;
+    auto future_goal_handle = action_client_->async_send_goal(goal_);
+    if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
+      rclcpp::executor::FutureReturnCode::SUCCESS)
+    {
+      throw std::runtime_error("send_goal failed");
+    }
 
-        case nav2_tasks::TaskStatus::FAILED:
-          setStatus(BT::NodeStatus::IDLE);
-          return BT::NodeStatus::FAILURE;
+    goal_handle_ = future_goal_handle.get();
+    if (!goal_handle_) {
+      throw std::runtime_error("Goal was rejected by the server");
+    }
 
-        case nav2_tasks::TaskStatus::CANCELED:
-          setStatus(BT::NodeStatus::IDLE);
-          return BT::NodeStatus::SUCCESS;
+    auto future_result = goal_handle_->async_result();
+    rclcpp::executor::FutureReturnCode rc;
+    do {
+      rc = rclcpp::spin_until_future_complete(node_, future_result, node_loop_timeout_);
 
-        case nav2_tasks::TaskStatus::RUNNING:
-          setStatusRunningAndYield();
-          break;
+      if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
+        setStatusRunningAndYield();
+        onLoopIteration();
+      } 
 
-        default:
-          throw std::logic_error("BtActionNode::Tick: invalid status value");
-      }
+      //if (rc == rclcpp::executor::FutureReturnCode::ABORTED) {
+        //throw std::runtime_error("Get async result failed");
+      //}
+    } while (rc != rclcpp::executor::FutureReturnCode::SUCCESS);
+
+    result_ = future_result.get();
+    switch (result_.code) {
+      case rclcpp_action::ResultCode::SUCCEEDED:
+        onSuccess();
+        setStatus(BT::NodeStatus::IDLE);
+        return BT::NodeStatus::SUCCESS;
+
+      case rclcpp_action::ResultCode::ABORTED:
+        setStatus(BT::NodeStatus::IDLE);
+        return BT::NodeStatus::FAILURE;
+
+      case rclcpp_action::ResultCode::CANCELED:
+        setStatus(BT::NodeStatus::IDLE);
+        return BT::NodeStatus::SUCCESS;
+
+      default:
+        throw std::logic_error("BtActionNode::Tick: invalid status value");
     }
   }
 
@@ -105,15 +135,18 @@ public:
   {
     // Shut the node down if it is currently running
     if (status() == BT::NodeStatus::RUNNING) {
-      action_client_->cancel();
+      action_client_->async_cancel_goal(goal_handle_);
+      auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
+      rclcpp::spin_until_future_complete(node_, future_cancel);
     }
 
+    setStatus(BT::NodeStatus::IDLE);
     CoroActionNode::halt();
   }
 
 protected:
-  const std::string & action_name_;
-  typename std::unique_ptr<nav2_util::SimpleActionClient<ActionT>> action_client_;
+  const std::string action_name_;
+  typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
 
   typename ActionT::Goal goal_;
   typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult result_;
@@ -124,6 +157,9 @@ protected:
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
   std::chrono::milliseconds node_loop_timeout_;
+
+  // The SimpleActionClient supports a single goal at a time
+  typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
 };
 
 }  // namespace nav2_tasks

@@ -17,17 +17,11 @@
 
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <SequenceStar name="root">
-      <ComputePathToPose goal="${goal}" path="${path}"/>
-      <ParallelNode threshold="1">
-        <FollowPath path="${path}"/>
-        <Sequence>
-          <RateController hz="1.0">
-            <ComputePathToPose goal="${goal}" path="${path}"/>
-          </RateController>
-          <UpdatePath/>
-        </Sequence>
-      </ParallelNode>
-    </SequenceStar>
+    <Sequence name="root">
+      <RateController hz="1.0">
+        <ComputePathToPose goal="${goal}"/>
+      </RateController>
+      <FollowPath path="${path}"/>
+    </Sequence>
   </BehaviorTree>
 </root>

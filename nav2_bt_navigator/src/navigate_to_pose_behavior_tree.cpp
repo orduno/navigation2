@@ -51,27 +51,11 @@ NavigateToPoseBehaviorTree::NavigateToPoseBehaviorTree()
   factory_.registerNodeType<nav2_tasks::RateController>("RateController");
 
   // Register our simple action nodes
-  factory_.registerSimpleAction("UpdatePath",
-    std::bind(&NavigateToPoseBehaviorTree::updatePath, this, std::placeholders::_1));
-
   factory_.registerSimpleAction("globalLocalizationServiceRequest",
     std::bind(&NavigateToPoseBehaviorTree::globalLocalizationServiceRequest, this));
 
   global_localization_client_ =
     std::make_unique<nav2_util::GlobalLocalizationServiceClient>("bt_navigator");
-}
-
-BT::NodeStatus
-NavigateToPoseBehaviorTree::updatePath(BT::TreeNode & /*tree_node*/)
-{
-#if 0
-  // Get the updated path from the blackboard and send to the FollowPath task server
-  auto path = tree_node.blackboard()->template get<nav2_tasks::ComputePathToPoseResult::SharedPtr>(
-    "path");
-
-  follow_path_task_client_->sendUpdate(path);
-#endif
-  return BT::NodeStatus::RUNNING;
 }
 
 BT::NodeStatus

@@ -34,18 +34,15 @@ public:
 
   void onConfigure() override
   {
-  //blackboard_->set<geometry_msgs::msg::PoseStamped::SharedPtr>("goal", goal_);  // NOLINT
-  //blackboard_->set<nav2_msgs::msg::Path::SharedPtr>("path", path_);  // NOLINT
-
-  // TODO: Fix this (and others like it)
-    // Set up the input and output messages
-    //goal_.pose = blackboard()->template get<nav2_msgs::action::ComputePathToPose::Goal>("goal");
-
-    //auto bb_goal_ = blackboard()->template get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal");
-    //goal_.pose = *bb_goal;
-
-    //result_ = blackboard()->template get<rclcpp_action::ClientGoalHandle<nav2_msgs::action::ComputePathToPose>::WrappedResult>("path");
+    goal_.pose = *(blackboard()->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal"));
   }
+
+  void onSuccess() override
+  {
+	*(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path")) = result_.result->path;
+	//blackboard()->set<bool>("path_updated", true);
+  }
+
 };
 
 }  // namespace nav2_tasks

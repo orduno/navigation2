@@ -18,13 +18,8 @@
 #include <string>
 
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
-//#include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_tasks/bt_conversions.hpp"
 #include "rclcpp/rclcpp.hpp"
-
-//#include "nav2_tasks/compute_path_to_pose_action.hpp"
-//#include "nav2_tasks/follow_path_action.hpp"
-//#include "nav2_tasks/navigate_to_pose_action.hpp"
 
 using namespace std::chrono_literals;
 
@@ -55,7 +50,7 @@ BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-	  cancelAllActions(tree.root_node);
+      tree.root_node->halt();
       return TaskStatus::CANCELED;
     }
 
@@ -81,7 +76,14 @@ BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-	  cancelAllActions(tree->root_node);
+      // The BT library halts all of the child actions when the BT is destructed. However,
+      // in this case we're not creating the tree on the fly, but are re-using the tree
+      // that is passed in. So, we need to explicitly halt the child actions. If we didn't
+      // do this, the BT would be halted, but the remote actions would still be running
+
+      // haltAllActions(tree->root_node);
+
+      tree->root_node->halt();
       return TaskStatus::CANCELED;
     }
 
