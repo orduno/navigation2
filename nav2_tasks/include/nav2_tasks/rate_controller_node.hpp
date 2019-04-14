@@ -55,8 +55,13 @@ inline BT::NodeStatus RateController::tick()
     // Reset the starting point since we're starting a new iteration of
     // the rate controller (moving from IDLE to RUNNING)
     start_ = std::chrono::high_resolution_clock::now();
-	first_time = true;
+    first_time = true;
   }
+
+  //if (blackboard()->get<bool>("goal_reached") == true) {
+    //printf("Short circuit the RateController\n");
+	//return BT::NodeStatus::SUCCESS;
+  //}
 
   setStatus(BT::NodeStatus::RUNNING);
 
@@ -81,7 +86,9 @@ inline BT::NodeStatus RateController::tick()
         start_ = std::chrono::high_resolution_clock::now();
 
         // TODO(mjeronimo): make this an optional variable in the XML (if the variable exists, set it to true)
-		//blackboard()->set<bool>("path_updated", true);
+        // It is used in indicate an "event": "on_child_success_name="on_child_success"
+        // Also, an optional variable to halt/short-circuit and return SUCCESS:"should_return_name="should_return"
+        //blackboard()->set<bool>("path_updated", true);
 
         return BT::NodeStatus::SUCCESS;
 

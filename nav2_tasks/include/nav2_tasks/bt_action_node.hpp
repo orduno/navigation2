@@ -82,7 +82,7 @@ public:
 
   BT::NodeStatus tick() override
   {
-    onConfigure();
+    onConfigure(); // TODO: onTick()
 
     auto future_goal_handle = action_client_->async_send_goal(goal_);
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
@@ -103,7 +103,7 @@ public:
 
       if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
         setStatusRunningAndYield();
-        onLoopIteration();
+        onLoopIteration();			// TODO: onLoopTimeout
       } 
 
       //if (rc == rclcpp::executor::FutureReturnCode::ABORTED) {
