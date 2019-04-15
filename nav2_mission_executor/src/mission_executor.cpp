@@ -89,6 +89,8 @@ MissionExecutor::on_shutdown(const rclcpp_lifecycle::State &)
 void
 MissionExecutor::executeMission(const std::shared_ptr<GoalHandle> goal_handle)
 {
+printf("MissionExecutor::executeMission\n");
+
   // Initialize the goal and result
   auto goal = goal_handle->get_goal();
   auto result = std::make_shared<nav2_msgs::action::ExecuteMission::Result>();

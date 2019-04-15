@@ -24,8 +24,8 @@
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/msg/path.hpp"
-#include "nav2_util/simple_action_client.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace nav2_bt_navigator
 {

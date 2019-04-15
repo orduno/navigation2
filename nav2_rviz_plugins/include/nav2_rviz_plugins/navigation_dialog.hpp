@@ -15,13 +15,14 @@
 #ifndef NAV2_RVIZ_PLUGINS__NAVIGATION_DIALOG_HPP_
 #define NAV2_RVIZ_PLUGINS__NAVIGATION_DIALOG_HPP_
 
-#include <string>
 #include <QDialog>
 #include <QBasicTimer>
 
+#include <string>
+
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_util/simple_action_client.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 class QCheckBox;
 class QDialogButtonBox;
@@ -35,31 +36,32 @@ class NavigationDialog : public QDialog
   Q_OBJECT
 
 public:
-  NavigationDialog(QWidget *parent = 0);
+  explicit NavigationDialog(QWidget * parent = 0);
 
   void startNavigation(double x, double y, double theta, std::string & frame);
 
 protected:
-  void timerEvent(QTimerEvent *event);
+  void timerEvent(QTimerEvent * event);
 
 private slots:
   void onCancelButtonPressed();
 
 private:
-  QLabel *label;
-  QLineEdit *lineEdit;
-  QCheckBox *fromStartCheckBox;
-  QCheckBox *searchSelectionCheckBox;
-  QDialogButtonBox *buttonBox;
-  QPushButton *cancelButton;
-  QPushButton *moreButton;
-  QWidget *extension;
+  QLabel * label;
+  QLineEdit * lineEdit;
+  QCheckBox * fromStartCheckBox;
+  QCheckBox * searchSelectionCheckBox;
+  QDialogButtonBox * buttonBox;
+  QPushButton * cancelButton;
+  QPushButton * moreButton;
+  QWidget * extension;
 
   QBasicTimer timer_;
 
   rclcpp::Node::SharedPtr client_node_;
-  std::shared_ptr<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>> action_client_;
+  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr action_client_;
   nav2_msgs::action::NavigateToPose::Goal goal_;
+  rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr goal_handle_;
 };
 
 #endif  //  NAV2_RVIZ_PLUGINS__NAVIGATION_DIALOG_HPP_

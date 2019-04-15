@@ -49,101 +49,101 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   shutdown_button->setToolTip("TODO");
 
   ////
-    QChart * chart = new QChart();
-    QChartView *chartView = new QChartView(chart);
-    chartView->setMinimumSize(400, 300);
+  QChart * chart = new QChart();
+  QChartView * chartView = new QChartView(chart);
+  chartView->setMinimumSize(400, 300);
 
-    QValueAxis *axisX = new QValueAxis;
-    axisX->setRange(0, 2000);
-    axisX->setLabelFormat("%g");
-    axisX->setTitleText("Loop Iteration");
+  QValueAxis * axisX = new QValueAxis;
+  axisX->setRange(0, 2000);
+  axisX->setLabelFormat("%g");
+  axisX->setTitleText("Loop Iteration");
 
-    QValueAxis *axisY = new QValueAxis;
-    axisY->setRange(0, 50);
-    axisY->setTitleText("Time (ms)");
+  QValueAxis * axisY = new QValueAxis;
+  axisY->setRange(0, 50);
+  axisY->setTitleText("Time (ms)");
 
-    QLineSeries * series = new QLineSeries;
-    series->setName("loop rate samples");
-    QPen pen1(QRgb(0xfdb157));
-    pen1.setWidth(2);
-    series->setPen(pen1);
-    QVector<QPointF> points;
-    for (int i=0; i<2000; i++) {
-      points.append(QPointF(i, 25));
-    }
-    series->replace(points);
+  QLineSeries * series = new QLineSeries;
+  series->setName("loop rate samples");
+  QPen pen1(QRgb(0xfdb157));
+  pen1.setWidth(2);
+  series->setPen(pen1);
+  QVector<QPointF> points;
+  for (int i = 0; i < 2000; i++) {
+    points.append(QPointF(i, 25));
+  }
+  series->replace(points);
 
-    QLineSeries * lineseries = new QLineSeries;
-    lineseries->setName("target");
-    QPen pen(QRgb(0xff0000));
-    pen.setWidth(2);
-    lineseries->setPen(pen);
-    QVector<QPointF> points2;
-    points2.append(QPointF(0, 10));
-    points2.append(QPointF(2000, 10));
-    lineseries->replace(points2);
+  QLineSeries * lineseries = new QLineSeries;
+  lineseries->setName("target");
+  QPen pen(QRgb(0xff0000));
+  pen.setWidth(2);
+  lineseries->setPen(pen);
+  QVector<QPointF> points2;
+  points2.append(QPointF(0, 10));
+  points2.append(QPointF(2000, 10));
+  lineseries->replace(points2);
 
-    QPainterPath starPath;
-    starPath.moveTo(28, 15);
-    for (int i=1; i<5; i++) {
-	    starPath.lineTo(14 + 14 * qCos(0.8 * i * M_PI),
-	                    15 + 14 * qSin(0.8 * i * M_PI));
-    }
-    starPath.closeSubpath();
+  QPainterPath starPath;
+  starPath.moveTo(28, 15);
+  for (int i = 1; i < 5; i++) {
+    starPath.lineTo(14 + 14 * qCos(0.8 * i * M_PI),
+      15 + 14 * qSin(0.8 * i * M_PI));
+  }
+  starPath.closeSubpath();
 
-    QImage star(30, 30, QImage::Format_ARGB32);
-    star.fill(Qt::transparent);
+  QImage star(30, 30, QImage::Format_ARGB32);
+  star.fill(Qt::transparent);
 
-    QPainter painter(&star);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(QRgb(0x0000ff));
-    painter.setBrush(painter.pen().color());
-    painter.drawPath(starPath);
+  QPainter painter(&star);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setPen(QRgb(0x0000ff));
+  painter.setBrush(painter.pen().color());
+  painter.drawPath(starPath);
 
 #if 0
-QAbstractBarSeries  QHorizontalBarSeries         QScatterSeries
-QAbstractSeries     QHorizontalPercentBarSeries  QSplineSeries
-QAreaSeries         QHorizontalStackedBarSeries  QStackedBarSeries
-QBarSeries          QLineSeries                  QXYSeries
-QBoxPlotSeries      QPercentBarSeries
-QCandlestickSeries  QPieSeries
+  QAbstractBarSeries QHorizontalBarSeries QScatterSeries
+  QAbstractSeries QHorizontalPercentBarSeries QSplineSeries
+  QAreaSeries QHorizontalStackedBarSeries QStackedBarSeries
+  QBarSeries QLineSeries QXYSeries
+  QBoxPlotSeries QPercentBarSeries
+  QCandlestickSeries QPieSeries
 #endif
 
 #if 0
-    QBarSet * set0 = new QBarSet("samples");
-    for (int i=0; i<1000; i++) {
-      *set0 << i;
-    }
-    QBarSeries * barseries = new QBarSeries();
-    barseries->append(set0);
+  QBarSet * set0 = new QBarSet("samples");
+  for (int i = 0; i < 1000; i++) {
+    *set0 << i;
+  }
+  QBarSeries * barseries = new QBarSeries();
+  barseries->append(set0);
 #endif
 
-    QScatterSeries * series2 = new QScatterSeries();
-    series2->setName("scatter3");
-    series2->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
-    series2->setMarkerSize(30.0);
+  QScatterSeries * series2 = new QScatterSeries();
+  series2->setName("scatter3");
+  series2->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
+  series2->setMarkerSize(30.0);
 
-    *series2 << QPointF(1, 5) << QPointF(500, 25) << QPointF(1500, 50);
-    series2->setBrush(star);
-    series2->setPen(QColor(Qt::transparent));
+  *series2 << QPointF(1, 5) << QPointF(500, 25) << QPointF(1500, 50);
+  series2->setBrush(star);
+  series2->setPen(QColor(Qt::transparent));
 
-    chart->setAxisX(axisX, series);
-    chart->setAxisY(axisY, series);
-    chart->addSeries(series);
-    chart->addSeries(lineseries);
-    chart->addSeries(series2);
-    //chart->addSeries(barseries);
-    chart->legend()->hide();
-    chart->setTitle("DWB Loop Rate");
+  chart->setAxisX(axisX, series);
+  chart->setAxisY(axisY, series);
+  chart->addSeries(series);
+  chart->addSeries(lineseries);
+  chart->addSeries(series2);
+  // chart->addSeries(barseries);
+  chart->legend()->hide();
+  chart->setTitle("DWB Loop Rate");
 
-    series->attachAxis(axisX);
-    series->attachAxis(axisY);
-    lineseries->attachAxis(axisX);
-    lineseries->attachAxis(axisY);
-    series2->attachAxis(axisX);
-    series2->attachAxis(axisY);
-    //barseries->attachAxis(axisX);
-    //barseries->attachAxis(axisY);
+  series->attachAxis(axisX);
+  series->attachAxis(axisY);
+  lineseries->attachAxis(axisX);
+  lineseries->attachAxis(axisY);
+  series2->attachAxis(axisX);
+  series2->attachAxis(axisY);
+  // barseries->attachAxis(axisX);
+  // barseries->attachAxis(axisY);
 
   ////
 
@@ -168,14 +168,16 @@ Nav2Panel::onInitialize()
 void
 Nav2Panel::onStartupClicked()
 {
-  QFuture<void> future = QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::startup, &client_));
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::startup, &client_));
   startup_button->setEnabled(false);
 }
 
 void
 Nav2Panel::onShutdownClicked()
 {
-  QFuture<void> future = QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
   shutdown_button->setEnabled(false);
 }
 

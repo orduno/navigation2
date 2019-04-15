@@ -49,13 +49,11 @@ SimpleNavigator::on_configure(const rclcpp_lifecycle::State &)
       std::bind(&SimpleNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   // Create our two task clients
-  planner_client_ =
-    std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::ComputePathToPose>>(
-    client_node_, "ComputePathToPose");
+  planner_client_ = rclcpp_action::create_client<nav2_msgs::action::ComputePathToPose>(client_node_,
+      "ComputePathToPose");
 
-  controller_client_ =
-    std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::FollowPath>>(
-    client_node_, "FollowPath");
+  controller_client_ = rclcpp_action::create_client<nav2_msgs::action::FollowPath>(client_node_,
+      "FollowPath");
 
   // Create the action server that we implement with our navigateToPose method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "NavigateToPose",
@@ -107,7 +105,7 @@ SimpleNavigator::on_shutdown(const rclcpp_lifecycle::State &)
 void
 SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
 {
-  // Initialize the NavigateToPose goal and result
+  // Initialize the overall NavigateToPose goal and result
   auto goal = goal_handle->get_goal();
   auto result = std::make_shared<nav2_msgs::action::NavigateToPose::Result>();
 
@@ -117,8 +115,6 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   // Set up the input and output for the global planner
   nav2_msgs::action::ComputePathToPose::Goal planner_goal;
   planner_goal.pose = goal->pose;
-  rclcpp_action::ClientGoalHandle<nav2_msgs::action::ComputePathToPose>::WrappedResult
-    planner_result;
 
   RCLCPP_DEBUG(get_logger(), "Getting the path from the planner for goal pose:");
   RCLCPP_DEBUG(get_logger(), "position.x: %f", goal->pose.pose.position.x);
@@ -129,9 +125,40 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   RCLCPP_DEBUG(get_logger(), "orientation.z: %f", goal->pose.pose.orientation.z);
   RCLCPP_DEBUG(get_logger(), "orientation.w: %f", goal->pose.pose.orientation.w);
 
-  // Get the path from the global planner
-  auto status = planner_client_->invoke(planner_goal, planner_result);
-  if (status != nav2_util::ActionStatus::SUCCEEDED) {
+  planner_client_->wait_for_action_server();
+
+  // Send the goal pose to the planner
+  auto planner_future_goal_handle = planner_client_->async_send_goal(planner_goal);
+  if (rclcpp::spin_until_future_complete(client_node_, planner_future_goal_handle) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Send goal call failed");
+    goal_handle->set_aborted(result);
+    return;
+  }
+
+  // Get the goal handle
+  auto planner_goal_handle = planner_future_goal_handle.get();
+  if (!planner_goal_handle) {
+    RCLCPP_ERROR(get_logger(), "Goal was rejected by server");
+    goal_handle->set_aborted(result);
+    return;
+  }
+
+  // Wait for the action to complete
+  auto planner_future_result = planner_goal_handle->async_result();
+  if (rclcpp::spin_until_future_complete(client_node_, planner_future_result) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Get result call failed");
+    goal_handle->set_aborted(result);
+    return;
+  }
+
+  // Get the final result
+  auto planner_result = planner_future_result.get();
+  if (planner_result.code != rclcpp_action::ResultCode::SUCCEEDED) {
+    RCLCPP_ERROR(get_logger(), "Get wrapped result call failed");
     goal_handle->set_aborted(result);
     return;
   }
@@ -147,49 +174,67 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
     index++;
   }
 
-  // Set up the input and output for the local planner
+  controller_client_->wait_for_action_server();
+
+  // Set up the input for the local planner
   nav2_msgs::action::FollowPath::Goal controller_goal;
-  rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowPath>::WrappedResult controller_result;
   controller_goal.path = planner_result.result->path;
 
+  // Send the goal pose to the local planner
   RCLCPP_INFO(get_logger(), "Sending path to the controller to execute");
+  auto controller_future_goal_handle = controller_client_->async_send_goal(controller_goal);
+  if (rclcpp::spin_until_future_complete(client_node_, controller_future_goal_handle) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Send goal call failed");
+    goal_handle->set_aborted(result);
+    return;
+  }
 
-  // Call the local planner to follow the path
-  controller_client_->send_goal(controller_goal);
-  for (;; ) {
-    auto rc = controller_client_->wait_for_result(100ms);
-    switch (rc) {
-      case nav2_util::ActionStatus::SUCCEEDED:
-        RCLCPP_INFO(get_logger(), "Control task completed, navigation successful");
-        goal_handle->set_succeeded(result);
-        return;
+  // Get the goal handle
+  auto controller_goal_handle = controller_future_goal_handle.get();
+  if (!controller_goal_handle) {
+    RCLCPP_ERROR(get_logger(), "Goal was rejected by server");
+    goal_handle->set_aborted(result);
+    return;
+  }
 
-      case nav2_util::ActionStatus::FAILED:
-        RCLCPP_INFO(get_logger(), "Control task failed, returning");
-        goal_handle->set_aborted(result);
-        return;
+  auto controller_future_result = controller_goal_handle->async_result();
+  rclcpp::executor::FutureReturnCode rc;
+  do {
+    rc = rclcpp::spin_until_future_complete(client_node_, controller_future_result, 10ms);
 
-      case nav2_util::ActionStatus::CANCELED:
-        RCLCPP_INFO(get_logger(), "Control task has been canceled, returning");
-        goal_handle->set_canceled(result);
-        return;
+    if (goal_handle->is_canceling()) {
+      auto controller_future_cancel_result = controller_client_->async_cancel_goal(
+        controller_goal_handle);
+      if (rclcpp::spin_until_future_complete(client_node_, controller_future_cancel_result) !=
+        rclcpp::executor::FutureReturnCode::SUCCESS)
+      {
+        RCLCPP_ERROR(client_node_->get_logger(), "failed to cancel controller goal");
+      }
 
-      case nav2_util::ActionStatus::RUNNING:
-        // While the local planner is executing, check to see if this action (navigation) has
-        // been canceled. If so, cancel the child task and then update this actions's status
-        if (goal_handle->is_canceling()) {
-          RCLCPP_INFO(get_logger(), "Navigation task has been canceled");
-          controller_client_->cancel();
-          goal_handle->set_canceled(result);
-          return;
-        }
-
-        // TODO(mjeronimo): handle pre-emption
-        break;
-
-      default:
-        throw std::logic_error("Invalid status value");
+      goal_handle->set_canceled(result);
+      return;
     }
+  } while (rc == rclcpp::executor::FutureReturnCode::TIMEOUT);
+
+  // The return for the overall navigation is the result of the local planner
+  auto controller_result = controller_future_result.get();
+  switch (controller_result.code) {
+    case rclcpp_action::ResultCode::SUCCEEDED:
+      goal_handle->set_succeeded(result);
+      break;
+
+    case rclcpp_action::ResultCode::ABORTED:
+      goal_handle->set_aborted(result);
+      break;
+
+    case rclcpp_action::ResultCode::CANCELED:
+      goal_handle->set_canceled(result);
+      break;
+
+    default:
+      throw std::logic_error("BtActionNode::Tick: invalid status value");
   }
 }
 

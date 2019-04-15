@@ -35,7 +35,7 @@ public:
   void onConfigure() override
   {
 	goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
-    //blackboard()->set<bool>("goal_reached", false);
+    // blackboard()->set<bool>("goal_reached", false);
   }
 
   void onLoopIteration() override
@@ -43,7 +43,7 @@ public:
 	if (blackboard()->get<bool>("path_updated")) {
 	  goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
 	  blackboard()->set<bool>("path_updated", false);
-      //action_client_->send_goal(goal_);
+      // action_client_->send_goal(goal_);
 	}
   }
 

@@ -19,8 +19,8 @@
 #include <memory>
 
 #include "behaviortree_cpp/action_node.h"
-#include "nav2_util/simple_action_client.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace nav2_tasks
 {
@@ -30,12 +30,12 @@ class BtActionNode : public BT::CoroActionNode
 {
 public:
   explicit BtActionNode(const std::string & action_name)
-  : BT::CoroActionNode(action_name), action_name_(action_name), action_client_(nullptr)
+  : BT::CoroActionNode(action_name), action_name_(action_name)
   {
   }
 
   BtActionNode(const std::string & action_name, const BT::NodeParameters & params)
-  : BT::CoroActionNode(action_name, params), action_name_(action_name), action_client_(nullptr)
+  : BT::CoroActionNode(action_name, params), action_name_(action_name)
   {
   }
 
@@ -106,9 +106,10 @@ public:
         onLoopIteration();			// TODO: onLoopTimeout
       } 
 
-      //if (rc == rclcpp::executor::FutureReturnCode::ABORTED) {
-        //throw std::runtime_error("Get async result failed");
-      //}
+      // if (rc == rclcpp::executor::FutureReturnCode::ABORTED) {
+      //   throw std::runtime_error("Get async result failed");
+      // }
+
     } while (rc != rclcpp::executor::FutureReturnCode::SUCCESS);
 
     result_ = future_result.get();
@@ -158,7 +159,7 @@ protected:
   // a result from the server
   std::chrono::milliseconds node_loop_timeout_;
 
-  // The SimpleActionClient supports a single goal at a time
+  // The action server supports a single goal at a time
   typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
 };
 

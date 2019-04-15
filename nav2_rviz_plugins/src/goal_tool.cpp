@@ -14,6 +14,7 @@
 
 #include "nav2_rviz_plugins/goal_tool.hpp"
 
+#include <memory>
 #include <string>
 
 #include "rviz_common/display_context.hpp"
@@ -28,7 +29,7 @@ GoalTool::GoalTool()
   shortcut_key_ = 'g';
 
   navigation_dialog_ = std::make_unique<NavigationDialog>();
-  navigation_dialog_->move(0,0);
+  navigation_dialog_->move(0, 0);
 }
 
 GoalTool::~GoalTool()

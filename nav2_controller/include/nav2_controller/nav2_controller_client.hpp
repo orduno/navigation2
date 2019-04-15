@@ -18,9 +18,9 @@
 #include <memory>
 
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "nav2_util/simple_action_client.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 #include "std_srvs/srv/empty.hpp"
 
 namespace nav2_controller
@@ -54,8 +54,7 @@ protected:
   rclcpp::Client<Srv>::SharedPtr shutdown_client_;
 
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_publisher_;
-
-  std::unique_ptr<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>> navigate_action_client_;
+  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigate_action_client_;
 };
 
 }  // namespace nav2_controller

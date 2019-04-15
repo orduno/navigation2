@@ -12,31 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <QtWidgets>
+
+#include <memory>
+#include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_rviz_plugins/navigation_dialog.hpp"
-#include "nav2_util/simple_action_client.hpp"
+
+using namespace std::chrono_literals;
 
 void
 NavigationDialog::onCancelButtonPressed()
 {
-  action_client_->cancel();
+  printf("onCancelButtonPressed\n");
+
+  auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
+
+  if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(client_node_->get_logger(), "Failed to send cancellation");
+    return;
+  }
+
+  RCLCPP_INFO(client_node_->get_logger(), "Action canceled");
+  timer_.stop();
+  hide();
 }
 
-NavigationDialog::NavigationDialog(QWidget *parent)
- : QDialog(parent)
+NavigationDialog::NavigationDialog(QWidget * parent)
+: QDialog(parent)
 {
   client_node_ = std::make_shared<rclcpp::Node>("nav_to_pose_client");
-  action_client_ = std::make_shared<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(client_node_, "NavigateToPose");
+  action_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(client_node_,
+      "NavigateToPose");
   goal_ = nav2_msgs::action::NavigateToPose::Goal();
 
   cancelButton = new QPushButton(tr("&Cancel"));
   cancelButton->setDefault(true);
 
-  QHBoxLayout *layout = new QHBoxLayout;
+  QHBoxLayout * layout = new QHBoxLayout;
   layout->addWidget(cancelButton);
 
   setMinimumWidth(120);
@@ -51,19 +68,29 @@ void
 NavigationDialog::timerEvent(QTimerEvent * event)
 {
   if (event->timerId() == timer_.timerId()) {
-    //update();
-    auto result = action_client_->wait_for_result(std::chrono::milliseconds(1));
+    // update();
+    auto future_result = action_client_->async_get_result(goal_handle_);
+    if (rclcpp::spin_until_future_complete(client_node_, future_result, 1ms) ==
+      rclcpp::executor::FutureReturnCode::TIMEOUT)
+    {
+      return;
+    }
 
-    switch (result) {
-      case nav2_util::ActionStatus::SUCCEEDED:
-      case nav2_util::ActionStatus::FAILED:
-      case nav2_util::ActionStatus::CANCELED:
-	    timer_.stop();
+    auto wrapped_result = future_result.get();
+    switch (wrapped_result.code) {
+      case rclcpp_action::ResultCode::SUCCEEDED:
+        RCLCPP_INFO(client_node_->get_logger(), "action succeeded");
+        timer_.stop();
         hide();
-        break;
+        return;
 
-      case nav2_util::ActionStatus::RUNNING:
-        break;
+      case rclcpp_action::ResultCode::ABORTED:
+      case rclcpp_action::ResultCode::CANCELED:
+      default:
+        RCLCPP_INFO(client_node_->get_logger(), "action aborted or canceled");
+        timer_.stop();
+        hide();
+        return;
     }
   } else {
     QWidget::timerEvent(event);
@@ -95,11 +122,24 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   pose->pose.position.z = 0.0;
   pose->pose.orientation = orientationAroundZAxis(theta);
 
-  action_client_->wait_for_server();
+  action_client_->wait_for_action_server();
 
+  // Send the goal pose
   goal_.pose = *pose;
-  action_client_->send_goal(goal_);
+  auto future_goal_handle = action_client_->async_send_goal(goal_);
+  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
+    return;
+  }
+
+  // Get the goal handle and save so that we can check on completion in the timer callback
+  goal_handle_ = future_goal_handle.get();
+  if (!goal_handle_) {
+    RCLCPP_ERROR(client_node_->get_logger(), "Goal was rejected by server");
+    return;
+  }
 
   timer_.start(100, this);
 }
-

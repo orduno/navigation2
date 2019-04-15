@@ -34,7 +34,7 @@ Nav2ControllerClient::Nav2ControllerClient()
   resume_client_ = node_->create_client<Srv>("nav2_controller/resume");
   shutdown_client_ = node_->create_client<Srv>("nav2_controller/shutdown");
 
-  navigate_action_client_ = std::make_unique<nav2_util::SimpleActionClient<nav2_msgs::action::NavigateToPose>>(node_, "NavigateToPose");
+  navigate_action_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "NavigateToPose");
 
   initial_pose_publisher_ = node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose");
 }
@@ -97,6 +97,9 @@ Nav2ControllerClient::set_initial_pose(double x, double y, double theta)
 bool
 Nav2ControllerClient::navigate_to_pose(double x, double y, double theta)
 {
+  navigate_action_client_->wait_for_action_server();
+
+  // Initialize the goal
   geometry_msgs::msg::PoseStamped target_pose;
   target_pose.pose.position.x = x;
   target_pose.pose.position.y = y;
@@ -106,11 +109,34 @@ Nav2ControllerClient::navigate_to_pose(double x, double y, double theta)
   auto goal = nav2_msgs::action::NavigateToPose::Goal();
   goal.pose = target_pose;
 
-  rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult result;
+  // Send it
+  auto future_goal_handle = navigate_action_client_->async_send_goal(goal);
+  if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "send goal call failed");
+    return false;
+  }
 
-  auto status = navigate_action_client_->invoke(goal, result);
+  // Get the goal handle
+  auto goal_handle = future_goal_handle.get();
+  if (!goal_handle) {
+    RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by server");
+    return false;
+  }
 
-  return status == nav2_util::ActionStatus::SUCCEEDED;
+  // Wait for the action to complete
+  auto future_result = goal_handle->async_result();
+  if (rclcpp::spin_until_future_complete(node_, future_result) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "get result call failed");
+    return false;
+  }
+
+  // Get the final result
+  auto wrapped_result = future_result.get();
+  return wrapped_result.code == rclcpp_action::ResultCode::SUCCEEDED;
 }
 
 void
