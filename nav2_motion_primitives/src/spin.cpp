@@ -26,7 +26,6 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
-using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
 namespace nav2_motion_primitives

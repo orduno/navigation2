@@ -21,9 +21,6 @@
 #include <utility>
 
 #include "nav2_tasks/bt_conversions.hpp"
-#include "nav2_tasks/task_status.hpp"
-
-using nav2_tasks::TaskStatus;
 
 namespace nav2_bt_navigator
 {
@@ -171,20 +168,20 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
 
   // Execute the BT that was previously created in the configure step
   auto is_canceling = [goal_handle]() -> bool {return goal_handle->is_canceling();};
-  TaskStatus rc = bt_->run(tree_, is_canceling);
+  nav2_tasks::BtStatus rc = bt_->run(tree_, is_canceling);
 
   switch (rc) {
-    case TaskStatus::SUCCEEDED:
+    case nav2_tasks::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Navigation succeeded");
       goal_handle->set_succeeded(result);
       break;
 
-    case TaskStatus::FAILED:
+    case nav2_tasks::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
       goal_handle->set_aborted(result);
       break;
 
-    case TaskStatus::CANCELED:
+    case nav2_tasks::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
       goal_handle->set_canceled(result);
       // Reset the BT so that it can be run again in the future

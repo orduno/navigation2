@@ -17,8 +17,6 @@
 #include <memory>
 #include "nav2_mission_executor/execute_mission_behavior_tree.hpp"
 
-using nav2_tasks::TaskStatus;
-
 namespace nav2_mission_executor
 {
 
@@ -111,21 +109,21 @@ printf("MissionExecutor::executeMission\n");
 
   // Run the Behavior Tree
   auto is_canceling = [goal_handle]() -> bool {return goal_handle->is_canceling();};
-  TaskStatus rc = bt.run(blackboard, xml_string, is_canceling);
+  nav2_tasks::BtStatus rc = bt.run(blackboard, xml_string, is_canceling);
 
   // Handle the result
   switch (rc) {
-    case TaskStatus::SUCCEEDED:
+    case nav2_tasks::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Mission succeeded");
       goal_handle->set_succeeded(result);
       return;
 
-    case TaskStatus::FAILED:
+    case nav2_tasks::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Mission failed");
       goal_handle->set_aborted(result);
       return;
 
-    case TaskStatus::CANCELED:
+    case nav2_tasks::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Mission canceled");
       goal_handle->set_canceled(result);
       return;

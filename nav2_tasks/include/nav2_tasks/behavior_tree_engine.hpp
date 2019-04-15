@@ -22,10 +22,17 @@
 #include "behaviortree_cpp/blackboard/blackboard_local.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
-#include "nav2_tasks/task_status.hpp"
+
 
 namespace nav2_tasks
 {
+
+enum class BtStatus
+{
+  SUCCEEDED,
+  FAILED,
+  CANCELED,
+};
 
 class BehaviorTreeEngine
 {
@@ -33,13 +40,13 @@ public:
   BehaviorTreeEngine();
   virtual ~BehaviorTreeEngine() {}
 
-  TaskStatus run(
+  BtStatus run(
     BT::Blackboard::Ptr & blackboard,
     const std::string & behavior_tree_xml,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
-  TaskStatus run(
+  BtStatus run(
     std::unique_ptr<BT::Tree> & tree,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));

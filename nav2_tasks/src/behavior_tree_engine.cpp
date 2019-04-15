@@ -30,7 +30,7 @@ BehaviorTreeEngine::BehaviorTreeEngine()
 {
 }
 
-TaskStatus
+BtStatus
 BehaviorTreeEngine::run(
   BT::Blackboard::Ptr & blackboard,
   const std::string & behavior_tree_xml,
@@ -51,17 +51,16 @@ BehaviorTreeEngine::run(
     // Check if we've received a cancel message
     if (cancelRequested()) {
       tree.root_node->halt();
-      return TaskStatus::CANCELED;
+      return BtStatus::CANCELED;
     }
 
     loopRate.sleep();
   }
 
-  return (result == BT::NodeStatus::SUCCESS) ?
-         TaskStatus::SUCCEEDED : TaskStatus::FAILED;
+  return (result == BT::NodeStatus::SUCCESS) ?  BtStatus::SUCCEEDED : BtStatus::FAILED;
 }
 
-TaskStatus
+BtStatus
 BehaviorTreeEngine::run(
   std::unique_ptr<BT::Tree> & tree,
   std::function<bool()> cancelRequested,
@@ -84,14 +83,13 @@ BehaviorTreeEngine::run(
       // haltAllActions(tree->root_node);
 
       tree->root_node->halt();
-      return TaskStatus::CANCELED;
+      return BtStatus::CANCELED;
     }
 
     loopRate.sleep();
   }
 
-  return (result == BT::NodeStatus::SUCCESS) ?
-         TaskStatus::SUCCEEDED : TaskStatus::FAILED;
+  return (result == BT::NodeStatus::SUCCESS) ?  BtStatus::SUCCEEDED : BtStatus::FAILED;
 }
 
 BT::Tree

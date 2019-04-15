@@ -18,7 +18,6 @@
 
 #include "nav2_motion_primitives/stop.hpp"
 
-using nav2_tasks::TaskStatus;
 using namespace std::chrono_literals;
 
 namespace nav2_motion_primitives
