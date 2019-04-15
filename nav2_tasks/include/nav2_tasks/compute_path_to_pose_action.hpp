@@ -32,12 +32,12 @@ public:
   {
   }
 
-  void onConfigure() override
+  void on_tick() override
   {
     goal_.pose = *(blackboard()->get<geometry_msgs::msg::PoseStamped::SharedPtr>("goal"));
   }
 
-  void onSuccess() override
+  void on_success() override
   {
 	*(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path")) = result_.result->path;
 	//blackboard()->set<bool>("path_updated", true);

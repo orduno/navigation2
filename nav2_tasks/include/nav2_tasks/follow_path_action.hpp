@@ -32,14 +32,15 @@ public:
   {
   }
 
-  void onConfigure() override
+  void on_tick() override
   {
 	goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
     // blackboard()->set<bool>("goal_reached", false);
   }
 
-  void onLoopIteration() override
+  void on_loop_timeout() override
   {
+    // Check of the goal has been updated
 	if (blackboard()->get<bool>("path_updated")) {
 	  goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
 	  blackboard()->set<bool>("path_updated", false);
@@ -47,7 +48,7 @@ public:
 	}
   }
 
-  void onSuccess() override
+  void on_success() override
   {
     blackboard()->set<bool>("goal_reached", true);
   }

@@ -32,13 +32,6 @@ public:
   : BtActionNode<StopCommand, StopResult>(action_name)
   {
   }
-
-  void onConfigure() override
-  {
-    // Create the input and output messages
-    command_ = std::make_shared<nav2_tasks::StopCommand>();
-    result_ = std::make_shared<nav2_tasks::StopResult>();
-  }
 };
 
 }  // namespace nav2_tasks

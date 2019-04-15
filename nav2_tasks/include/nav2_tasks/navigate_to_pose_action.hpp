@@ -35,7 +35,7 @@ public:
   {
   }
 
-  void onConfigure() override
+  void on_tick() override
   {
     // Use the position and orientation fields from the XML attributes to initialize the goal
 

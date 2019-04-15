@@ -47,7 +47,7 @@ public:
 
   // This is a callback from the BT library invoked after the node is created and after the
   // blackboard has been set for the node. It is the first opportunity for the node to access
-  // the blackboard. The derived class does not override this method, but overrides onConfigure
+  // the blackboard. The derived class does not override this method, but overrides on_init
   void onInit() final
   {
     // Initialize the input and output messages
@@ -64,25 +64,31 @@ public:
 
     // Make sure the server is actually there before continuing
     action_client_->wait_for_action_server();
+
+	on_init();
   }
 
   // Derived classes can override this method to perform some local initialization such
   // as getting values from the blackboard.
-  virtual void onConfigure()
+  virtual void on_init()
   {
   }
 
-  virtual void onLoopIteration()
+  virtual void on_tick()
   {
   }
 
-  virtual void onSuccess()
+  virtual void on_loop_timeout()
+  {
+  }
+
+  virtual void on_success()
   {
   }
 
   BT::NodeStatus tick() override
   {
-    onConfigure(); // TODO: onTick()
+    on_tick();
 
     auto future_goal_handle = action_client_->async_send_goal(goal_);
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
@@ -103,19 +109,14 @@ public:
 
       if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
         setStatusRunningAndYield();
-        onLoopIteration();			// TODO: onLoopTimeout
+        on_loop_timeout();
       } 
-
-      // if (rc == rclcpp::executor::FutureReturnCode::ABORTED) {
-      //   throw std::runtime_error("Get async result failed");
-      // }
-
     } while (rc != rclcpp::executor::FutureReturnCode::SUCCESS);
 
     result_ = future_result.get();
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
-        onSuccess();
+        on_success();
         setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::SUCCESS;
 
