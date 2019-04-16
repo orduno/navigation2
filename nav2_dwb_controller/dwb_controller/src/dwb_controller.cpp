@@ -146,6 +146,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
         publishZeroVelocity();
       } else {
         if (isGoalReached(pose2d)) {
+printf("DWB GOAL REACHED!\n");
           break;
         }
         auto velocity = odom_sub_->getTwist();
@@ -162,7 +163,9 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
         // Check if there is an update to the path to follow
         if (action_server_->update_requested()) {
-          //current_goal_handle = action_server_->get_updated_goal_handle();
+		  printf("DWB RECEIVED A PATH UPDATE!\n");
+          current_goal_handle = action_server_->get_updated_goal_handle();
+		  (void) current_goal_handle;
           //goto preempted;
         }
       }
@@ -171,11 +174,12 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_INFO(this->get_logger(), e.what());
     publishZeroVelocity();
-    goal_handle->set_aborted(result);
+    current_goal_handle->set_aborted(result);
     return;
   }
 
-  goal_handle->set_succeeded(result);
+printf("DWB SUCCEEDED!\n");
+  current_goal_handle->set_succeeded(result);
   publishZeroVelocity();
 }
 

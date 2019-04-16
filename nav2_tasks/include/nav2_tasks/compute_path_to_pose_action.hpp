@@ -40,7 +40,7 @@ public:
   void on_success() override
   {
 	*(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path")) = result_.result->path;
-	//blackboard()->set<bool>("path_updated", true);
+	blackboard()->set<bool>("path_updated", true);
   }
 
 };

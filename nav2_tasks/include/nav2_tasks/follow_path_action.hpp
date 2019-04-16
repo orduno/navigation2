@@ -35,22 +35,31 @@ public:
   void on_tick() override
   {
 	goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
-    // blackboard()->set<bool>("goal_reached", false);
   }
 
   void on_loop_timeout() override
   {
     // Check of the goal has been updated
 	if (blackboard()->get<bool>("path_updated")) {
-	  goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
 	  blackboard()->set<bool>("path_updated", false);
+
+	  fprintf(stderr, "FollowPath DETECTED A PATH UPDATE!!!!!!!!!!!!\n");
+	  goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
+
       // action_client_->send_goal(goal_);
+      auto future_goal_handle = action_client_->async_send_goal(goal_);
+      if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
+        rclcpp::executor::FutureReturnCode::SUCCESS)
+      {
+        RCLCPP_ERROR(node_->get_logger(), "Sending updated goal failed");
+      }
 	}
   }
 
   void on_success() override
   {
-    blackboard()->set<bool>("goal_reached", true);
+	printf("FollowPath client: on_success\n");
+    //blackboard()->set<bool>("goal_reached", true);
   }
 
 };

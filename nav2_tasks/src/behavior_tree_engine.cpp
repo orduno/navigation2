@@ -75,6 +75,9 @@ BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
+	  
+	  printf("BehaviorTreeEngine: cancelRequested\n");
+
       // The BT library halts all of the child actions when the BT is destructed. However,
       // in this case we're not creating the tree on the fly, but are re-using the tree
       // that is passed in. So, we need to explicitly halt the child actions. If we didn't

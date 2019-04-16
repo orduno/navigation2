@@ -106,25 +106,29 @@ public:
     rclcpp::executor::FutureReturnCode rc;
     do {
       rc = rclcpp::spin_until_future_complete(node_, future_result, node_loop_timeout_);
-
       if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
-        setStatusRunningAndYield();
         on_loop_timeout();
+        //setStatusRunningAndYield();
       } 
     } while (rc != rclcpp::executor::FutureReturnCode::SUCCESS);
+
+	printf("BtActionNode(%s): after spin loop\n", action_name_.c_str());
 
     result_ = future_result.get();
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
+	    printf("BtActionNode(%s): SUCEEDED\n", action_name_.c_str());
         on_success();
         setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::SUCCESS;
 
       case rclcpp_action::ResultCode::ABORTED:
+	    printf("BtActionNode(%s): ABORTED\n", action_name_.c_str());
         setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::FAILURE;
 
       case rclcpp_action::ResultCode::CANCELED:
+	    printf("BtActionNode(%s): CANCELED\n", action_name_.c_str());
         setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::SUCCESS;
 
@@ -135,6 +139,8 @@ public:
 
   void halt() override
   {
+    printf("BtActionNode(%s): halt\n", action_name_.c_str());
+
     // Shut the node down if it is currently running
     if (status() == BT::NodeStatus::RUNNING) {
       action_client_->async_cancel_goal(goal_handle_);

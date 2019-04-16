@@ -58,8 +58,10 @@ inline BT::NodeStatus RateController::tick()
     first_time = true;
   }
 
+  // Stop ticking (and waiting for the timeout) if we've already reached the goal
   //if (blackboard()->get<bool>("goal_reached") == true) {
-    //printf("Short circuit the RateController\n");
+    //blackboard()->set<bool>("goal_reached", false);
+    //printf("Short circuit the RateController: goal reached!\n");
 	//return BT::NodeStatus::SUCCESS;
   //}
 
@@ -79,21 +81,13 @@ inline BT::NodeStatus RateController::tick()
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
-      case BT::NodeStatus::SUCCESS:
-        child_node_->setStatus(BT::NodeStatus::IDLE);
-
-        // Reset the timer
-        start_ = std::chrono::high_resolution_clock::now();
-
-        // TODO(mjeronimo): make this an optional variable in the XML (if the variable exists, set it to true)
-        // It is used in indicate an "event": "on_child_success_name="on_child_success"
-        // Also, an optional variable to halt/short-circuit and return SUCCESS:"should_return_name="should_return"
-        //blackboard()->set<bool>("path_updated", true);
-
-        return BT::NodeStatus::SUCCESS;
-
       case BT::NodeStatus::RUNNING:
         return BT::NodeStatus::RUNNING;
+
+      case BT::NodeStatus::SUCCESS:
+        child_node_->setStatus(BT::NodeStatus::IDLE);
+        start_ = std::chrono::high_resolution_clock::now(); // Reset the timer
+        return BT::NodeStatus::SUCCESS;
 
       case BT::NodeStatus::FAILURE:
       default:
