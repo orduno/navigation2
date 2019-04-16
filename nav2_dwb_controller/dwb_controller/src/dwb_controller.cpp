@@ -137,17 +137,17 @@ preempted:
     auto path = nav_2d_utils::pathToPath2D(goal->path);
 
     planner_->setPlan(path);
-    RCLCPP_INFO(get_logger(), "Path provided to the local planner");
+    RCLCPP_INFO(get_logger(), "Providing path to the local planner");
 
     rclcpp::Rate loop_rate(10);
     while (rclcpp::ok()) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
       if (!getRobotPose(pose2d)) {
-        RCLCPP_INFO(get_logger(), "No pose. Stopping robot");
+        RCLCPP_INFO(get_logger(), "No pose. Stopping the robot");
         publishZeroVelocity();
       } else {
         if (isGoalReached(pose2d)) {
-          RCLCPP_INFO(get_logger(), "Goal reached");
+          RCLCPP_INFO(get_logger(), "Reached the goal");
           break;
         }
         auto velocity = odom_sub_->getTwist();

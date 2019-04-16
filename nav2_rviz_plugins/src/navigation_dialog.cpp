@@ -35,7 +35,6 @@ NavigationDialog::onCancelButtonPressed()
     return;
   }
 
-  RCLCPP_INFO(client_node_->get_logger(), "Action canceled");
   timer_.stop();
   hide();
 }
@@ -77,7 +76,6 @@ NavigationDialog::timerEvent(QTimerEvent * event)
     auto wrapped_result = future_result.get();
     switch (wrapped_result.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
-        RCLCPP_INFO(client_node_->get_logger(), "action succeeded");
         timer_.stop();
         hide();
         return;
@@ -85,7 +83,6 @@ NavigationDialog::timerEvent(QTimerEvent * event)
       case rclcpp_action::ResultCode::ABORTED:
       case rclcpp_action::ResultCode::CANCELED:
       default:
-        RCLCPP_INFO(client_node_->get_logger(), "action aborted or canceled");
         timer_.stop();
         hide();
         return;
