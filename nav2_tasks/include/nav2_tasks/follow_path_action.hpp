@@ -15,8 +15,8 @@
 #ifndef NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_
 #define NAV2_TASKS__FOLLOW_PATH_ACTION_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
@@ -32,36 +32,29 @@ public:
   {
   }
 
+  void on_init() override
+  {
+    blackboard()->set<bool>("path_updated", false);
+  }
+
   void on_tick() override
   {
-	goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
+    goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
   }
 
   void on_loop_timeout() override
   {
-    // Check of the goal has been updated
-	if (blackboard()->get<bool>("path_updated")) {
-	  blackboard()->set<bool>("path_updated", false);
+    // Check if the goal has been updated
+    if (blackboard()->get<bool>("path_updated")) {
+      // Reset the flag in the blackboard
+      blackboard()->set<bool>("path_updated", false);  // NOLINT
 
-	  fprintf(stderr, "FollowPath DETECTED A PATH UPDATE!!!!!!!!!!!!\n");
-	  goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
-
-      // action_client_->send_goal(goal_);
-      auto future_goal_handle = action_client_->async_send_goal(goal_);
-      if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
-        rclcpp::executor::FutureReturnCode::SUCCESS)
-      {
-        RCLCPP_ERROR(node_->get_logger(), "Sending updated goal failed");
-      }
-	}
+      // Grab the new goal and set the flag so that we send the new goal to
+      // the action server on the next loop iteration
+      goal_.path = *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path"));
+      goal_updated_ = true;
+    }
   }
-
-  void on_success() override
-  {
-	printf("FollowPath client: on_success\n");
-    //blackboard()->set<bool>("goal_reached", true);
-  }
-
 };
 
 }  // namespace nav2_tasks

@@ -65,7 +65,7 @@ DummyController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*com
       RCLCPP_INFO(get_logger(), "Task cancelled");
       setZeroVelocity();
       task_server_->setCanceled();
-      return; //  TODO: TaskStatus::CANCELED;
+      return;
     }
 
     // Log a message every second
@@ -89,8 +89,6 @@ DummyController::followPath(const nav2_tasks::FollowPathCommand::SharedPtr /*com
 
   nav2_tasks::FollowPathResult result;
   task_server_->setResult(result);
-
-  return; // TODO TaskStatus::SUCCEEDED;
 }
 
 void DummyController::setZeroVelocity()

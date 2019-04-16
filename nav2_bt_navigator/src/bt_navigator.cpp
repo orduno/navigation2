@@ -71,7 +71,6 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("path_updated", false);  // NOLINT
-  blackboard_->set<bool>("goal_reached", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
 
   // Get the BT filename to use from the node parameter

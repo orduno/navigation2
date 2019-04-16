@@ -42,7 +42,7 @@ protected:
   using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::ExecuteMission>;
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ExecuteMission>;
 
-  // An action server that implements the NavigateToPose action
+  // Out action server implements the ExecuteMission action
   std::unique_ptr<ActionServer> action_server_;
 
   // The action server callback

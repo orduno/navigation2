@@ -73,8 +73,8 @@ public:
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
    */
   ObservationBuffer(
-    nav2_lifecycle::LifecycleNode::SharedPtr nh, 
-	std::string topic_name,
+    nav2_lifecycle::LifecycleNode::SharedPtr nh,
+    std::string topic_name,
     double observation_keep_time,
     double expected_update_rate,
     double min_obstacle_height, double max_obstacle_height, double obstacle_range,

@@ -62,7 +62,7 @@ public:
    */
   Costmap2DPublisher(
     nav2_lifecycle::LifecycleNode::SharedPtr ros_node,
-	Costmap2D * costmap,
+    Costmap2D * costmap,
     std::string global_frame,
     std::string topic_name,
     bool always_send_full_costmap = false);
@@ -73,13 +73,15 @@ public:
   ~Costmap2DPublisher();
 
   void on_configure() {}
-  void on_activate() {
-    costmap_pub_->on_activate();;
-    costmap_update_pub_->on_activate();;
+  void on_activate()
+  {
+    costmap_pub_->on_activate();
+    costmap_update_pub_->on_activate();
   }
-  void on_deactivate() {
-    costmap_pub_->on_deactivate();;
-    costmap_update_pub_->on_deactivate();;
+  void on_deactivate()
+  {
+    costmap_pub_->on_deactivate();
+    costmap_update_pub_->on_deactivate();
   }
   void on_cleanup() {}
 
@@ -124,7 +126,8 @@ private:
   bool always_send_full_costmap_;
 
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr costmap_update_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
+    costmap_update_pub_;
 
   nav_msgs::msg::OccupancyGrid grid_;
   // Translate from 0-255 values in costmap to -1 to 100 values in message.

@@ -48,7 +48,7 @@ protected:
   using GoalHandle = rclcpp_action::ServerGoalHandle<nav2_msgs::action::FollowPath>;
   using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::FollowPath>;
 
-  // An action server that implements the FollowPath action
+  // Our action server implements the FollowPath action
   std::unique_ptr<ActionServer> action_server_;
 
   // The action server callback

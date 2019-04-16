@@ -15,8 +15,8 @@
 #ifndef NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
 #define NAV2_TASKS__COMPUTE_PATH_TO_POSE_ACTION_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_tasks/bt_action_node.hpp"
@@ -39,10 +39,9 @@ public:
 
   void on_success() override
   {
-	*(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path")) = result_.result->path;
-	blackboard()->set<bool>("path_updated", true);
+    *(blackboard()->get<nav2_msgs::msg::Path::SharedPtr>("path")) = result_.result->path;
+    blackboard()->set<bool>("path_updated", true);  // NOLINT
   }
-
 };
 
 }  // namespace nav2_tasks

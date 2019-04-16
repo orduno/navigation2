@@ -32,7 +32,9 @@
  * Test harness for ObstacleLayer for Costmap2D
  */
 
+#include <memory>
 #include <set>
+#include <string>
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -48,10 +50,10 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
-class TestLifecycleNode: public nav2_lifecycle::LifecycleNode
+class TestLifecycleNode : public nav2_lifecycle::LifecycleNode
 {
 public:
-  TestLifecycleNode(const std::string & name)
+  explicit TestLifecycleNode(const std::string & name)
   : nav2_lifecycle::LifecycleNode(name)
   {
   }

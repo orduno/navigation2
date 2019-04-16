@@ -47,7 +47,7 @@
 #include "nav2_util/execution_timer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
-using namespace std::chrono;
+using namespace std::chrono_literals;
 
 namespace nav2_costmap_2d
 {
@@ -90,19 +90,21 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types_[i]);
     layered_costmap_->addPlugin(plugin);
 
-    // TODO: instead of get(), use a shared ptr
-    plugin->initialize(layered_costmap_, plugin_names_[i], tf_buffer_.get(), shared_from_this(), client_node_);
+    // TODO(mjeronimo): instead of get(), use a shared ptr
+    plugin->initialize(layered_costmap_, plugin_names_[i], tf_buffer_.get(),
+      shared_from_this(), client_node_);
   }
 
   // Create the publishers and subscribers
   footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>("footprint",
-    std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
+      std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
 
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
     "published_footprint", rmw_qos_profile_default);
 
-  costmap_publisher_ = new Costmap2DPublisher(shared_from_this(), layered_costmap_->getCostmap(), global_frame_,
-    "costmap", always_send_full_costmap_);
+  costmap_publisher_ = new Costmap2DPublisher(shared_from_this(),
+      layered_costmap_->getCostmap(), global_frame_,
+      "costmap", always_send_full_costmap_);
 
   // Set the footprint
   if (use_radius_) {
@@ -176,7 +178,7 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   stop();
 
   // Map thread stuff
-  // TODO: unique_ptr
+  // TODO(mjeronimo): unique_ptr
   map_update_thread_shutdown_ = true;
   map_update_thread_->join();
   delete map_update_thread_;
@@ -239,8 +241,10 @@ Costmap2DROS::getParameters()
   get_parameter_or("update_frequency", map_update_frequency_, 5.0);
   get_parameter_or("origin_x", origin_x_, 0.0);
   get_parameter_or("origin_y", origin_y_, 0.0);
-  get_parameter_or("plugin_names", plugin_names_, {"static_layer", "obstacle_layer", "inflation_layer"});
-  get_parameter_or("plugin_types", plugin_types_, {"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"});
+  get_parameter_or("plugin_names", plugin_names_, {"static_layer", "obstacle_layer",
+      "inflation_layer"});
+  get_parameter_or("plugin_types", plugin_types_, {"nav2_costmap_2d::StaticLayer",
+      "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"});
   get_parameter_or("resolution", resolution_, 0.1);
   get_parameter_or("robot_base_frame", robot_base_frame_, std::string("base_link"));
   get_parameter_or("robot_radius", robot_radius_, 0.1);
@@ -275,7 +279,8 @@ Costmap2DROS::getParameters()
       use_radius_ = false;
     } else {
       // Footprint provided but invalid, so stay with the radius
-      RCLCPP_ERROR(get_logger(), "The footprint parameter is invalid: \"%s\", using radius (%lf) instead",
+      RCLCPP_ERROR(
+        get_logger(), "The footprint parameter is invalid: \"%s\", using radius (%lf) instead",
         footprint_.c_str(), robot_radius_);
     }
   }
@@ -324,9 +329,9 @@ Costmap2DROS::mapUpdateLoop(double frequency)
 
   rclcpp::Rate r(frequency);
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
-    nav2_util::ExecutionTimer timer;  
+    nav2_util::ExecutionTimer timer;
 
-	// Measure the execution time of the updateMap method
+    // Measure the execution time of the updateMap method
     timer.start();
     updateMap();
     timer.end();
@@ -351,13 +356,12 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     // Make sure to sleep for the remainder of our cycle time
     r.sleep();
 
-    // TODO(bpwilcox): find ROS2 equivalent or port for r.cycletime()
 #if 0
-     if (r.period() > tf2::durationFromSec(1 / frequency)) {
-      RCLCPP_WARN(get_logger(
-          "Costmap2DROS: Map update loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds",
-          frequency,
-          r.period());
+    // TODO(bpwilcox): find ROS2 equivalent or port for r.cycletime()
+    if (r.period() > tf2::durationFromSec(1 / frequency)) {
+      RCLCPP_WARN(get_logger(),
+        "Costmap2DROS: Map update loop missed its desired rate of %.4fHz... "
+        "the loop actually took %.4f seconds", frequency, r.period());
     }
 #endif
   }
@@ -482,7 +486,6 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
   robot_pose.header.stamp = rclcpp::Time();
 
   // Save time for checking tf delay later
-  // TODO: what's the difference?
   rclcpp::Time current_time = rclcpp_node_->now();
 
   // Get the global pose of the robot
@@ -507,12 +510,14 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
   if (current_time - global_pose.header.stamp >
     nav2_util::duration_from_seconds(transform_tolerance_))
   {
-    RCLCPP_WARN(get_logger(),
+    RCLCPP_WARN(
+      get_logger(),
       "Transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f, difference: %.4f", //NOLINT
       tf2::timeToSec(tf2_ros::fromMsg(current_time)),
       tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)),
       transform_tolerance_,
-      tf2::timeToSec(tf2_ros::fromMsg(current_time)) - tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)));
+      tf2::timeToSec(tf2_ros::fromMsg(current_time)) -
+      tf2::timeToSec(tf2_ros::fromMsg(global_pose.header.stamp)));
 
     return false;
   }

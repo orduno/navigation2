@@ -38,6 +38,7 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -68,7 +69,7 @@ namespace nav2_costmap_2d
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
  * topics that provide observations about obstacles in either the form
  * of PointCloud or LaserScan messages. */
-class Costmap2DROS: public nav2_lifecycle::LifecycleNode
+class Costmap2DROS : public nav2_lifecycle::LifecycleNode
 {
 public:
   /**
@@ -76,7 +77,7 @@ public:
    * @param name The name for this costmap
    * @param tf A reference to a TransformListener
    */
-  Costmap2DROS(const std::string & name); // , tf2_ros::Buffer & tf);
+  explicit Costmap2DROS(const std::string & name);
   ~Costmap2DROS();
 
   nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
@@ -233,13 +234,14 @@ public:
    * getUnpaddedRobotFootprint(). */
   void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
 
-  std::shared_ptr<tf2_ros::Buffer> getTfBuffer() { return tf_buffer_; }
+  std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
 
 protected:
   rclcpp::Node::SharedPtr client_node_;
 
   // Publishers and subscribers
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+    footprint_pub_;
   Costmap2DPublisher * costmap_publisher_{nullptr};
 
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
@@ -265,14 +267,14 @@ protected:
 
   // Parameters
   void getParameters();
-  bool   always_send_full_costmap_{false};
+  bool always_send_full_costmap_{false};
   std::string footprint_;
-  float  footprint_padding_{0};
+  float footprint_padding_{0};
   std::string global_frame_;       ///< The global frame for the costmap
-  int    map_height_meters_{0};
+  int map_height_meters_{0};
   double map_publish_frequency_{0};
   double map_update_frequency_{0};
-  int    map_width_meters_{0};
+  int map_width_meters_{0};
   double origin_x_{0};
   double origin_y_{0};
   std::vector<std::string> plugin_names_;
@@ -280,8 +282,8 @@ protected:
   double resolution_{0};
   std::string robot_base_frame_;   ///< The frame_id of the robot base
   double robot_radius_;
-  bool   rolling_window_{false};   ///< Whether to use a rolling window version of the costmap
-  bool   track_unknown_space_{false};
+  bool rolling_window_{false};     ///< Whether to use a rolling window version of the costmap
+  bool track_unknown_space_{false};
   double transform_tolerance_{0};  ///< The timeout before transform errors
 
   // Derived parameters

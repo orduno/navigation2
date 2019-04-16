@@ -15,14 +15,14 @@
 #ifndef NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_
 #define NAV2_TASKS__NAVIGATE_TO_POSE_ACTION_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 
-#include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_tasks/bt_conversions.hpp"
-#include "nav2_tasks/bt_action_node.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_tasks/bt_action_node.hpp"
+#include "nav2_tasks/bt_conversions.hpp"
 
 namespace nav2_tasks
 {
@@ -38,11 +38,10 @@ public:
   void on_tick() override
   {
     // Use the position and orientation fields from the XML attributes to initialize the goal
-
     geometry_msgs::msg::Point position;
-    bool have_position = getParam<geometry_msgs::msg::Point>("position", position);
-
     geometry_msgs::msg::Quaternion orientation;
+
+    bool have_position = getParam<geometry_msgs::msg::Point>("position", position);
     bool have_orientation = getParam<geometry_msgs::msg::Quaternion>("orientation", orientation);
 
     if (!have_position || !have_orientation) {

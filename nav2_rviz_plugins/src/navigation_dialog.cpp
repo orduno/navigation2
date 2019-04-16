@@ -26,8 +26,6 @@ using namespace std::chrono_literals;
 void
 NavigationDialog::onCancelButtonPressed()
 {
-  printf("onCancelButtonPressed\n");
-
   auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
 
   if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=

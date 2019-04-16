@@ -50,16 +50,16 @@ namespace nav2_costmap_2d
 {
 class LayeredCostmap;
 
-class Layer // : public nav2_lifecycle::LifecycleHelperInterface
+class Layer  // TODO(mjeronimo): public nav2_lifecycle::LifecycleHelperInterface
 {
 public:
   Layer();
   virtual ~Layer() {}
 
   void initialize(
-    LayeredCostmap * parent, 
+    LayeredCostmap * parent,
     std::string name,
-    tf2_ros::Buffer * tf, 
+    tf2_ros::Buffer * tf,
     nav2_lifecycle::LifecycleNode::SharedPtr node,
     rclcpp::Node::SharedPtr client_node);
   virtual void deactivate() {} /** @brief Stop publishers. */
@@ -67,6 +67,7 @@ public:
   virtual void reset() {}
 
 #if 0
+  // TODO(mjeronimo):
   nav2_lifecycle::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   nav2_lifecycle::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
@@ -136,7 +137,7 @@ protected:
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.
    *
-   * tf_, name_, and layered_costmap_ will all be set already when this is called. 
+   * tf_, name_, and layered_costmap_ will all be set already when this is called.
    */
   virtual void onInitialize() {}
 

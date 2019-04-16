@@ -19,19 +19,24 @@
 #include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrent>
 
-#include <QtCharts/QChartView>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QScatterSeries>
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QBarSet>
+#include <QtCharts/QChartView>
 #include <QtCharts/QLegend>
-#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
 
 #include "rviz_common/display_context.hpp"
 
-using namespace QtConcurrent;
-using namespace QtCharts;
+using QtCharts::QBarSeries;
+using QtCharts::QBarSet;
+using QtCharts::QChart;
+using QtCharts::QChartView;
+using QtCharts::QLegend;
+using QtCharts::QLineSeries;
+using QtCharts::QScatterSeries;
+using QtCharts::QValueAxis;
 
 namespace nav2_rviz_plugins
 {
@@ -48,7 +53,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   startup_button->setToolTip("TODO");
   shutdown_button->setToolTip("TODO");
 
-  ////
   QChart * chart = new QChart();
   QChartView * chartView = new QChartView(chart);
   chartView->setMinimumSize(400, 300);
@@ -144,8 +148,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   series2->attachAxis(axisY);
   // barseries->attachAxis(axisX);
   // barseries->attachAxis(axisY);
-
-  ////
 
   QHBoxLayout * button_layout = new QHBoxLayout;
   button_layout->addWidget(startup_button);

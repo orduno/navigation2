@@ -14,12 +14,13 @@
 
 #include <memory>
 
-//#include "gtest/gtest.h"
+// #include "gtest/gtest.h"
 #include "nav2_msgs/action/execute_mission.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-static const std::string xml_text = R"(
+static const char xml_text[] =
+  R"(
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
@@ -29,12 +30,13 @@ static const std::string xml_text = R"(
 </root>
 )";
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
   auto node = std::make_shared<rclcpp::Node>("mission_executor_test_node");
-  auto action_client = rclcpp_action::create_client<nav2_msgs::action::ExecuteMission>(node, "ExecuteMission");
+  auto action_client =
+    rclcpp_action::create_client<nav2_msgs::action::ExecuteMission>(node, "ExecuteMission");
 
   action_client->wait_for_action_server();
 

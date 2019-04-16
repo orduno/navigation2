@@ -37,14 +37,13 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  // The complete behavior tree that results from parsing the incoming XML. When the tree goes
-  // out of scope, all the nodes are destroyed
+  // Parse the input XML and create the corresponding Behavior Tree
   BT::Tree tree = BT::buildTreeFromText(factory_, behavior_tree_xml, blackboard);
 
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
-  // Loop until something happens with ROS or the node completes w/ success or failure
+  // Loop until something happens with ROS or the node completes
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
     result = tree.root_node->executeTick();
 
@@ -57,7 +56,7 @@ BehaviorTreeEngine::run(
     loopRate.sleep();
   }
 
-  return (result == BT::NodeStatus::SUCCESS) ?  BtStatus::SUCCEEDED : BtStatus::FAILED;
+  return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
 }
 
 BtStatus
@@ -75,16 +74,6 @@ BehaviorTreeEngine::run(
 
     // Check if we've received a cancel message
     if (cancelRequested()) {
-	  
-	  printf("BehaviorTreeEngine: cancelRequested\n");
-
-      // The BT library halts all of the child actions when the BT is destructed. However,
-      // in this case we're not creating the tree on the fly, but are re-using the tree
-      // that is passed in. So, we need to explicitly halt the child actions. If we didn't
-      // do this, the BT would be halted, but the remote actions would still be running
-
-      // haltAllActions(tree->root_node);
-
       tree->root_node->halt();
       return BtStatus::CANCELED;
     }
@@ -92,7 +81,7 @@ BehaviorTreeEngine::run(
     loopRate.sleep();
   }
 
-  return (result == BT::NodeStatus::SUCCESS) ?  BtStatus::SUCCEEDED : BtStatus::FAILED;
+  return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
 }
 
 BT::Tree

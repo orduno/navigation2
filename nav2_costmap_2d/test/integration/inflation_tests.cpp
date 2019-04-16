@@ -31,12 +31,13 @@
  * @author David Lu!!
  * Test harness for InflationLayer for Costmap2D
  */
+#include <gtest/gtest.h>
+
 #include <map>
 #include <cmath>
 #include <memory>
 #include <vector>
 
-#include <gtest/gtest.h>
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"

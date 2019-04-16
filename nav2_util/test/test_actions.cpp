@@ -125,7 +125,7 @@ public:
     node->on_init();
     rclcpp::spin(node->get_node_base_interface());
     node->on_term();
-	node.reset();
+    node.reset();
   }
 
   std::unique_ptr<std::thread> server_thread_;
@@ -167,7 +167,7 @@ protected:
   void TearDown() override
   {
     node_->on_term();
-	node_.reset();
+    node_.reset();
   }
 
   std::shared_ptr<ActionTestNode> node_;
@@ -181,13 +181,15 @@ TEST_F(ActionTest, test_simple_action)
 
   // Send the goal
   auto future_goal_handle = node_->action_client_->async_send_goal(goal);
-  ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_,
+    future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
 
   auto goal_handle = future_goal_handle.get();
 
   // Wait for the result
   auto future_result = node_->action_client_->async_get_result(goal_handle);
-  ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result), rclcpp::executor::FutureReturnCode::SUCCESS);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
+    rclcpp::executor::FutureReturnCode::SUCCESS);
 
   // The final result
   rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result = future_result.get();
@@ -220,13 +222,15 @@ TEST_F(ActionTest, test_simple_action_with_feedback)
 
   // Send the goal
   auto future_goal_handle = node_->action_client_->async_send_goal(goal, feedback_callback);
-  ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_,
+    future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
 
   auto goal_handle = future_goal_handle.get();
 
   // Wait for the result
   auto future_result = node_->action_client_->async_get_result(goal_handle);
-  ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result), rclcpp::executor::FutureReturnCode::SUCCESS);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_,
+    future_result), rclcpp::executor::FutureReturnCode::SUCCESS);
 
   // The final result
   rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result = future_result.get();

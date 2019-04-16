@@ -210,7 +210,8 @@ bool makeFootprintFromString(
   return true;
 }
 
-std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(nav2_lifecycle::LifecycleNode::SharedPtr node)
+std::vector<geometry_msgs::msg::Point> makeFootprintFromParams(
+  nav2_lifecycle::LifecycleNode::SharedPtr node)
 {
   std::string full_param_name = "footprint";
   std::string full_radius_param_name = "robot_radius";

@@ -15,8 +15,9 @@
 #ifndef NAV2_TASKS__RATE_CONTROLLER_NODE_HPP_
 #define NAV2_TASKS__RATE_CONTROLLER_NODE_HPP_
 
-#include <string>
 #include <chrono>
+#include <string>
+
 #include "behaviortree_cpp/decorator_node.h"
 
 namespace nav2_tasks
@@ -58,13 +59,6 @@ inline BT::NodeStatus RateController::tick()
     first_time = true;
   }
 
-  // Stop ticking (and waiting for the timeout) if we've already reached the goal
-  //if (blackboard()->get<bool>("goal_reached") == true) {
-    //blackboard()->set<bool>("goal_reached", false);
-    //printf("Short circuit the RateController: goal reached!\n");
-	//return BT::NodeStatus::SUCCESS;
-  //}
-
   setStatus(BT::NodeStatus::RUNNING);
 
   // Determine how long its been since we've started this iteration
@@ -86,7 +80,7 @@ inline BT::NodeStatus RateController::tick()
 
       case BT::NodeStatus::SUCCESS:
         child_node_->setStatus(BT::NodeStatus::IDLE);
-        start_ = std::chrono::high_resolution_clock::now(); // Reset the timer
+        start_ = std::chrono::high_resolution_clock::now();  // Reset the timer
         return BT::NodeStatus::SUCCESS;
 
       case BT::NodeStatus::FAILURE:

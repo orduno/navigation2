@@ -15,11 +15,10 @@
 #ifndef NAV2_TASKS__BT_ACTION_NODE_HPP_
 #define NAV2_TASKS__BT_ACTION_NODE_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "behaviortree_cpp/action_node.h"
-#include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 namespace nav2_tasks
@@ -46,8 +45,9 @@ public:
   }
 
   // This is a callback from the BT library invoked after the node is created and after the
-  // blackboard has been set for the node. It is the first opportunity for the node to access
-  // the blackboard. The derived class does not override this method, but overrides on_init
+  // blackboard has been set for the node by the library. It is the first opportunity for
+  // the node to access the blackboard. Derived classes do not override this method,
+  // but override on_init instead.
   void onInit() final
   {
     // Initialize the input and output messages
@@ -65,31 +65,41 @@ public:
     // Make sure the server is actually there before continuing
     action_client_->wait_for_action_server();
 
-	on_init();
+    // Give the derive class a chance to do any initialization
+    on_init();
   }
 
-  // Derived classes can override this method to perform some local initialization such
-  // as getting values from the blackboard.
+  // Derived classes can override any of the following methods to hook into the
+  // processing for the action: on_init, on_tick, on_loop_timeout, and on_success
+
+  // Perform any local initialization such as getting values from the blackboard
   virtual void on_init()
   {
   }
 
+  // Could do dynamic checks, such as getting updates to values on the blackboard
   virtual void on_tick()
   {
   }
 
+  // There can be many loop iterations per tick. Any opportunity to do something after
+  // a timeout waiting for a result that hasn't been received yet
   virtual void on_loop_timeout()
   {
   }
 
+  // Called upon successful completion of the action. A derived class can override this
+  // method to put a value on the blackboard, for example
   virtual void on_success()
   {
   }
 
+  // The main override required by a BT action
   BT::NodeStatus tick() override
   {
     on_tick();
 
+new_goal_received:
     auto future_goal_handle = action_client_->async_send_goal(goal_);
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
       rclcpp::executor::FutureReturnCode::SUCCESS)
@@ -99,36 +109,39 @@ public:
 
     goal_handle_ = future_goal_handle.get();
     if (!goal_handle_) {
-      throw std::runtime_error("Goal was rejected by the server");
+      throw std::runtime_error("Goal was rejected by the action server");
     }
 
     auto future_result = goal_handle_->async_result();
     rclcpp::executor::FutureReturnCode rc;
     do {
       rc = rclcpp::spin_until_future_complete(node_, future_result, node_loop_timeout_);
+
       if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
         on_loop_timeout();
-        //setStatusRunningAndYield();
-      } 
-    } while (rc != rclcpp::executor::FutureReturnCode::SUCCESS);
 
-	printf("BtActionNode(%s): after spin loop\n", action_name_.c_str());
+        if (goal_updated_) {
+          goal_updated_ = false;
+          goto new_goal_received;
+        }
+
+        // Yield to any other CoroActionNodes (couroutines)
+        setStatusRunningAndYield();
+      }
+    } while (rc != rclcpp::executor::FutureReturnCode::SUCCESS);
 
     result_ = future_result.get();
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
-	    printf("BtActionNode(%s): SUCEEDED\n", action_name_.c_str());
         on_success();
         setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::SUCCESS;
 
       case rclcpp_action::ResultCode::ABORTED:
-	    printf("BtActionNode(%s): ABORTED\n", action_name_.c_str());
         setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::FAILURE;
 
       case rclcpp_action::ResultCode::CANCELED:
-	    printf("BtActionNode(%s): CANCELED\n", action_name_.c_str());
         setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::SUCCESS;
 
@@ -137,10 +150,10 @@ public:
     }
   }
 
+  // The other (optional) override required by a BT action. In this case, we
+  // make sure to cancel the ROS2 action if it is still running.
   void halt() override
   {
-    printf("BtActionNode(%s): halt\n", action_name_.c_str());
-
     // Shut the node down if it is currently running
     if (status() == BT::NodeStatus::RUNNING) {
       action_client_->async_cancel_goal(goal_handle_);
@@ -156,7 +169,10 @@ protected:
   const std::string action_name_;
   typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
 
+  // All ROS2 actions have a goal and a result
   typename ActionT::Goal goal_;
+  bool goal_updated_{false};
+  typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
   typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult result_;
 
   // The node that will be used for any ROS operations
@@ -165,9 +181,6 @@ protected:
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
   std::chrono::milliseconds node_loop_timeout_;
-
-  // The action server supports a single goal at a time
-  typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
 };
 
 }  // namespace nav2_tasks

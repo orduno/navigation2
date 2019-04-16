@@ -20,7 +20,8 @@
 
 using namespace std::chrono_literals;
 
-struct xytheta {
+struct xytheta
+{
   double x;
   double y;
   double theta;
@@ -55,7 +56,7 @@ int main(int argc, char ** argv)
 
 #ifdef ITERATIVE_NAVIGATION
   // Navigate through all of the poses (skip the first, which is the initial pose)
-  for (std::vector<xytheta>::size_type i=1; i<target_poses.size(); i++) {
+  for (std::vector<xytheta>::size_type i = 1; i < target_poses.size(); i++) {
     auto pose = target_poses[i];
     if (!client.navigate_to_pose(pose.x, pose.y, pose.theta)) {
       printf("Navigation FAILED!\n");
@@ -68,16 +69,15 @@ int main(int argc, char ** argv)
   // Get set up to generate random indices
   std::random_device r;
   std::default_random_engine e1(r());
-  std::uniform_int_distribution<int> uniform_dist(0, target_poses.size()-1);
+  std::uniform_int_distribution<int> uniform_dist(0, target_poses.size() - 1);
 
   // Navigate to randomly-selected poses from the target_poses collection
-  for (int i=0, cur_index=0; i<10; i++) {
-
+  for (int i = 0, cur_index = 0; i < 10; i++) {
     // Get a random index that is not the current one (so we can navigate
     // to a pose different than our current location)
-	int next_index;
-	do {
-	  next_index = uniform_dist(r);
+    int next_index;
+    do {
+      next_index = uniform_dist(r);
     } while (next_index == cur_index);
 
     // Grab the pose for that index and start the navigation

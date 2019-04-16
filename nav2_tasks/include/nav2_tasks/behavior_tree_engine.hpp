@@ -23,16 +23,10 @@
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
 
-
 namespace nav2_tasks
 {
 
-enum class BtStatus
-{
-  SUCCEEDED,
-  FAILED,
-  CANCELED,
-};
+enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 
 class BehaviorTreeEngine
 {
@@ -73,7 +67,7 @@ public:
   }
 
 protected:
-  // A factory that will be used to dynamically construct the behavior tree
+  // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 };
 

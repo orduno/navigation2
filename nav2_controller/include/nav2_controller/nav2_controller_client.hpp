@@ -53,7 +53,9 @@ protected:
   rclcpp::Client<Srv>::SharedPtr resume_client_;
   rclcpp::Client<Srv>::SharedPtr shutdown_client_;
 
-  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_publisher_;
+  using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;
+
+  rclcpp::Publisher<PoseWithCovarianceStamped>::SharedPtr initial_pose_publisher_;
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigate_action_client_;
 };
 

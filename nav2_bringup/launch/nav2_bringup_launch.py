@@ -39,7 +39,8 @@ def generate_launch_description():
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
         'world',
         default_value=os.path.join(
-            get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3_worlds/burger.model'),
+            get_package_share_directory('turtlebot3_gazebo'),
+            'worlds/turtlebot3_worlds/burger.model'),
         description='Full path to world file to load')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
@@ -68,12 +69,12 @@ def generate_launch_description():
             ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
-    start_rviz_cmd  = launch.actions.ExecuteProcess(
-        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),],
+    start_rviz_cmd = launch.actions.ExecuteProcess(
+        cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'), ],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = launch.actions.RegisterEventHandler(
-        event_handler = launch.event_handlers.OnProcessExit(
+        event_handler=launch.event_handlers.OnProcessExit(
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 

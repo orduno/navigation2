@@ -125,18 +125,19 @@ DwbController::on_shutdown(const rclcpp_lifecycle::State &)
 void
 DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 {
-  RCLCPP_INFO(get_logger(), "Starting controller");
+  RCLCPP_INFO(get_logger(), "Received a new goal");
   auto result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
 
-//preempted:
   std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
+
+preempted:
   auto goal = current_goal_handle->get_goal();
 
   try {
     auto path = nav_2d_utils::pathToPath2D(goal->path);
 
     planner_->setPlan(path);
-    RCLCPP_INFO(get_logger(), "Path provided to the planner");
+    RCLCPP_INFO(get_logger(), "Path provided to the local planner");
 
     rclcpp::Rate loop_rate(10);
     while (rclcpp::ok()) {
@@ -146,7 +147,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
         publishZeroVelocity();
       } else {
         if (isGoalReached(pose2d)) {
-printf("DWB GOAL REACHED!\n");
+          RCLCPP_INFO(get_logger(), "Goal reached");
           break;
         }
         auto velocity = odom_sub_->getTwist();
@@ -163,10 +164,9 @@ printf("DWB GOAL REACHED!\n");
 
         // Check if there is an update to the path to follow
         if (action_server_->update_requested()) {
-		  printf("DWB RECEIVED A PATH UPDATE!\n");
+          RCLCPP_INFO(get_logger(), "Received a new goal, pre-empting the old one");
           current_goal_handle = action_server_->get_updated_goal_handle();
-		  (void) current_goal_handle;
-          //goto preempted;
+          goto preempted;
         }
       }
       loop_rate.sleep();
@@ -178,7 +178,7 @@ printf("DWB GOAL REACHED!\n");
     return;
   }
 
-printf("DWB SUCCEEDED!\n");
+  RCLCPP_INFO(get_logger(), "DWB succeeded, setting result");
   current_goal_handle->set_succeeded(result);
   publishZeroVelocity();
 }
