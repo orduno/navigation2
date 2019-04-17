@@ -58,6 +58,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
+  loop_time_pub_ = create_publisher<nav2_msgs::msg::LoopTime>("/loop_time");
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
@@ -74,6 +75,7 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
   vel_pub_->on_activate();
+  loop_time_pub_->on_activate();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -86,6 +88,7 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
   vel_pub_->on_deactivate();
+  loop_time_pub_->on_deactivate();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -103,6 +106,7 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   planner_.reset();
   odom_sub_.reset();
   vel_pub_.reset();
+  loop_time_pub_.reset();
   action_server_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -154,6 +158,29 @@ preempted:
         auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
         RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
+
+#if 0
+nav2_msgs::msg::LoopTime loop_time_msg;
+
+loop_time_msgs.header.stamp = 
+loop_time_msgs.header.frame_id = 
+loop_time_msgs.topic =
+loop_time_msgs.pub = true;
+loop_time_msgs.rate =
+loop_time_msgs.jitter =
+loop_time_msgs.iteration =
+loop_time_msgs.looptime =
+
+std_msgs/Header header              # timestamp in header is the time when msg was dispatched
+string topic                        # Name of the topic
+bool pub                            # True if time captured at publisher end, false if subscription
+int32 rate                          # Desired rate
+int32 jitter                        # Acceptable jitter in percentage
+int32 iteration                     # Iteration count
+uint64 looptime                     # Looptime value in nanosecs
+
+loop_time_pub_.publish(loop_time_msg);
+#endif
 
         if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");
