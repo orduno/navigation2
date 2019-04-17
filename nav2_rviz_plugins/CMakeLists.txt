@@ -20,7 +20,6 @@ find_package(nav2_controller REQUIRED)
 find_package(nav2_lifecycle REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav2_tasks REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent Charts)
@@ -57,7 +56,6 @@ set(dependencies
   nav2_lifecycle
   nav2_msgs
   nav2_msgs
-  nav2_tasks
   nav_msgs
   pluginglib
   Qt5

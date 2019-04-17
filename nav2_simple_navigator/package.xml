@@ -15,7 +15,6 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>diagnostic_msgs</build_depend>
-  <build_depend>nav2_tasks</build_depend>
   <build_depend>nav2_msgs</build_depend>
   <build_depend>nav2_lifecycle</build_depend>
   <build_depend>nav2_util</build_depend>
@@ -26,7 +25,6 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>diagnostic_msgs</exec_depend>
-  <exec_depend>nav2_tasks</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_lifecycle</exec_depend>
   <exec_depend>nav2_util</exec_depend>

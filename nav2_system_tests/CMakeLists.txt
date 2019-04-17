@@ -5,7 +5,6 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(nav2_tasks REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -22,7 +21,6 @@ nav2_package()
 
 set(dependencies
   rclcpp
-  nav2_tasks
   nav2_util
   nav2_msgs
   nav_msgs
@@ -44,7 +42,7 @@ if(BUILD_TESTING)
 
 #  add_subdirectory(src/planning)
 #  add_subdirectory(src/localization)
-#  add_subdirectory(src/system)
+  add_subdirectory(src/system)
   add_subdirectory(src/updown)
 
 endif()
