@@ -39,12 +39,6 @@ using nav2_util::LifecycleServiceClient;
 namespace nav2_controller
 {
 
-static void
-message(const char * msg)
-{
-  fprintf(stderr, ANSI_COLOR_BLUE "\33[1m%s\33[0m" ANSI_COLOR_RESET "\n", msg);
-}
-
 Nav2Controller::Nav2Controller()
 : Node("nav2_controller")
 {
@@ -62,7 +56,7 @@ Nav2Controller::Nav2Controller()
   resume_srv_ = create_service<std_srvs::srv::Empty>("nav2_controller/resume",
       std::bind(&Nav2Controller::resumeCallback, this, _1, _2, _3));
 
-  client_ = std::make_shared<rclcpp::Node>("nav2_controller_lifecycle_client_node");
+  service_client_node_ = std::make_shared<rclcpp::Node>("nav2_controller_service_client_node");
 }
 
 Nav2Controller::~Nav2Controller()
@@ -76,7 +70,6 @@ Nav2Controller::startupCallback(
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
 {
-  RCLCPP_INFO(get_logger(), "startupCallback");
   startup();
 }
 
@@ -86,7 +79,6 @@ Nav2Controller::shutdownCallback(
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
 {
-  RCLCPP_INFO(get_logger(), "shutdownCallback");
   shutdown();
 }
 
@@ -96,7 +88,6 @@ Nav2Controller::pauseCallback(
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
 {
-  RCLCPP_INFO(get_logger(), "pauseCallback");
   pause();
 }
 
@@ -106,7 +97,6 @@ Nav2Controller::resumeCallback(
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
 {
-  RCLCPP_INFO(get_logger(), "resumeCallback");
   resume();
 }
 
@@ -115,12 +105,9 @@ Nav2Controller::createLifecycleServiceClients()
 {
   message("Creating and initializing lifecycle service clients");
 
-  node_map["amcl"] = std::make_shared<LifecycleServiceClient>("amcl", client_);
-  node_map["map_server"] = std::make_shared<LifecycleServiceClient>("map_server", client_);
-  node_map["dwb_controller"] = std::make_shared<LifecycleServiceClient>("dwb_controller", client_);
-  node_map["navfn_planner"] = std::make_shared<LifecycleServiceClient>("navfn_planner", client_);
-  node_map["bt_navigator"] = std::make_shared<LifecycleServiceClient>("bt_navigator", client_);
-  node_map["world_model"] = std::make_shared<LifecycleServiceClient>("world_model", client_);
+  for (auto &node_name : node_names) {  
+    node_map[node_name] = std::make_shared<LifecycleServiceClient>(node_name, service_client_node_);
+  }
 }
 
 void
@@ -145,51 +132,11 @@ Nav2Controller::changeStateForAllNodes(std::uint8_t transition)
 }
 
 void
-Nav2Controller::activateMapServer()
+Nav2Controller::bringupNode(const std::string & node_name)
 {
-  message("Configuring and activating the MapServer");
-  node_map["map_server"]->change_state(Transition::TRANSITION_CONFIGURE);
-  node_map["map_server"]->change_state(Transition::TRANSITION_ACTIVATE);
-}
-
-void
-Nav2Controller::activateLocalizer()
-{
-  message("Configuring and activating AMCL");
-  node_map["amcl"]->change_state(Transition::TRANSITION_CONFIGURE);
-  node_map["amcl"]->change_state(Transition::TRANSITION_ACTIVATE);
-}
-
-void
-Nav2Controller::activateWorldModel()
-{
-  message("Configuring and activating the world model");
-
-  node_map["world_model"]->change_state(Transition::TRANSITION_CONFIGURE);
-  node_map["world_model"]->change_state(Transition::TRANSITION_ACTIVATE);
-}
-
-void
-Nav2Controller::activateLocalPlanner()
-{
-  message("Configuring and activating DWB");
-
-  node_map["dwb_controller"]->change_state(Transition::TRANSITION_CONFIGURE);
-  node_map["dwb_controller"]->change_state(Transition::TRANSITION_ACTIVATE);
-}
-
-void
-Nav2Controller::activateRemainingNodes()
-{
-  message("Configuring and activating the global planner");
-
-  node_map["navfn_planner"]->change_state(Transition::TRANSITION_CONFIGURE);
-  node_map["navfn_planner"]->change_state(Transition::TRANSITION_ACTIVATE);
-
-  message("Configuring and activating the navigator");
-
-  node_map["bt_navigator"]->change_state(Transition::TRANSITION_CONFIGURE);
-  node_map["bt_navigator"]->change_state(Transition::TRANSITION_ACTIVATE);
+  message(std::string("Configuring and activating ") + node_name);
+  node_map[node_name]->change_state(Transition::TRANSITION_CONFIGURE);
+  node_map[node_name]->change_state(Transition::TRANSITION_ACTIVATE);
 }
 
 void
@@ -206,11 +153,11 @@ Nav2Controller::startup()
 {
   message("Starting the system bringup...");
   createLifecycleServiceClients();
-  activateMapServer();
-  activateLocalizer();
-  activateWorldModel();
-  activateLocalPlanner();
-  activateRemainingNodes();
+
+  for (auto &node_name : node_names) {  
+    bringupNode(node_name);
+  }
+
   message("The system is active");
 }
 
@@ -221,7 +168,6 @@ Nav2Controller::shutdown()
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("The system has been sucessfully shut down");
-  std::this_thread::sleep_for(2s);
 }
 
 void
@@ -247,12 +193,16 @@ void
 Nav2Controller::resume()
 {
   message("Resuming the system...");
-  activateMapServer();
-  activateLocalizer();
-  activateWorldModel();
-  activateLocalPlanner();
-  activateRemainingNodes();
+  for (auto &node_name : node_names) {  
+    bringupNode(node_name);
+  }
   message("The system has been resumed");
+}
+
+void
+Nav2Controller::message(const std::string & msg)
+{
+  std::cout << ANSI_COLOR_BLUE << "\33[1m" << msg << "\33[0m\n" << ANSI_COLOR_RESET;
 }
 
 }  // namespace nav2_controller

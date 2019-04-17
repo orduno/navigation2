@@ -35,16 +35,11 @@ public:
   Nav2Controller();
   ~Nav2Controller();
 
-  void startup();
-  void shutdown();
-  void pause();
-  void resume();
-
-  void setAutostart(std::chrono::seconds waitfor = std::chrono::seconds(10));
-
 protected:
-  rclcpp::Node::SharedPtr client_;
+  // The ROS node to use when calling lifecycle services
+  rclcpp::Node::SharedPtr service_client_node_;
 
+  // The services provided by this node
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr startup_srv_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr shutdown_srv_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr pause_srv_;
@@ -70,13 +65,14 @@ protected:
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
+  void startup();
+  void shutdown();
+  void pause();
+  void resume();
+
   // Support functions for bring-up
   void createLifecycleServiceClients();
-  void activateMapServer();
-  void activateLocalizer();
-  void activateWorldModel();
-  void activateLocalPlanner();
-  void activateRemainingNodes();
+  void bringupNode(const std::string & node_name);
 
   // Support functions for shutdown
   void shutdownAllNodes();
@@ -85,8 +81,13 @@ protected:
   // For each node in the map, transition to the new target state
   void changeStateForAllNodes(std::uint8_t transition);
 
+  // A convenience function to highlight the output on the console
+  void message(const std::string & msg);
+
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map;
+
+  std::vector<std::string> node_names { "map_server", "amcl", "world_model", "dwb_controller", "navfn_planner", "bt_navigator" };
 };
 
 }  // namespace nav2_controller
