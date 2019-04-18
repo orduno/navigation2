@@ -15,14 +15,12 @@
 #ifndef NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
 #define NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
 
-#include <condition_variable>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "nav2_util/lifecycle_service_client.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 
@@ -65,6 +63,7 @@ protected:
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
+  // Support functions for the service calls
   void startup();
   void shutdown();
   void pause();
@@ -85,9 +84,10 @@ protected:
   void message(const std::string & msg);
 
   // A map of all nodes to be controlled
-  std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map;
+  std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;
 
-  std::vector<std::string> node_names { "map_server", "amcl", "world_model", "dwb_controller", "navfn_planner", "bt_navigator" };
+  // The names of the nodes to be managed, in the order of desired bring-up
+  std::vector<std::string> node_names_;
 };
 
 }  // namespace nav2_controller

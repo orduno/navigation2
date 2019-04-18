@@ -18,7 +18,6 @@
 #include <chrono>
 #include <memory>
 #include <string>
-#include <thread>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -40,7 +39,9 @@ namespace nav2_controller
 {
 
 Nav2Controller::Nav2Controller()
-: Node("nav2_controller")
+: Node("nav2_controller"),
+  node_names_{"map_server", "amcl", "world_model", "dwb_controller", "navfn_planner",
+    "bt_navigator"}
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -104,9 +105,9 @@ void
 Nav2Controller::createLifecycleServiceClients()
 {
   message("Creating and initializing lifecycle service clients");
-
-  for (auto &node_name : node_names) {  
-    node_map[node_name] = std::make_shared<LifecycleServiceClient>(node_name, service_client_node_);
+  for (auto & node_name : node_names_) {
+    node_map_[node_name] =
+      std::make_shared<LifecycleServiceClient>(node_name, service_client_node_);
   }
 }
 
@@ -114,7 +115,7 @@ void
 Nav2Controller::destroyLifecycleServiceClients()
 {
   message("Destroying lifecycle service clients");
-  for (auto & kv : node_map) {
+  for (auto & kv : node_map_) {
     kv.second.reset();
   }
 }
@@ -122,10 +123,10 @@ Nav2Controller::destroyLifecycleServiceClients()
 void
 Nav2Controller::changeStateForAllNodes(std::uint8_t transition)
 {
-  for (const auto & kv : node_map) {
+  for (const auto & kv : node_map_) {
     if (!kv.second->change_state(transition)) {
-      fprintf(stderr,
-        ANSI_COLOR_RED "Failed to change state for %s\n" ANSI_COLOR_RESET, kv.first.c_str());
+      std::cerr << ANSI_COLOR_RED "Failed to change state for " << kv.first.c_str() <<
+        ANSI_COLOR_RESET;
       return;
     }
   }
@@ -135,8 +136,8 @@ void
 Nav2Controller::bringupNode(const std::string & node_name)
 {
   message(std::string("Configuring and activating ") + node_name);
-  node_map[node_name]->change_state(Transition::TRANSITION_CONFIGURE);
-  node_map[node_name]->change_state(Transition::TRANSITION_ACTIVATE);
+  node_map_[node_name]->change_state(Transition::TRANSITION_CONFIGURE);
+  node_map_[node_name]->change_state(Transition::TRANSITION_ACTIVATE);
 }
 
 void
@@ -153,11 +154,9 @@ Nav2Controller::startup()
 {
   message("Starting the system bringup...");
   createLifecycleServiceClients();
-
-  for (auto &node_name : node_names) {  
+  for (auto & node_name : node_names_) {
     bringupNode(node_name);
   }
-
   message("The system is active");
 }
 
@@ -174,15 +173,12 @@ void
 Nav2Controller::pause()
 {
   message("Pausing the system...");
-  for (const auto & kv : node_map) {
-    if (!kv.second->change_state(Transition::TRANSITION_DEACTIVATE)) {
-      fprintf(stderr,
-        ANSI_COLOR_RED "Failed to change state for %s\n" ANSI_COLOR_RESET, kv.first.c_str());
-      return;
-    }
-    if (!kv.second->change_state(Transition::TRANSITION_CLEANUP)) {
-      fprintf(stderr,
-        ANSI_COLOR_RED "Failed to change state for %s\n" ANSI_COLOR_RESET, kv.first.c_str());
+  for (const auto & kv : node_map_) {
+    if (!kv.second->change_state(Transition::TRANSITION_DEACTIVATE) ||
+      !kv.second->change_state(Transition::TRANSITION_CLEANUP))
+    {
+      std::cerr << ANSI_COLOR_RED "Failed to change state for " << kv.first.c_str() <<
+        ANSI_COLOR_RESET;
       return;
     }
   }
@@ -193,7 +189,7 @@ void
 Nav2Controller::resume()
 {
   message("Resuming the system...");
-  for (auto &node_name : node_names) {  
+  for (auto & node_name : node_names_) {
     bringupNode(node_name);
   }
   message("The system has been resumed");
