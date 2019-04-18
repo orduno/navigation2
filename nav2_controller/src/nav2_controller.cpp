@@ -21,13 +21,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_RED      "\x1b[31m"
+#define ANSI_COLOR_YELLOW   "\x1b[33m"
+#define ANSI_COLOR_BLUE     "\x1b[34m"
+#define ANSI_COLOR_RESET    "\x1b[0m"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -198,7 +195,7 @@ Nav2Controller::resume()
 void
 Nav2Controller::message(const std::string & msg)
 {
-  std::cerr << ANSI_COLOR_BLUE << "\33[1m" << msg << "\33[0m" << ANSI_COLOR_RESET;
+  RCLCPP_INFO(get_logger(), ANSI_COLOR_BLUE "\33[1m%s\33[0m" ANSI_COLOR_RESET, msg.c_str());
 }
 
 }  // namespace nav2_controller

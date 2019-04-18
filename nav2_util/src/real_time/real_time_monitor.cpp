@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/resource.h>
-
 #include "nav2_util/real_time/real_time_monitor.hpp"
+
+#include <sys/resource.h>
 
 void RealTimeMonitor::print_duration(FILE * log_file_, rclcpp::Duration dur)
 {
   uint32_t nsecs = (dur.nanoseconds()) % 1000000000;
   uint32_t secs = ((dur.nanoseconds()) - nsecs) / 1000000000;
   fprintf(log_file_, "Looptime: %d secs %d nsecs\n", secs, nsecs);
-
 }
 
 void RealTimeMonitor::print_metrics(FILE * log_file_)
@@ -52,7 +51,6 @@ RealTimeMonitor::~RealTimeMonitor()
 
 int RealTimeMonitor::init(std::string id)
 {
-  //printf("init\n");
   RealTimeData *rtd = new RealTimeData();
 
   //TODO:: Check if file exists
@@ -67,16 +65,13 @@ int RealTimeMonitor::init(std::string id)
   rtd->init_ = true;
 
   rtd_map_[id] = rtd;
-
   return 0;
 }
 
 int RealTimeMonitor::init(std::string id, uint32_t rate, uint32_t jitter_margin,
                            std::function<void(int iter_num, rclcpp::Duration looptime)> cb)
 {
-  //printf("init2\n");
   int ret;
-
   if ((ret = init(id)))
     return ret;
 
