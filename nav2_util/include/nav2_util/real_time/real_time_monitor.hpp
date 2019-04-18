@@ -29,6 +29,7 @@ public:
   uint32_t jitter_margin_;
   std::function<void(int, rclcpp::Duration)> overrun_cb_;
   rclcpp::Time prev_looptime_;
+  rclcpp::Time start_;
   rclcpp::Duration acceptable_looptime_;
   
   FILE * log_file_;
@@ -39,12 +40,17 @@ class RealTimeMonitor
 public:
   RealTimeMonitor();
   ~RealTimeMonitor();
+
   int init(std::string id);
   int init(std::string id, uint32_t rate, uint32_t jitter_margin,
                            std::function<void(int iter_num, rclcpp::Duration looptime)> cb);
   int deinit(std::string id);
+
+  int start(std::string id, rclcpp::Time now);
+
   int calc_looptime(std::string id, rclcpp::Time now);
   int calc_latency(std::string id, builtin_interfaces::msg::Time & time, rclcpp::Time now);
+
 private:
   void print_duration(FILE * log_file_, rclcpp::Duration dur);
   void print_metrics(FILE * log_file_);

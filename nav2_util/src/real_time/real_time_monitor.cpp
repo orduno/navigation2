@@ -16,25 +16,7 @@
 
 #include <sys/resource.h>
 
-void RealTimeMonitor::print_duration(FILE * log_file_, rclcpp::Duration dur)
-{
-  uint32_t nsecs = (dur.nanoseconds()) % 1000000000;
-  uint32_t secs = ((dur.nanoseconds()) - nsecs) / 1000000000;
-  fprintf(log_file_, "Looptime: %d secs %d nsecs\n", secs, nsecs);
-}
-
-void RealTimeMonitor::print_metrics(FILE * log_file_)
-{
-  struct rusage r_usage;
-
-  if (getrusage(RUSAGE_SELF, &r_usage) != 0) {
-    return;
-  }
-
-  fprintf(log_file_, "Minor pagefaults: %lu\n", r_usage.ru_minflt);
-  fprintf(log_file_, "Major pagefaults: %lu\n", r_usage.ru_majflt);
-  fprintf(log_file_, "Memory usage: %lu\n", r_usage.ru_maxrss);
-}
+#include "rclcpp/time.hpp"
 
 RealTimeMonitor::RealTimeMonitor()
 {
@@ -42,14 +24,15 @@ RealTimeMonitor::RealTimeMonitor()
 
 RealTimeMonitor::~RealTimeMonitor()
 {
-  for (std::map<std::string, RealTimeData *>::iterator it=rtd_map_.begin(); it!=rtd_map_.end(); ++it) {
+  for (auto it=rtd_map_.begin(); it!=rtd_map_.end(); ++it) {
     if (it->second->log_file_) {
       fclose(it->second->log_file_);
     }
   }
 }
 
-int RealTimeMonitor::init(std::string id)
+int
+RealTimeMonitor::init(std::string id)
 {
   RealTimeData *rtd = new RealTimeData();
 
@@ -68,15 +51,16 @@ int RealTimeMonitor::init(std::string id)
   return 0;
 }
 
-int RealTimeMonitor::init(std::string id, uint32_t rate, uint32_t jitter_margin,
+int
+RealTimeMonitor::init(std::string id, uint32_t rate, uint32_t jitter_margin,
                            std::function<void(int iter_num, rclcpp::Duration looptime)> cb)
 {
   int ret;
   if ((ret = init(id)))
     return ret;
 
-  RealTimeData *rtd;
-  std::map<std::string, RealTimeData *>::iterator it = rtd_map_.find(id);
+  RealTimeData * rtd;
+  auto it = rtd_map_.find(id);
   if (it != rtd_map_.end()) {
       rtd = it->second;
   } else {
@@ -84,7 +68,9 @@ int RealTimeMonitor::init(std::string id, uint32_t rate, uint32_t jitter_margin,
       return -1;
   }
 
-  //iter_cnt_ = 0;
+  //MJ:
+  rtd->iter_cnt_ = 1;
+
   rtd->rate_ = rate;
   rtd->jitter_margin_ = jitter_margin;
   rtd->overrun_cb_ = cb;
@@ -97,29 +83,42 @@ int RealTimeMonitor::init(std::string id, uint32_t rate, uint32_t jitter_margin,
   return 0;
 }
 
-int RealTimeMonitor::deinit(std::string id)
+int
+RealTimeMonitor::deinit(std::string id)
 {
   (void)(id);
   return 0;
 }
 
-int RealTimeMonitor::calc_looptime(std::string id, rclcpp::Time now)
+int 
+RealTimeMonitor::start(std::string id, rclcpp::Time now)
 {
-  //printf("calc_looptime\n");
-
-  RealTimeData * rtd;
-  std::map<std::string, RealTimeData *>::iterator it = rtd_map_.find(id);
-
-  if (it != rtd_map_.end()) {
-      rtd = it->second;
-  } else {
+  auto it = rtd_map_.find(id);
+  if (it == rtd_map_.end()) {
       printf("Error: No such topic monitored %s", id.c_str());
       return -1;
   }
-  
+
+  RealTimeData * rtd = it->second;
+  rtd->start_ = now;
+
+  return 0;
+}
+
+int
+RealTimeMonitor::calc_looptime(std::string id, rclcpp::Time now)
+{
+  auto it = rtd_map_.find(id);
+  if (it == rtd_map_.end()) {
+      printf("Error: No such topic monitored %s", id.c_str());
+      return -1;
+  }
+
+  RealTimeData * rtd = it->second;
   rclcpp::Duration looptime(0,0);
 
 /*
+  TODO: an assert?
   if (now < prev_looptime_) {
     printf("Invalid argument");
     return -1;
@@ -128,7 +127,21 @@ int RealTimeMonitor::calc_looptime(std::string id, rclcpp::Time now)
 
   //if (iter_cnt_ != 0) {
   if (!rtd->init_) {
-    looptime = now - rtd->prev_looptime_;
+#if 1
+    // MJ:
+	auto target_looptime_ns = 1000000000/rtd->rate_;
+	auto target_duration_for_previous = rclcpp::Duration(((rtd->iter_cnt_-1) * target_looptime_ns));
+
+	printf("target_duration_for_previous: %ld\n", target_duration_for_previous.nanoseconds());
+	printf("rtd->start_: %ld\n", rtd->start_.nanoseconds());
+	printf("now: %ld\n", now.nanoseconds());
+
+    looptime = now - (rtd->start_ + target_duration_for_previous);
+
+	printf("looptime: %ld\n", looptime.nanoseconds());
+#else
+	looptime = now - rtd->prev_looptime_;
+#endif
   } else {
     rtd->init_ = false;
   }
@@ -145,6 +158,42 @@ int RealTimeMonitor::calc_looptime(std::string id, rclcpp::Time now)
 
   //printf("looptime: %ld\n", looptime.nanoseconds());
   //printf("acceptable_looptime: %ld\n", rtd->acceptable_looptime_.nanoseconds());
+
+  rtd->prev_looptime_ = now;
+  rtd->iter_cnt_++;
+
+  return 0;
+}
+
+int
+RealTimeMonitor::calc_latency(std::string /*id*/, builtin_interfaces::msg::Time & time, rclcpp::Time now)
+{
+  rclcpp::Duration latency(0,0);
+  rclcpp::Time msg_time(time.sec,time.nanosec);
+  latency = now - msg_time;
+  return latency.nanoseconds();
+}
+
+void
+RealTimeMonitor::print_duration(FILE * log_file_, rclcpp::Duration dur)
+{
+  uint32_t nsecs = (dur.nanoseconds()) % 1000000000;
+  uint32_t secs = ((dur.nanoseconds()) - nsecs) / 1000000000;
+  fprintf(log_file_, "Looptime: %d secs %d nsecs\n", secs, nsecs);
+}
+
+void
+RealTimeMonitor::print_metrics(FILE * log_file_)
+{
+  struct rusage r_usage;
+  if (getrusage(RUSAGE_SELF, &r_usage) != 0) {
+    return;
+  }
+
+  fprintf(log_file_, "Minor pagefaults: %lu\n", r_usage.ru_minflt);
+  fprintf(log_file_, "Major pagefaults: %lu\n", r_usage.ru_majflt);
+  fprintf(log_file_, "Memory usage: %lu\n", r_usage.ru_maxrss);
+}
 
 #if 0
 nav2_msgs::msg::LoopTime loop_time_msg;
@@ -169,19 +218,4 @@ uint64 looptime                     # Looptime value in nanosecs
 
 loop_time_pub_.publish(loop_time_msg);
 #endif
-
-  rtd->prev_looptime_ = now;
-  rtd->iter_cnt_++;
-
-  return 0;
-}
-
-int RealTimeMonitor::calc_latency(std::string /*id*/, builtin_interfaces::msg::Time & time, rclcpp::Time now)
-{
-  rclcpp::Duration latency(0,0);
-  rclcpp::Time msg_time(time.sec,time.nanosec);
-
-  latency = now - msg_time;
-  return latency.nanoseconds();
-}
 

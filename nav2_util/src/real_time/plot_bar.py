@@ -7,7 +7,6 @@ def create_parser():
     parser = argparse.ArgumentParser(description='Realtime Logparser Configuration')
     parser.add_argument('-f', '--filename', type=str, dest='filename', default='logfile.txt', help='Log file name')
     parser.add_argument('-d', '--desired', type=int, dest='desired', default=100000000, help='Desired Looptime')
-    parser.add_argument('-a', '--acceptable', type=int, dest='acceptable', default=110000000, help='Acceptable Looptime')
     parser.add_argument('-j', '--jitter', type=int, dest='jitter', default=10, help='Acceptable Jitter')
 
     return parser
@@ -30,19 +29,23 @@ def read(logfile):
     return X,Y
 
 def plot_bar(args, X, Y):
+    fig_size = plt.rcParams["figure.figsize"]
+    fig_size[0] = 9
+    fig_size[1] = 6
+    plt.rcParams["figure.figsize"] = fig_size
+
     ax = plt.subplot()
     ax.margins(x=0)
-
-    #Y = [y / 100 for y in Y]
 
     # Don't allow the axis to be on top of your data
     ax.set_axisbelow(True)
 
-    # Turn on the minor TICKS, which are required for the minor GRID
+    # Turn on the minor ticks, which are required for the minor grid
     #ax.minorticks_on()
 
     # Customize the major grid
     #ax.grid(which='major', linestyle='-', linewidth='0.5', color='black')
+
     # Customize the minor grid
     ax.set_xticks(X)
     ax.set_xticklabels(X)
@@ -54,12 +57,8 @@ def plot_bar(args, X, Y):
 
     # To specify the number of ticks on both or any single axes
     ax.locator_params(axis='y', nbins=20)
-    #ax.locator_params(axis='x', nbins=10)
-
-    #ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
 
     plt.grid(zorder=0)
-
     bar_width = 0.7
 
     #plt.bar(X, Y, align='edge', width=0.3, zorder=3)
@@ -84,9 +83,7 @@ def plot_bar(args, X, Y):
     plt.hlines(args.desired, 0, len(X), colors="g", linestyle="dashed", linewidth=1.0)
     plt.text(len(X), args.desired, ' Desired', ha='left', va='center', color="black")
     plt.hlines(max_value, 0, len(X), colors="r", linestyle="solid", linewidth=1.0)
-    #plt.text(len(X), args.acceptable, ' Acceptable', ha='left', va='center', color="black")
     plt.hlines(min_value, 0, len(X), colors="r", linestyle="solid", linewidth=1.0)
-
     plt.axhspan(min_value, max_value, color='green', alpha=0.2)
 
     plt.show()

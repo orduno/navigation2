@@ -136,8 +136,9 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
   uint32_t rate = 20;
   rclcpp::Rate loop_rate(rate);
-  rtm_.init("dwb_cmd_vel", 20, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
+  rtm_.init("dwb_cmd_vel", 10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
                                    std::placeholders::_1, std::placeholders::_2));
+  rtm_.start("dwb_cmd_vel", now());
 
 preempted:
   auto goal = current_goal_handle->get_goal();
