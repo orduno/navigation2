@@ -27,6 +27,7 @@
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/msg/loop_time.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "nav2_util/real_time/real_time_monitor.hpp"
 
 namespace nav2_dwb_controller
 {
@@ -59,6 +60,7 @@ protected:
   void publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & velocity);
   void publishZeroVelocity();
   bool getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d);
+  void cbLooptimeOverrun(int iter_num, rclcpp::Duration jitter);
 
   // The DWBController contains a costmap node
   dwb_core::CostmapROSPtr costmap_ros_;
@@ -71,6 +73,8 @@ protected:
 
   // The local planner
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
+
+  RealTimeMonitor rtm_;
 };
 
 }  // namespace nav2_dwb_controller

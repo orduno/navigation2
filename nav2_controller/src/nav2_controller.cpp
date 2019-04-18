@@ -202,7 +202,7 @@ Nav2Controller::resume()
 void
 Nav2Controller::message(const std::string & msg)
 {
-  std::cout << ANSI_COLOR_BLUE << "\33[1m" << msg << "\33[0m\n" << ANSI_COLOR_RESET;
+  std::cerr << ANSI_COLOR_BLUE << "\33[1m" << msg << "\33[0m" << ANSI_COLOR_RESET;
 }
 
 }  // namespace nav2_controller

@@ -151,8 +151,6 @@ NavfnPlanner::on_shutdown(const rclcpp_lifecycle::State &)
 void
 NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
 {
-  RCLCPP_INFO(get_logger(), "computePathToPose");
-
   // Initialize the ComputePathToPose goal and result
   auto goal = goal_handle->get_goal();
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
@@ -190,10 +188,10 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
       return;
     }
 
-    RCLCPP_INFO(get_logger(), "Found valid path of size %u", result->path.poses.size());
+    RCLCPP_DEBUG(get_logger(), "Found valid path of size %u", result->path.poses.size());
 
     // Publish the plan for visualization purposes
-    RCLCPP_INFO(get_logger(), "Publishing the valid path");
+    RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
     publishEndpoints(start->pose.pose, goal->pose.pose);
 
@@ -247,7 +245,7 @@ NavfnPlanner::makePlan(
   double wx = start.position.x;
   double wy = start.position.y;
 
-  RCLCPP_INFO(get_logger(), "Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
+  RCLCPP_DEBUG(get_logger(), "Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;

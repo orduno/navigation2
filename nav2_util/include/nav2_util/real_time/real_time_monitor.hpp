@@ -1,0 +1,57 @@
+// Copyright (c) 2018 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef NAV2_REAL_TIME_MONITOR_HPP_
+#define NAV2_REAL_TIME_MONITOR_HPP_
+
+#include "rclcpp/rclcpp.hpp"
+#include "builtin_interfaces/msg/time.hpp"
+
+class RealTimeData
+{
+public:
+  RealTimeData():iter_cnt_(0), prev_looptime_(0,0), acceptable_looptime_(0,0) {}
+  ~RealTimeData() {}
+  bool init_;
+  uint32_t iter_cnt_;
+  uint32_t rate_;
+  uint32_t jitter_margin_;
+  std::function<void(int, rclcpp::Duration)> overrun_cb_;
+  rclcpp::Time prev_looptime_;
+  rclcpp::Duration acceptable_looptime_;
+  
+  FILE * log_file_;
+};
+
+class RealTimeMonitor
+{
+public:
+  RealTimeMonitor();
+  ~RealTimeMonitor();
+  int init(std::string id);
+  int init(std::string id, uint32_t rate, uint32_t jitter_margin,
+                           std::function<void(int iter_num, rclcpp::Duration looptime)> cb);
+  int deinit(std::string id);
+  int calc_looptime(std::string id, rclcpp::Time now);
+  int calc_latency(std::string id, builtin_interfaces::msg::Time & time, rclcpp::Time now);
+private:
+  void print_duration(FILE * log_file_, rclcpp::Duration dur);
+  void print_metrics(FILE * log_file_);
+
+  std::map<std::string, RealTimeData *> rtd_map_;
+};
+
+#endif  // NAV2_REAL_TIME_MONITOR_HPP_
+
+

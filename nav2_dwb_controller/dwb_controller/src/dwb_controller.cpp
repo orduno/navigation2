@@ -129,10 +129,15 @@ DwbController::on_shutdown(const rclcpp_lifecycle::State &)
 void
 DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 {
-  RCLCPP_INFO(get_logger(), "Received a new goal");
+  RCLCPP_INFO(get_logger(), "Received a goal, begin following path");
   auto result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
 
   std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
+
+  uint32_t rate = 20;
+  rclcpp::Rate loop_rate(rate);
+  rtm_.init("dwb_cmd_vel", 20, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
+                                   std::placeholders::_1, std::placeholders::_2));
 
 preempted:
   auto goal = current_goal_handle->get_goal();
@@ -140,10 +145,9 @@ preempted:
   try {
     auto path = nav_2d_utils::pathToPath2D(goal->path);
 
+    RCLCPP_DEBUG(get_logger(), "Providing path to the local planner");
     planner_->setPlan(path);
-    RCLCPP_INFO(get_logger(), "Providing path to the local planner");
 
-    rclcpp::Rate loop_rate(10);
     while (rclcpp::ok()) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
       if (!getRobotPose(pose2d)) {
@@ -157,30 +161,7 @@ preempted:
         auto velocity = odom_sub_->getTwist();
         auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, velocity);
         publishVelocity(cmd_vel_2d);
-        RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
-
-#if 0
-nav2_msgs::msg::LoopTime loop_time_msg;
-
-loop_time_msgs.header.stamp = 
-loop_time_msgs.header.frame_id = 
-loop_time_msgs.topic =
-loop_time_msgs.pub = true;
-loop_time_msgs.rate =
-loop_time_msgs.jitter =
-loop_time_msgs.iteration =
-loop_time_msgs.looptime =
-
-std_msgs/Header header              # timestamp in header is the time when msg was dispatched
-string topic                        # Name of the topic
-bool pub                            # True if time captured at publisher end, false if subscription
-int32 rate                          # Desired rate
-int32 jitter                        # Acceptable jitter in percentage
-int32 iteration                     # Iteration count
-uint64 looptime                     # Looptime value in nanosecs
-
-loop_time_pub_.publish(loop_time_msg);
-#endif
+        //RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
 
         if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");
@@ -205,7 +186,7 @@ loop_time_pub_.publish(loop_time_msg);
     return;
   }
 
-  RCLCPP_INFO(get_logger(), "DWB succeeded, setting result");
+  RCLCPP_DEBUG(get_logger(), "DWB succeeded, setting result");
   current_goal_handle->set_succeeded(result);
   publishZeroVelocity();
 }
@@ -214,6 +195,7 @@ void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & vel
 {
   auto cmd_vel = nav_2d_utils::twist2Dto3D(velocity.velocity);
   vel_pub_->publish(cmd_vel);
+  rtm_.calc_looptime("dwb_cmd_vel", this->now());
 }
 
 void DwbController::publishZeroVelocity()
@@ -240,6 +222,11 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   }
   pose2d = nav_2d_utils::poseStampedToPose2D(current_pose);
   return true;
+}
+
+void DwbController::cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime)
+{
+  printf("cbLooptimeOverrun Iteration:%d looptime:%ld ns \n", iter_num, long(looptime.nanoseconds()));
 }
 
 }  // namespace nav2_dwb_controller

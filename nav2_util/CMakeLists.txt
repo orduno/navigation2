@@ -40,6 +40,14 @@ ament_target_dependencies(${library_name}
   test_msgs
 )
 
+add_library(rt_lib SHARED
+  src/real_time/real_time_monitor.cpp
+)
+
+ament_target_dependencies(rt_lib
+  rclcpp
+)
+
 add_library(map_lib SHARED
   src/map/map.c
   src/map/map_store.c
@@ -96,6 +104,7 @@ target_link_libraries(lifecycle_bringup ${library_name})
 install(TARGETS
   ${library_name}
   map_lib
+  rt_lib
   pf_lib
   sensors_lib
   motions_lib
@@ -122,6 +131,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib map_loader)
+ament_export_libraries(${library_name} rt_lib pf_lib sensors_lib motions_lib map_lib map_loader)
 
 ament_package()
