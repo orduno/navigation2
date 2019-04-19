@@ -24,10 +24,8 @@ RealTimeMonitor::RealTimeMonitor()
 
 RealTimeMonitor::~RealTimeMonitor()
 {
-  for (auto it=rtd_map_.begin(); it!=rtd_map_.end(); ++it) {
-    if (it->second->log_file_) {
-      fclose(it->second->log_file_);
-    }
+  if (rtd_) {
+    fclose(rtd_->log_file_);
   }
 }
 
@@ -47,7 +45,7 @@ RealTimeMonitor::init(std::string id)
   rtd->prev_looptime_ = rclcpp::Time(0,0);
   rtd->init_ = true;
 
-  rtd_map_[id] = rtd;
+  rtd_ = rtd;
   return 0;
 }
 
@@ -59,11 +57,8 @@ RealTimeMonitor::init(std::string id, uint32_t rate, uint32_t jitter_margin,
   if ((ret = init(id)))
     return ret;
 
-  RealTimeData * rtd;
-  auto it = rtd_map_.find(id);
-  if (it != rtd_map_.end()) {
-      rtd = it->second;
-  } else {
+  RealTimeData * rtd = rtd_;
+  if (rtd == nullptr) {
       printf("Error: Initialization error %s", id.c_str());
       return -1;
   }
@@ -93,28 +88,25 @@ RealTimeMonitor::deinit(std::string id)
 int 
 RealTimeMonitor::start(std::string id, rclcpp::Time now)
 {
-  auto it = rtd_map_.find(id);
-  if (it == rtd_map_.end()) {
+  RealTimeData * rtd = rtd_;
+  if (rtd == nullptr) {
       printf("Error: No such topic monitored %s", id.c_str());
       return -1;
   }
 
-  RealTimeData * rtd = it->second;
   rtd->start_ = now;
-
   return 0;
 }
 
 int
 RealTimeMonitor::calc_looptime(std::string id, rclcpp::Time now)
 {
-  auto it = rtd_map_.find(id);
-  if (it == rtd_map_.end()) {
+  RealTimeData * rtd = rtd_;
+  if (rtd == nullptr) {
       printf("Error: No such topic monitored %s", id.c_str());
       return -1;
   }
 
-  RealTimeData * rtd = it->second;
   rclcpp::Duration looptime(0,0);
 
 /*
@@ -127,18 +119,23 @@ RealTimeMonitor::calc_looptime(std::string id, rclcpp::Time now)
 
   //if (iter_cnt_ != 0) {
   if (!rtd->init_) {
-#if 1
+#if 0
     // MJ:
-	auto target_looptime_ns = 1000000000/rtd->rate_;
+	auto target_looptime_ns = (long int) (1000000000/rtd->rate_);
 	auto target_duration_for_previous = rclcpp::Duration(((rtd->iter_cnt_-1) * target_looptime_ns));
 
-	printf("target_duration_for_previous: %ld\n", target_duration_for_previous.nanoseconds());
-	printf("rtd->start_: %ld\n", rtd->start_.nanoseconds());
-	printf("now: %ld\n", now.nanoseconds());
+	printf("tdp       : %ld\n", target_duration_for_previous.nanoseconds());
+  printf("\n");
+	printf("start     : %ld\n", rtd->start_.nanoseconds());
+	printf("now       : %ld\n", now.nanoseconds());
+	printf("start+tdp : %ld\n", (rtd->start_ + target_duration_for_previous).nanoseconds());
+	printf("now-start : %ld\n", now.nanoseconds() - rtd->start_.nanoseconds());
 
-    looptime = now - (rtd->start_ + target_duration_for_previous);
+  looptime = now - (rtd->start_ + target_duration_for_previous);
 
-	printf("looptime: %ld\n", looptime.nanoseconds());
+	printf("t_looptime: %ld\n", target_looptime_ns);
+	printf("looptime  : %ld\n", looptime.nanoseconds());
+  printf("\n");
 #else
 	looptime = now - rtd->prev_looptime_;
 #endif

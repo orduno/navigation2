@@ -21,16 +21,18 @@
 class RealTimeData
 {
 public:
-  RealTimeData():iter_cnt_(0), prev_looptime_(0,0), acceptable_looptime_(0,0) {}
+  RealTimeData() {}
   ~RealTimeData() {}
+
   bool init_;
-  uint32_t iter_cnt_;
-  uint32_t rate_;
-  uint32_t jitter_margin_;
+  uint32_t iter_cnt_{0};
+  uint32_t rate_{0};
+  uint32_t jitter_margin_{0};
+  rclcpp::Time prev_looptime_{0,0};
+  rclcpp::Time start_{0,0};
+  rclcpp::Duration acceptable_looptime_{0,0};
+
   std::function<void(int, rclcpp::Duration)> overrun_cb_;
-  rclcpp::Time prev_looptime_;
-  rclcpp::Time start_;
-  rclcpp::Duration acceptable_looptime_;
   
   FILE * log_file_;
 };
@@ -55,9 +57,7 @@ private:
   void print_duration(FILE * log_file_, rclcpp::Duration dur);
   void print_metrics(FILE * log_file_);
 
-  std::map<std::string, RealTimeData *> rtd_map_;
+  RealTimeData * rtd_;
 };
 
 #endif  // NAV2_REAL_TIME_MONITOR_HPP_
-
-
