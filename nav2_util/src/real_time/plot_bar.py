@@ -23,14 +23,14 @@ def read(logfile):
                 #X.append(float(m.group(1)))
                 X.append(int(m.group(1)))
                 n = re.search('(\d+) nsecs', line, re.IGNORECASE)
-                print(n.group(1))
+                #print(n.group(1))
                 Y.append(float(n.group(1)))
             line = f.readline()
     return X,Y
 
 def plot_bar(args, X, Y):
     fig_size = plt.rcParams["figure.figsize"]
-    fig_size[0] = 9
+    fig_size[0] = 9 
     fig_size[1] = 6
     plt.rcParams["figure.figsize"] = fig_size
 
@@ -59,10 +59,10 @@ def plot_bar(args, X, Y):
     ax.locator_params(axis='y', nbins=20)
 
     plt.grid(zorder=0)
-    bar_width = 0.7
+    bar_width = 0.8
 
     #plt.bar(X, Y, align='edge', width=0.3, zorder=3)
-    plt.bar(X, Y, width=bar_width, zorder=3)
+    plt.bar(X, Y, width=bar_width, zorder=3, color='b')
 
     max_value = int(args.desired + args.desired * (args.jitter * 0.01));
     min_value = int(args.desired - args.desired * (args.jitter * 0.01));
@@ -73,7 +73,7 @@ def plot_bar(args, X, Y):
 
     t10 = [i for i in X if Y[i] < min_value]
     t20 = [i for i in Y if i < min_value]
-    plt.bar(t10, t20, color='r', width=bar_width, zorder=4)
+    plt.bar(t10, t20, color='b', width=bar_width, zorder=4)
 
     #plt.title('Real-Time Computing', fontsize=20, fontweight='bold')
     plt.title(args.filename, fontsize=18, fontweight='normal', pad=20)

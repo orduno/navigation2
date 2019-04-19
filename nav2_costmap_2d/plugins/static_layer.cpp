@@ -95,7 +95,7 @@ StaticLayer::reset()
 void
 StaticLayer::getParameters()
 {
-  int temp_lethal_threshold;
+  int temp_lethal_threshold = 0;
 
   node_->get_parameter_or("track_unknown_space", track_unknown_space_, true);
   node_->get_parameter_or("use_maximum", use_maximum_, false);

@@ -18,169 +18,74 @@
 
 #include "rclcpp/time.hpp"
 
-RealTimeMonitor::RealTimeMonitor()
+namespace nav2_util
 {
+
+RealTimeMonitor::RealTimeMonitor(
+  std::string id, uint32_t rate, uint32_t jitter_margin,
+  std::function<void(int iter_num, rclcpp::Duration looptime)> cb)
+
+: rate_(rate), jitter_margin_(jitter_margin), overrun_cb_(cb)
+{
+  uint32_t looptime_ns = 1000000000 / rate;
+  uint32_t jitter_ns = (looptime_ns * jitter_margin) / 100;
+  uint32_t desired_looptime_ns = looptime_ns + jitter_ns;
+
+  acceptable_looptime_ = rclcpp::Duration(0, desired_looptime_ns);
+
+  // TODO(mjeronimo): Create a unique file name?
+  std::string filename = "/tmp/log_" + id + ".txt";
+
+  if ((log_file_ = fopen(filename.c_str(), "w")) == nullptr) {
+    throw std::runtime_error("Error: Could not open log file");
+  }
+
+  fprintf(log_file_, "Desired looptime:%ld ns \n", long(acceptable_looptime_.nanoseconds()));
 }
 
 RealTimeMonitor::~RealTimeMonitor()
 {
-  if (rtd_) {
-    fclose(rtd_->log_file_);
-  }
-}
-
-int
-RealTimeMonitor::init(std::string id)
-{
-  RealTimeData *rtd = new RealTimeData();
-
-  //TODO:: Check if file exists
-  std::string filename = "/tmp/log_" + id + ".txt";
-  rtd->log_file_ = fopen(filename.c_str(), "w");
-
-  if (rtd->log_file_ == NULL) {
-   printf("Error: Could not open log file");
-  }
-
-  rtd->prev_looptime_ = rclcpp::Time(0,0);
-  rtd->init_ = true;
-
-  rtd_ = rtd;
-  return 0;
-}
-
-int
-RealTimeMonitor::init(std::string id, uint32_t rate, uint32_t jitter_margin,
-                           std::function<void(int iter_num, rclcpp::Duration looptime)> cb)
-{
-  int ret;
-  if ((ret = init(id)))
-    return ret;
-
-  RealTimeData * rtd = rtd_;
-  if (rtd == nullptr) {
-      printf("Error: Initialization error %s", id.c_str());
-      return -1;
-  }
-
-  //MJ:
-  rtd->iter_cnt_ = 1;
-
-  rtd->rate_ = rate;
-  rtd->jitter_margin_ = jitter_margin;
-  rtd->overrun_cb_ = cb;
-  uint32_t looptime_ns = 1000000000/rate;
-  uint32_t jitter_ns = (looptime_ns*jitter_margin)/100;
-  uint32_t desired_looptime_ns = looptime_ns + jitter_ns;
-  rtd->acceptable_looptime_ = rclcpp::Duration(0, desired_looptime_ns);
-  fprintf(rtd->log_file_, "Desired looptime:%ld ns \n", long(rtd->acceptable_looptime_.nanoseconds()));
-
-  return 0;
-}
-
-int
-RealTimeMonitor::deinit(std::string id)
-{
-  (void)(id);
-  return 0;
-}
-
-int 
-RealTimeMonitor::start(std::string id, rclcpp::Time now)
-{
-  RealTimeData * rtd = rtd_;
-  if (rtd == nullptr) {
-      printf("Error: No such topic monitored %s", id.c_str());
-      return -1;
-  }
-
-  rtd->start_ = now;
-  return 0;
-}
-
-int
-RealTimeMonitor::calc_looptime(std::string id, rclcpp::Time now)
-{
-  RealTimeData * rtd = rtd_;
-  if (rtd == nullptr) {
-      printf("Error: No such topic monitored %s", id.c_str());
-      return -1;
-  }
-
-  rclcpp::Duration looptime(0,0);
-
-/*
-  TODO: an assert?
-  if (now < prev_looptime_) {
-    printf("Invalid argument");
-    return -1;
-  }
-*/
-
-  //if (iter_cnt_ != 0) {
-  if (!rtd->init_) {
-#if 0
-    // MJ:
-	auto target_looptime_ns = (long int) (1000000000/rtd->rate_);
-	auto target_duration_for_previous = rclcpp::Duration(((rtd->iter_cnt_-1) * target_looptime_ns));
-
-	printf("tdp       : %ld\n", target_duration_for_previous.nanoseconds());
-  printf("\n");
-	printf("start     : %ld\n", rtd->start_.nanoseconds());
-	printf("now       : %ld\n", now.nanoseconds());
-	printf("start+tdp : %ld\n", (rtd->start_ + target_duration_for_previous).nanoseconds());
-	printf("now-start : %ld\n", now.nanoseconds() - rtd->start_.nanoseconds());
-
-  looptime = now - (rtd->start_ + target_duration_for_previous);
-
-	printf("t_looptime: %ld\n", target_looptime_ns);
-	printf("looptime  : %ld\n", looptime.nanoseconds());
-  printf("\n");
-#else
-	looptime = now - rtd->prev_looptime_;
-#endif
-  } else {
-    rtd->init_ = false;
-  }
-
-  fprintf(rtd->log_file_, "Iteration: %d ", rtd->iter_cnt_);
-  print_duration(rtd->log_file_, looptime);
-
-  if (rtd->overrun_cb_) {
-    if (looptime > rtd->acceptable_looptime_) {
-      rtd->overrun_cb_(rtd->iter_cnt_, looptime);
-      print_metrics(rtd->log_file_);
-    }
-  }
-
-  //printf("looptime: %ld\n", looptime.nanoseconds());
-  //printf("acceptable_looptime: %ld\n", rtd->acceptable_looptime_.nanoseconds());
-
-  rtd->prev_looptime_ = now;
-  rtd->iter_cnt_++;
-
-  return 0;
-}
-
-int
-RealTimeMonitor::calc_latency(std::string /*id*/, builtin_interfaces::msg::Time & time, rclcpp::Time now)
-{
-  rclcpp::Duration latency(0,0);
-  rclcpp::Time msg_time(time.sec,time.nanosec);
-  latency = now - msg_time;
-  return latency.nanoseconds();
+  fclose(log_file_);
 }
 
 void
-RealTimeMonitor::print_duration(FILE * log_file_, rclcpp::Duration dur)
+RealTimeMonitor::start()
 {
-  uint32_t nsecs = (dur.nanoseconds()) % 1000000000;
-  uint32_t secs = ((dur.nanoseconds()) - nsecs) / 1000000000;
+  start_ = prev_looptime_ = clock_.now();
+}
+
+void
+RealTimeMonitor::calc_looptime()
+{
+  // TODO(mjeronimo): check if now is before prev_looptime
+  // TODO(mjeronimo): use C++ steady clock
+  auto now = clock_.now();
+
+  fprintf(log_file_, "Iteration: %d ", iter_cnt_);
+
+  rclcpp::Duration looptime = now - prev_looptime_;
+  print_duration(looptime);
+
+  if (looptime > acceptable_looptime_ && overrun_cb_) {
+    print_metrics();
+    overrun_cb_(iter_cnt_, looptime);
+  }
+
+  prev_looptime_ = now;
+  iter_cnt_++;
+}
+
+void
+RealTimeMonitor::print_duration(rclcpp::Duration duration)
+{
+  uint32_t nsecs = (duration.nanoseconds()) % 1000000000;
+  uint32_t secs = ((duration.nanoseconds()) - nsecs) / 1000000000;
+
   fprintf(log_file_, "Looptime: %d secs %d nsecs\n", secs, nsecs);
 }
 
 void
-RealTimeMonitor::print_metrics(FILE * log_file_)
+RealTimeMonitor::print_metrics()
 {
   struct rusage r_usage;
   if (getrusage(RUSAGE_SELF, &r_usage) != 0) {
@@ -195,7 +100,7 @@ RealTimeMonitor::print_metrics(FILE * log_file_)
 #if 0
 nav2_msgs::msg::LoopTime loop_time_msg;
 loop_time_msg.header.stamp = now();
-loop_time_msg.header.frame_id = "map"; 
+loop_time_msg.header.frame_id = "map";
 loop_time_msg.topic = "Foobar";
 loop_time_msg.pub = true;
 loop_time_msg.rate = 0;
@@ -205,14 +110,35 @@ loop_time_msg.looptime = 0;
 
 loop_time_pub_->publish(loop_time_msg);
 
-std_msgs/Header header              # timestamp in header is the time when msg was dispatched
-string topic                        # Name of the topic
-bool pub                            # True if time captured at publisher end, false if subscription
-int32 rate                          # Desired rate
-int32 jitter                        # Acceptable jitter in percentage
-int32 iteration                     # Iteration count
-uint64 looptime                     # Looptime value in nanosecs
+std_msgs / Header header              // timestamp in header is the time when msg was dispatched
+string topic                        // Name of the topic
+bool pub                            // True if time captured at publisher end, false if subscription
+int32 rate                          // Desired rate
+int32 jitter                        // Acceptable jitter in percentage
+int32 iteration                     // Iteration count
+uint64 looptime                     // Looptime value in nanosecs
 
 loop_time_pub_.publish(loop_time_msg);
 #endif
 
+#if 0
+  rclcpp::Duration looptime(0, 0);
+  // MJ:
+  auto target_looptime_ns = (long int) (1000000000 / rate_);
+  auto target_duration_for_previous = rclcpp::Duration(((iter_cnt_ - 1) * target_looptime_ns));
+
+  printf("tdp       : %ld\n", target_duration_for_previous.nanoseconds());
+  printf("\n");
+  printf("start     : %ld\n", start_.nanoseconds());
+  printf("now       : %ld\n", now.nanoseconds());
+  printf("start+tdp : %ld\n", (start_ + target_duration_for_previous).nanoseconds());
+  printf("now-start : %ld\n", now.nanoseconds() - start_.nanoseconds());
+
+  looptime = now - (start_ + target_duration_for_previous);
+
+  printf("t_looptime: %ld\n", target_looptime_ns);
+  printf("looptime  : %ld\n", looptime.nanoseconds());
+  printf("\n");
+#endif
+
+}  // namespace nav2_util

@@ -64,6 +64,10 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
       std::bind(&DwbController::followPath, this, std::placeholders::_1));
 
+  rtm_ = std::make_unique<nav2_util::RealTimeMonitor>("dwb_cmd_vel",
+    10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
+    std::placeholders::_1, std::placeholders::_2));
+
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
@@ -108,6 +112,7 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   vel_pub_.reset();
   loop_time_pub_.reset();
   action_server_.reset();
+  rtm_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -136,9 +141,6 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
   uint32_t rate = 20;
   rclcpp::Rate loop_rate(rate);
-  rtm_.init("dwb_cmd_vel", 10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
-                                   std::placeholders::_1, std::placeholders::_2));
-  rtm_.start("dwb_cmd_vel", now());
 
 preempted:
   auto goal = current_goal_handle->get_goal();
@@ -148,6 +150,7 @@ preempted:
 
     RCLCPP_DEBUG(get_logger(), "Providing path to the local planner");
     planner_->setPlan(path);
+    rtm_->start();
 
     while (rclcpp::ok()) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;
@@ -159,10 +162,13 @@ preempted:
           RCLCPP_INFO(get_logger(), "Reached the goal");
           break;
         }
+
         auto velocity = odom_sub_->getTwist();
         auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, velocity);
-        publishVelocity(cmd_vel_2d);
+
         //RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
+        publishVelocity(cmd_vel_2d);
+        rtm_->calc_looptime();
 
         if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");
@@ -175,9 +181,14 @@ preempted:
         if (action_server_->update_requested()) {
           RCLCPP_INFO(get_logger(), "Received a new goal, pre-empting the old one");
           current_goal_handle = action_server_->get_updated_goal_handle();
+
+          // Maintain the correct loop rate even when we get a path update
+          loop_rate.sleep();
+
           goto preempted;
         }
       }
+
       loop_rate.sleep();
     }
   } catch (nav_core2::PlannerException & e) {
@@ -196,7 +207,6 @@ void DwbController::publishVelocity(const nav_2d_msgs::msg::Twist2DStamped & vel
 {
   auto cmd_vel = nav_2d_utils::twist2Dto3D(velocity.velocity);
   vel_pub_->publish(cmd_vel);
-  rtm_.calc_looptime("dwb_cmd_vel", this->now());
 }
 
 void DwbController::publishZeroVelocity()
@@ -205,6 +215,7 @@ void DwbController::publishZeroVelocity()
   velocity.velocity.x = 0;
   velocity.velocity.y = 0;
   velocity.velocity.theta = 0;
+
   publishVelocity(velocity);
 }
 

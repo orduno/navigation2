@@ -12,52 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_REAL_TIME_MONITOR_HPP_
-#define NAV2_REAL_TIME_MONITOR_HPP_
+#ifndef NAV2_UTIL__REAL_TIME_MONITOR_HPP_
+#define NAV2_UTIL__REAL_TIME_MONITOR_HPP_
 
-#include "rclcpp/rclcpp.hpp"
 #include "builtin_interfaces/msg/time.hpp"
+#include "rclcpp/rclcpp.hpp"
 
-class RealTimeData
+namespace nav2_util
 {
-public:
-  RealTimeData() {}
-  ~RealTimeData() {}
-
-  bool init_;
-  uint32_t iter_cnt_{0};
-  uint32_t rate_{0};
-  uint32_t jitter_margin_{0};
-  rclcpp::Time prev_looptime_{0,0};
-  rclcpp::Time start_{0,0};
-  rclcpp::Duration acceptable_looptime_{0,0};
-
-  std::function<void(int, rclcpp::Duration)> overrun_cb_;
-  
-  FILE * log_file_;
-};
 
 class RealTimeMonitor
 {
 public:
-  RealTimeMonitor();
+  RealTimeMonitor(
+    std::string id, uint32_t rate, uint32_t jitter_margin,
+    std::function<void(int iter_num, rclcpp::Duration looptime)> cb);
+  RealTimeMonitor() = delete;
   ~RealTimeMonitor();
 
-  int init(std::string id);
-  int init(std::string id, uint32_t rate, uint32_t jitter_margin,
-                           std::function<void(int iter_num, rclcpp::Duration looptime)> cb);
-  int deinit(std::string id);
-
-  int start(std::string id, rclcpp::Time now);
-
-  int calc_looptime(std::string id, rclcpp::Time now);
-  int calc_latency(std::string id, builtin_interfaces::msg::Time & time, rclcpp::Time now);
+  void start();
+  void calc_looptime();
 
 private:
-  void print_duration(FILE * log_file_, rclcpp::Duration dur);
-  void print_metrics(FILE * log_file_);
+  void print_duration(rclcpp::Duration dur);
+  void print_metrics();
 
-  RealTimeData * rtd_;
+  uint32_t iter_cnt_{0};
+  uint32_t rate_{0};
+  uint32_t jitter_margin_{0};
+  rclcpp::Time start_{0, 0};
+  rclcpp::Time prev_looptime_{0, 0};
+  rclcpp::Duration acceptable_looptime_{0, 0};
+  std::function<void(int, rclcpp::Duration)> overrun_cb_;
+  FILE * log_file_;
+
+  rclcpp::Clock clock_;
 };
 
-#endif  // NAV2_REAL_TIME_MONITOR_HPP_
+}  // namespace nav2_util
+
+#endif  // NAV2_UTIL__REAL_TIME_MONITOR_HPP_

@@ -87,7 +87,7 @@ void StandardTrajectoryGenerator::initializeIterator(
 void StandardTrajectoryGenerator::checkUseDwaParam(
   const nav2_lifecycle::LifecycleNode::SharedPtr & nh)
 {
-  bool use_dwa;
+  bool use_dwa = false;
   nh->get_parameter_or("use_dwa", use_dwa, false);
   if (use_dwa) {
     throw nav_core2::PlannerException("Deprecated parameter use_dwa set to true. "

@@ -74,7 +74,7 @@ protected:
   // The local planner
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
 
-  RealTimeMonitor rtm_;
+  std::unique_ptr<nav2_util::RealTimeMonitor> rtm_;
 };
 
 }  // namespace nav2_dwb_controller
