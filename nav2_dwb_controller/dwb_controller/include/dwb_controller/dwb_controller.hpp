@@ -63,7 +63,7 @@ protected:
   void cbLooptimeOverrun(int iter_num, rclcpp::Duration jitter);
 
   // The DWBController contains a costmap node
-  dwb_core::CostmapROSPtr costmap_ros_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<std::thread> costmap_thread_;
 
   // Publishers and subscribers

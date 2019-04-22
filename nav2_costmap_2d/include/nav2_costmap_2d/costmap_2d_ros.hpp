@@ -50,6 +50,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
+#include "nav2_util/real_time/real_time_monitor.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Transform.h"
@@ -292,6 +293,9 @@ protected:
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   std::shared_ptr<ClearCostmapService> clear_costmap_service_;
+
+  std::unique_ptr<nav2_util::RealTimeMonitor> rtm_;
+  void cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime);
 };
 
 }  // namespace nav2_costmap_2d
