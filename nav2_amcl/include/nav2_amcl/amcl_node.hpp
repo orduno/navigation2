@@ -34,6 +34,7 @@
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/map_service_client.hpp"
 #include "nav2_util/motion_model/motion_model.hpp"
+#include "nav2_util/real_time/real_time_monitor.hpp"
 #include "nav2_util/sensors/laser/laser.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -158,6 +159,9 @@ protected:
   rclcpp::Time last_laser_received_ts_;
   void checkLaserReceived();
   std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
+
+  std::unique_ptr<nav2_util::RealTimeMonitor> rtm_;
+  void cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime);
 
   // Node parameters (initialized via initParameters)
   void initParameters();

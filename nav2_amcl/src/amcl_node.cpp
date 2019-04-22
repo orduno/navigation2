@@ -79,6 +79,10 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initParticleFilter();
   initLaserScan();
 
+  rtm_ = std::make_unique<nav2_util::RealTimeMonitor>("amcl_pose", 
+    10, 10, std::bind(&AmclNode::cbLooptimeOverrun, this,
+    std::placeholders::_1, std::placeholders::_2));
+
   RCLCPP_INFO(get_logger(), "return from on_configure");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -684,6 +688,16 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       RCLCPP_INFO(get_logger(), "Publishing pose");
       first_pose_sent_ = true;
       pose_pub_->publish(p);
+
+static bool first_time = true;
+
+if (first_time) {
+  rtm_->start();
+  first_time = false;
+} else {
+  rtm_->calc_looptime();
+}
+
       last_published_pose_ = p;
 
       RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
@@ -999,5 +1013,12 @@ AmclNode::initLaserScan()
   scan_error_count_ = 0;
   memset(&last_laser_received_ts_, 0, sizeof(last_laser_received_ts_));
 }
+
+void
+AmclNode::cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime)
+{
+  printf("AmclNode: Iteration:%d looptime:%ld ns \n", iter_num, long(looptime.nanoseconds()));
+}
+
 
 }  // namespace nav2_amcl
