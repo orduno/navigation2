@@ -294,7 +294,7 @@ protected:
 
   std::shared_ptr<ClearCostmapService> clear_costmap_service_;
 
-  std::unique_ptr<nav2_util::RealTimeMonitor> rtm_;
+  std::unique_ptr<nav2_util::RateMonitor> rtm_;
   void cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime);
 };
 

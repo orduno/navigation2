@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__REAL_TIME_MONITOR_HPP_
-#define NAV2_UTIL__REAL_TIME_MONITOR_HPP_
+#ifndef NAV2_UTIL__RATE_MONITOR_HPP_
+#define NAV2_UTIL__RATE_MONITOR_HPP_
 
 #include "builtin_interfaces/msg/time.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -21,16 +21,15 @@
 namespace nav2_util
 {
 
-class RealTimeMonitor
+class RateMonitor
 {
 public:
-  RealTimeMonitor(
+  RateMonitor(
     std::string id, uint32_t rate, uint32_t jitter_margin,
     std::function<void(int iter_num, rclcpp::Duration looptime)> cb);
-  RealTimeMonitor() = delete;
-  ~RealTimeMonitor();
+  RateMonitor() = delete;
+  ~RateMonitor();
 
-  void start();
   void calc_looptime();
 
 private:
@@ -45,10 +44,10 @@ private:
   rclcpp::Duration acceptable_looptime_{0, 0};
   std::function<void(int, rclcpp::Duration)> overrun_cb_;
   FILE * log_file_;
-
+  bool first_time_{true};
   rclcpp::Clock clock_;
 };
 
 }  // namespace nav2_util
 
-#endif  // NAV2_UTIL__REAL_TIME_MONITOR_HPP_
+#endif  // NAV2_UTIL__RATE_MONITOR_HPP_

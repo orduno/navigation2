@@ -79,7 +79,7 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initParticleFilter();
   initLaserScan();
 
-  rtm_ = std::make_unique<nav2_util::RealTimeMonitor>("amcl_pose", 
+  rtm_ = std::make_unique<nav2_util::RateMonitor>("amcl_pose", 
     10, 10, std::bind(&AmclNode::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
 
@@ -688,16 +688,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       RCLCPP_INFO(get_logger(), "Publishing pose");
       first_pose_sent_ = true;
       pose_pub_->publish(p);
-
-static bool first_time = true;
-
-if (first_time) {
-  rtm_->start();
-  first_time = false;
-} else {
-  rtm_->calc_looptime();
-}
-
+      rtm_->calc_looptime();
       last_published_pose_ = p;
 
       RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",

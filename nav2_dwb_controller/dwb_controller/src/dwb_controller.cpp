@@ -66,7 +66,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
 #define TARGET_LOOP_RATE	100
 
-  rtm_ = std::make_unique<nav2_util::RealTimeMonitor>("dwb_cmd_vel",
+  rtm_ = std::make_unique<nav2_util::RateMonitor>("dwb_cmd_vel",
     10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
 
@@ -152,7 +152,6 @@ preempted:
 
     RCLCPP_DEBUG(get_logger(), "Providing path to the local planner");
     planner_->setPlan(path);
-    rtm_->start();
 
     while (rclcpp::ok()) {
       nav_2d_msgs::msg::Pose2DStamped pose2d;

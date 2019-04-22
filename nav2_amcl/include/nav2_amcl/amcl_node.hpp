@@ -160,7 +160,7 @@ protected:
   void checkLaserReceived();
   std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
 
-  std::unique_ptr<nav2_util::RealTimeMonitor> rtm_;
+  std::unique_ptr<nav2_util::RateMonitor> rtm_;
   void cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime);
 
   // Node parameters (initialized via initParameters)

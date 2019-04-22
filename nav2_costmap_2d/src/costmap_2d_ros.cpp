@@ -118,7 +118,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Add cleaning service
   clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
 
-  rtm_ = std::make_unique<nav2_util::RealTimeMonitor>("costmap_update",
+  rtm_ = std::make_unique<nav2_util::RateMonitor>("costmap_update",
     5, 10, std::bind(&Costmap2DROS::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
 
@@ -330,9 +330,6 @@ Costmap2DROS::mapUpdateLoop(double frequency)
   }
 
   RCLCPP_DEBUG(get_logger(), "Entering loop");
-
-  rtm_->start();
-
   rclcpp::Rate r(frequency);
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;

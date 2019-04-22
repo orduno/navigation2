@@ -21,7 +21,7 @@
 namespace nav2_util
 {
 
-RealTimeMonitor::RealTimeMonitor(
+RateMonitor::RateMonitor(
   std::string id, uint32_t rate, uint32_t jitter_margin,
   std::function<void(int iter_num, rclcpp::Duration looptime)> cb)
 
@@ -43,20 +43,20 @@ RealTimeMonitor::RealTimeMonitor(
   fprintf(log_file_, "Desired looptime:%ld ns \n", long(acceptable_looptime_.nanoseconds()));
 }
 
-RealTimeMonitor::~RealTimeMonitor()
+RateMonitor::~RateMonitor()
 {
   fclose(log_file_);
 }
 
 void
-RealTimeMonitor::start()
+RateMonitor::calc_looptime()
 {
-  start_ = prev_looptime_ = clock_.now();
-}
+  if (first_time_) {
+    start_ = prev_looptime_ = clock_.now();
+	first_time_ = false;
+	return;
+  }
 
-void
-RealTimeMonitor::calc_looptime()
-{
   // TODO(mjeronimo): check if now is before prev_looptime
   // TODO(mjeronimo): use C++ steady clock
   auto now = clock_.now();
@@ -76,7 +76,7 @@ RealTimeMonitor::calc_looptime()
 }
 
 void
-RealTimeMonitor::print_duration(rclcpp::Duration duration)
+RateMonitor::print_duration(rclcpp::Duration duration)
 {
   uint32_t nsecs = (duration.nanoseconds()) % 1000000000;
   uint32_t secs = ((duration.nanoseconds()) - nsecs) / 1000000000;
@@ -85,7 +85,7 @@ RealTimeMonitor::print_duration(rclcpp::Duration duration)
 }
 
 void
-RealTimeMonitor::print_metrics()
+RateMonitor::print_metrics()
 {
   struct rusage r_usage;
   if (getrusage(RUSAGE_SELF, &r_usage) != 0) {
