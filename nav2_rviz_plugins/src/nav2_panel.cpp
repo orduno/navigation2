@@ -32,23 +32,29 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 {
   // Create the control button and its tooltip
 
-  start_stop_button_ = new QPushButton("Startup");
-  start_stop_button_->setToolTip("Bring up and shutdown the nav2 system");
-
-  pause_resume_button_ = new QPushButton("Pause");
-  pause_resume_button_->setToolTip("Pause and resume the nav2 system");
+  start_stop_button_ = new QPushButton;
+  pause_resume_button_ = new QPushButton;
 
   // Create the state machine used to present the proper control button states in the UI
+
+  const char * startup_msg = "Configure and activate all nav2 lifecycle nodes";
+  const char * shutdown_msg1 = "Deactivate and cleanup all nav2 lifecycle nodes";
+  const char * shutdown_msg2 = "Deactivate, cleanup, and shutdown all nav2 lifecycle nodes";
 
   initial_ = new QState();
   initial_->setObjectName("initial");
   initial_->assignProperty(start_stop_button_, "text", "Startup");
+  initial_->assignProperty(start_stop_button_, "toolTip", startup_msg);
+  initial_->assignProperty(pause_resume_button_, "text", "Pause");
   initial_->assignProperty(pause_resume_button_, "enabled", false);
+  initial_->assignProperty(pause_resume_button_, "toolTip", startup_msg);
 
   starting_ = new QState();
   starting_->setObjectName("starting");
   starting_->assignProperty(start_stop_button_, "text", "Shutdown");
+  starting_->assignProperty(start_stop_button_, "toolTip", shutdown_msg2);
   starting_->assignProperty(pause_resume_button_, "enabled", true);
+  starting_->assignProperty(pause_resume_button_, "toolTip", shutdown_msg1);
 
   stopping_ = new QState();
   stopping_->setObjectName("stopping");
@@ -59,11 +65,13 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   pausing_->setObjectName("pausing");
   pausing_->assignProperty(start_stop_button_, "enabled", false);
   pausing_->assignProperty(pause_resume_button_, "text", "Resume");
+  pausing_->assignProperty(pause_resume_button_, "toolTip", startup_msg);
 
   resuming_ = new QState();
   resuming_->setObjectName("resuming");
   resuming_->assignProperty(start_stop_button_, "enabled", true);
   resuming_->assignProperty(pause_resume_button_, "text", "Pause");
+  resuming_->assignProperty(pause_resume_button_, "toolTip", shutdown_msg1);
 
   QObject::connect(starting_, SIGNAL(entered()), this, SLOT(onStartup()));
   QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
@@ -89,7 +97,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // Display the available log files
 
   QLabel *label = new QLabel(this);
-  label->setText("Log files:");
+  label->setText("Rate Monitors:");
 
   QListWidget * listWidget = new QListWidget(this);
   listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -136,7 +144,6 @@ Nav2Panel::itemDoubleClicked(QListWidgetItem * list_item)
   std::string filename(list_item->text().toStdString());
   std::string cmd("python3 ~/src/navigation2/nav2_util/src/real_time/plot_bar.py -f /tmp/nav2/");
   cmd += filename + ".log";
-  // std::cout << "\"" << cmd << "\"\n";
   int rc = system(cmd.c_str());
   (void)rc;
 }
