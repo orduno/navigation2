@@ -26,8 +26,8 @@
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/msg/loop_time.hpp"
+#include "nav2_util/rate_monitor.hpp"
 #include "nav2_util/simple_action_server.hpp"
-#include "nav2_util/real_time/real_time_monitor.hpp"
 
 namespace nav2_dwb_controller
 {

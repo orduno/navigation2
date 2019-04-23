@@ -22,10 +22,11 @@ include_directories(include)
 set(library_name ${PROJECT_NAME}_core)
 add_library(${library_name} SHARED
   src/costmap.cpp
-  src/node_utils.cpp
   src/lifecycle_service_client.cpp
-  src/string_utils.cpp
   src/lifecycle_utils.cpp
+  src/node_utils.cpp
+  src/rate_monitor.cpp
+  src/string_utils.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -38,14 +39,6 @@ ament_target_dependencies(${library_name}
   lifecycle_msgs
   rclcpp_action
   test_msgs
-)
-
-add_library(rt_lib SHARED
-  src/real_time/real_time_monitor.cpp
-)
-
-ament_target_dependencies(rt_lib
-  rclcpp
 )
 
 add_library(map_lib SHARED
@@ -104,7 +97,6 @@ target_link_libraries(lifecycle_bringup ${library_name})
 install(TARGETS
   ${library_name}
   map_lib
-  rt_lib
   pf_lib
   sensors_lib
   motions_lib
@@ -131,6 +123,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} rt_lib pf_lib sensors_lib motions_lib map_lib map_loader)
+ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib map_loader)
 
 ament_package()

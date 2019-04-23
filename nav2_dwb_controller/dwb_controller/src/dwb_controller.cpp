@@ -64,8 +64,6 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
       std::bind(&DwbController::followPath, this, std::placeholders::_1));
 
-#define TARGET_LOOP_RATE	100
-
   rtm_ = std::make_unique<nav2_util::RateMonitor>("dwb_cmd_vel",
     10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
@@ -141,8 +139,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
   std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
 
-  uint32_t rate = TARGET_LOOP_RATE;
-  rclcpp::Rate loop_rate(rate);
+  rclcpp::Rate loop_rate(100ms);	// period vs. hz
 
 preempted:
   auto goal = current_goal_handle->get_goal();

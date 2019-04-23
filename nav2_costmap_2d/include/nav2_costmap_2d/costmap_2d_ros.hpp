@@ -50,7 +50,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
-#include "nav2_util/real_time/real_time_monitor.hpp"
+#include "nav2_util/rate_monitor.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Transform.h"

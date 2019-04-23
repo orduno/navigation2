@@ -79,9 +79,15 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initParticleFilter();
   initLaserScan();
 
-  rtm_ = std::make_unique<nav2_util::RateMonitor>("amcl_pose", 
+  amcl_pose_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_pose", 
     10, 10, std::bind(&AmclNode::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
+
+  laser_scan_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_laser_scan_input", 
+    5, 10, nullptr);
+
+  odom_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_odom_monitor", 
+    5, 10, nullptr);
 
   RCLCPP_INFO(get_logger(), "return from on_configure");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -267,6 +273,7 @@ AmclNode::getOdomPose(
   y = odom_pose.pose.position.y;
   yaw = tf2::getYaw(odom_pose.pose.orientation);
 
+  odom_monitor_->calc_looptime();
   return true;
 }
 
@@ -429,6 +436,8 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
   last_laser_received_ts_ = rclcpp_node_->now();
   int laser_index = -1;
+
+  laser_scan_monitor_->calc_looptime();
 
   // Do we have the base->base_laser Tx yet?
   if (frame_to_laser_.find(laser_scan_frame_id) == frame_to_laser_.end()) {
@@ -688,7 +697,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       RCLCPP_INFO(get_logger(), "Publishing pose");
       first_pose_sent_ = true;
       pose_pub_->publish(p);
-      rtm_->calc_looptime();
+      amcl_pose_monitor_->calc_looptime();
       last_published_pose_ = p;
 
       RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
@@ -1008,7 +1017,7 @@ AmclNode::initLaserScan()
 void
 AmclNode::cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime)
 {
-  printf("AmclNode: Iteration:%d looptime:%ld ns \n", iter_num, long(looptime.nanoseconds()));
+  printf("AmclNode::cbLooptimeOverrun: Iteration: %d looptime: %ldns \n", iter_num, long(looptime.nanoseconds()));
 }
 
 

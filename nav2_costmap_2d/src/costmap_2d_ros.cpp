@@ -118,7 +118,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Add cleaning service
   clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
 
-  rtm_ = std::make_unique<nav2_util::RateMonitor>("costmap_update",
+  rtm_ = std::make_unique<nav2_util::RateMonitor>(name_ + "_costmap_update",
     5, 10, std::bind(&Costmap2DROS::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
 
@@ -322,7 +322,7 @@ Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & orie
 void
 Costmap2DROS::mapUpdateLoop(double frequency)
 {
-  RCLCPP_DEBUG(get_logger(), "mapUpdateLoop: %lf", frequency);
+  RCLCPP_INFO(get_logger(), "mapUpdateLoop frequency: %lf", frequency);
 
   // the user might not want to run the loop every cycle
   if (frequency == 0.0) {
@@ -330,13 +330,16 @@ Costmap2DROS::mapUpdateLoop(double frequency)
   }
 
   RCLCPP_DEBUG(get_logger(), "Entering loop");
-  rclcpp::Rate r(frequency);
+
+  rclcpp::Rate r(frequency);	// 200ms by default
+
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;
 
     // Measure the execution time of the updateMap method
     timer.start();
     updateMap();
+    rtm_->calc_looptime();
     timer.end();
 
     RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
@@ -354,12 +357,10 @@ Costmap2DROS::mapUpdateLoop(double frequency)
         costmap_publisher_->publishCostmap();
         last_publish_ = current_time;
       }
-
     }
 
     // Make sure to sleep for the remainder of our cycle time
     r.sleep();
-    rtm_->calc_looptime();
 
 #if 0
     // TODO(bpwilcox): find ROS2 equivalent or port for r.cycletime()
@@ -533,7 +534,7 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 void
 Costmap2DROS::cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime)
 {
-  printf("Costmap2DROS: Iteration:%d looptime:%ld ns \n", iter_num, long(looptime.nanoseconds()));
+//  printf("Costmap2DROS::cbLooptimeOverrun: Iteration: %d, looptime: %ldns \n", iter_num, long(looptime.nanoseconds()));
 }
 
 }  // namespace nav2_costmap_2d

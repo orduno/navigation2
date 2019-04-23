@@ -26,7 +26,7 @@ class RateMonitor
 public:
   RateMonitor(
     std::string id, uint32_t rate, uint32_t jitter_margin,
-    std::function<void(int iter_num, rclcpp::Duration looptime)> cb);
+    std::function<void(int iter_num, rclcpp::Duration looptime)> cb = nullptr);
   RateMonitor() = delete;
   ~RateMonitor();
 

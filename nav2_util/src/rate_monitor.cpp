@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_util/real_time/real_time_monitor.hpp"
+#include "nav2_util/rate_monitor.hpp"
 
 #include <sys/resource.h>
 
@@ -29,18 +29,19 @@ RateMonitor::RateMonitor(
 {
   uint32_t looptime_ns = 1000000000 / rate;
   uint32_t jitter_ns = (looptime_ns * jitter_margin) / 100;
-  uint32_t desired_looptime_ns = looptime_ns + jitter_ns;
 
-  acceptable_looptime_ = rclcpp::Duration(0, desired_looptime_ns);
+  acceptable_looptime_ = rclcpp::Duration(0, looptime_ns + jitter_ns);
 
   // TODO(mjeronimo): Create a unique file name?
-  std::string filename = "/tmp/log_" + id + ".txt";
+  std::string filename = "/tmp/" + id + ".log";
 
   if ((log_file_ = fopen(filename.c_str(), "w")) == nullptr) {
     throw std::runtime_error("Error: Could not open log file");
   }
 
-  fprintf(log_file_, "Desired looptime:%ld ns \n", long(acceptable_looptime_.nanoseconds()));
+  fprintf(log_file_, "Name: %s\n", id.c_str());
+  fprintf(log_file_, "Desired looptime: %ldns \n", (long)looptime_ns);
+  fprintf(log_file_, "Jitter margin: %ld%% \n", (long)jitter_margin);
 }
 
 RateMonitor::~RateMonitor()
