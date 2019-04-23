@@ -15,6 +15,7 @@
 #include "nav2_util/rate_monitor.hpp"
 
 #include <sys/resource.h>
+#include <sys/stat.h>
 
 #include "rclcpp/time.hpp"
 
@@ -27,20 +28,23 @@ RateMonitor::RateMonitor(
 
 : rate_(rate), jitter_margin_(jitter_margin), overrun_cb_(cb)
 {
-  uint32_t looptime_ns = 1000000000 / rate;
-  uint32_t jitter_ns = (looptime_ns * jitter_margin) / 100;
+  uint32_t period_ns = 1000000000 / rate;
+  uint32_t jitter_ns = (period_ns * jitter_margin) / 100;
 
-  acceptable_looptime_ = rclcpp::Duration(0, looptime_ns + jitter_ns);
+  acceptable_looptime_ = rclcpp::Duration(0, period_ns + jitter_ns);
+
+  std::string directory = "/tmp/nav2/";
+  mkdir(directory.c_str(), 0700);
 
   // TODO(mjeronimo): Create a unique file name?
-  std::string filename = "/tmp/" + id + ".log";
+  std::string filename = directory + id + ".log";
 
   if ((log_file_ = fopen(filename.c_str(), "w")) == nullptr) {
     throw std::runtime_error("Error: Could not open log file");
   }
 
   fprintf(log_file_, "Name: %s\n", id.c_str());
-  fprintf(log_file_, "Desired looptime: %ldns \n", (long)looptime_ns);
+  fprintf(log_file_, "Desired looptime: %ldns \n", (long)period_ns);
   fprintf(log_file_, "Jitter margin: %ld%% \n", (long)jitter_margin);
 }
 

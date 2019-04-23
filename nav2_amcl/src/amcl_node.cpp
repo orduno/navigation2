@@ -79,14 +79,14 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initParticleFilter();
   initLaserScan();
 
-  amcl_pose_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_pose", 
+  amcl_pose_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_output__pose", 
     10, 10, std::bind(&AmclNode::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
 
-  laser_scan_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_laser_scan_input", 
+  laser_scan_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_input__laser_scan", 
     5, 10, nullptr);
 
-  odom_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_odom_monitor", 
+  odom_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_input__odometry", 
     5, 10, nullptr);
 
   RCLCPP_INFO(get_logger(), "return from on_configure");

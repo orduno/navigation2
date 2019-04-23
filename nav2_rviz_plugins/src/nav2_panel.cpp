@@ -14,29 +14,15 @@
 
 #include "nav2_rviz_plugins/nav2_panel.hpp"
 
+#include <dirent.h>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QListWidgetItem>
 #include <QPushButton>
-#include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrent>
-
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarSet>
-#include <QtCharts/QChartView>
-#include <QtCharts/QLegend>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QScatterSeries>
-#include <QtCharts/QValueAxis>
+#include <QVBoxLayout>
 
 #include "rviz_common/display_context.hpp"
-
-using QtCharts::QBarSeries;
-using QtCharts::QBarSet;
-using QtCharts::QChart;
-using QtCharts::QChartView;
-using QtCharts::QLegend;
-using QtCharts::QLineSeries;
-using QtCharts::QScatterSeries;
-using QtCharts::QValueAxis;
 
 namespace nav2_rviz_plugins
 {
@@ -44,121 +30,91 @@ namespace nav2_rviz_plugins
 Nav2Panel::Nav2Panel(QWidget * parent)
 : Panel(parent)
 {
-  startup_button = new QPushButton("Startup");
-  shutdown_button = new QPushButton("Shutdown");
+  // Create the control button and its tooltip
 
-  connect(startup_button, SIGNAL(clicked()), this, SLOT(onStartupClicked()));
-  connect(shutdown_button, SIGNAL(clicked()), this, SLOT(onShutdownClicked()));
+  start_stop_button = new QPushButton("Startup");
+  start_stop_button->setToolTip("Bring up and shutdown the nav2 system");
 
-  startup_button->setToolTip("TODO");
-  shutdown_button->setToolTip("TODO");
+  // Create the state machine used to present the proper control button state in the UI
 
-  QChart * chart = new QChart();
-  QChartView * chartView = new QChartView(chart);
-  chartView->setMinimumSize(400, 300);
+  initial_ = new QState();
+  initial_->setObjectName("initial");
+  initial_->assignProperty(start_stop_button, "text", "Startup");
 
-  QValueAxis * axisX = new QValueAxis;
-  axisX->setRange(0, 2000);
-  axisX->setLabelFormat("%g");
-  axisX->setTitleText("Loop Iteration");
+  starting_ = new QState();
+  starting_->setObjectName("starting");
+  starting_->assignProperty(start_stop_button, "text", "Shutdown");
 
-  QValueAxis * axisY = new QValueAxis;
-  axisY->setRange(0, 50);
-  axisY->setTitleText("Time (ms)");
+  stopping_ = new QState();
+  stopping_->setObjectName("stopping");
+  stopping_->assignProperty(start_stop_button, "enabled", false);
 
-  QLineSeries * series = new QLineSeries;
-  series->setName("loop rate samples");
-  QPen pen1(QRgb(0xfdb157));
-  pen1.setWidth(2);
-  series->setPen(pen1);
-  QVector<QPointF> points;
-  for (int i = 0; i < 2000; i++) {
-    points.append(QPointF(i, 25));
+  QObject::connect(starting_, SIGNAL(entered()), this, SLOT(onStartup()));
+  QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
+
+  initial_->addTransition(start_stop_button, SIGNAL(clicked()), starting_);
+  starting_->addTransition(start_stop_button, SIGNAL(clicked()), stopping_);
+
+  machine_.addState(initial_);
+  machine_.addState(starting_);
+  machine_.addState(stopping_);
+  machine_.setInitialState(initial_);
+  machine_.start();
+
+  // Display the available log files
+
+  QLabel *label = new QLabel(this);
+  label->setText("Log files:");
+
+  QListWidget * listWidget = new QListWidget(this);
+  listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+
+  DIR *dir;
+  if ((dir = opendir ("/tmp/nav2")) != nullptr) {
+    struct dirent *ent;
+    while ((ent = readdir (dir)) != nullptr) {
+	  if (ent->d_name[0] != '.') {
+
+	    std::string filename(ent->d_name);
+
+		size_t lastindex = filename.find_last_of(".");
+        std::string basename = filename.substr(0, lastindex);
+
+        new QListWidgetItem(tr(basename.c_str()), listWidget);
+
+
+      }
+    }
+    closedir (dir);
+    listWidget->sortItems(Qt::AscendingOrder);
+    QObject::connect(listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(itemDoubleClicked(QListWidgetItem *)));
+  } else {
+    printf("Could not open directory: /tmp/nav2\n");
   }
-  series->replace(points);
 
-  QLineSeries * lineseries = new QLineSeries;
-  lineseries->setName("target");
-  QPen pen(QRgb(0xff0000));
-  pen.setWidth(2);
-  lineseries->setPen(pen);
-  QVector<QPointF> points2;
-  points2.append(QPointF(0, 10));
-  points2.append(QPointF(2000, 10));
-  lineseries->replace(points2);
-
-  QPainterPath starPath;
-  starPath.moveTo(28, 15);
-  for (int i = 1; i < 5; i++) {
-    starPath.lineTo(14 + 14 * qCos(0.8 * i * M_PI),
-      15 + 14 * qSin(0.8 * i * M_PI));
-  }
-  starPath.closeSubpath();
-
-  QImage star(30, 30, QImage::Format_ARGB32);
-  star.fill(Qt::transparent);
-
-  QPainter painter(&star);
-  painter.setRenderHint(QPainter::Antialiasing);
-  painter.setPen(QRgb(0x0000ff));
-  painter.setBrush(painter.pen().color());
-  painter.drawPath(starPath);
-
-#if 0
-  QAbstractBarSeries QHorizontalBarSeries QScatterSeries
-  QAbstractSeries QHorizontalPercentBarSeries QSplineSeries
-  QAreaSeries QHorizontalStackedBarSeries QStackedBarSeries
-  QBarSeries QLineSeries QXYSeries
-  QBoxPlotSeries QPercentBarSeries
-  QCandlestickSeries QPieSeries
-#endif
-
-#if 0
-  QBarSet * set0 = new QBarSet("samples");
-  for (int i = 0; i < 1000; i++) {
-    *set0 << i;
-  }
-  QBarSeries * barseries = new QBarSeries();
-  barseries->append(set0);
-#endif
-
-  QScatterSeries * series2 = new QScatterSeries();
-  series2->setName("scatter3");
-  series2->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
-  series2->setMarkerSize(30.0);
-
-  *series2 << QPointF(1, 5) << QPointF(500, 25) << QPointF(1500, 50);
-  series2->setBrush(star);
-  series2->setPen(QColor(Qt::transparent));
-
-  chart->setAxisX(axisX, series);
-  chart->setAxisY(axisY, series);
-  chart->addSeries(series);
-  chart->addSeries(lineseries);
-  chart->addSeries(series2);
-  // chart->addSeries(barseries);
-  chart->legend()->hide();
-  chart->setTitle("DWB Loop Rate");
-
-  series->attachAxis(axisX);
-  series->attachAxis(axisY);
-  lineseries->attachAxis(axisX);
-  lineseries->attachAxis(axisY);
-  series2->attachAxis(axisX);
-  series2->attachAxis(axisY);
-  // barseries->attachAxis(axisX);
-  // barseries->attachAxis(axisY);
+  // Lay out the items in the panel
 
   QHBoxLayout * button_layout = new QHBoxLayout;
-  button_layout->addWidget(startup_button);
-  button_layout->addWidget(shutdown_button);
+  button_layout->addWidget(start_stop_button);
   button_layout->setContentsMargins(2, 0, 2, 2);
 
   QVBoxLayout * main_layout = new QVBoxLayout;
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->addWidget(chartView);
+  main_layout->setContentsMargins(10, 10, 10, 10);
+  main_layout->addWidget(label);
+  main_layout->addWidget(listWidget);
   main_layout->addLayout(button_layout);
   setLayout(main_layout);
+}
+
+void
+Nav2Panel::itemDoubleClicked(QListWidgetItem * list_item)
+{
+  std::string filename(list_item->text().toStdString());
+  std::string cmd("python3 ~/src/navigation2/nav2_util/src/real_time/plot_bar.py -f /tmp/nav2/");
+  cmd += filename + ".log";
+  // std::cout << "\"" << cmd << "\"\n";
+  int rc = system(cmd.c_str());
+  (void)rc;
 }
 
 void
@@ -168,19 +124,17 @@ Nav2Panel::onInitialize()
 }
 
 void
-Nav2Panel::onStartupClicked()
+Nav2Panel::onStartup()
 {
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::startup, &client_));
-  startup_button->setEnabled(false);
 }
 
 void
-Nav2Panel::onShutdownClicked()
+Nav2Panel::onShutdown()
 {
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
-  shutdown_button->setEnabled(false);
 }
 
 void

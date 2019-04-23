@@ -118,7 +118,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Add cleaning service
   clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
 
-  rtm_ = std::make_unique<nav2_util::RateMonitor>(name_ + "_costmap_update",
+  rtm_ = std::make_unique<nav2_util::RateMonitor>(name_ + "__costmap_update",
     5, 10, std::bind(&Costmap2DROS::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
 
