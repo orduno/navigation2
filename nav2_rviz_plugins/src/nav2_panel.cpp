@@ -32,32 +32,57 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 {
   // Create the control button and its tooltip
 
-  start_stop_button = new QPushButton("Startup");
-  start_stop_button->setToolTip("Bring up and shutdown the nav2 system");
+  start_stop_button_ = new QPushButton("Startup");
+  start_stop_button_->setToolTip("Bring up and shutdown the nav2 system");
 
-  // Create the state machine used to present the proper control button state in the UI
+  pause_resume_button_ = new QPushButton("Pause");
+  pause_resume_button_->setToolTip("Pause and resume the nav2 system");
+
+  // Create the state machine used to present the proper control button states in the UI
 
   initial_ = new QState();
   initial_->setObjectName("initial");
-  initial_->assignProperty(start_stop_button, "text", "Startup");
+  initial_->assignProperty(start_stop_button_, "text", "Startup");
+  initial_->assignProperty(pause_resume_button_, "enabled", false);
 
   starting_ = new QState();
   starting_->setObjectName("starting");
-  starting_->assignProperty(start_stop_button, "text", "Shutdown");
+  starting_->assignProperty(start_stop_button_, "text", "Shutdown");
+  starting_->assignProperty(pause_resume_button_, "enabled", true);
 
   stopping_ = new QState();
   stopping_->setObjectName("stopping");
-  stopping_->assignProperty(start_stop_button, "enabled", false);
+  stopping_->assignProperty(start_stop_button_, "enabled", false);
+  stopping_->assignProperty(pause_resume_button_, "enabled", false);
+
+  pausing_ = new QState();
+  pausing_->setObjectName("pausing");
+  pausing_->assignProperty(start_stop_button_, "enabled", false);
+  pausing_->assignProperty(pause_resume_button_, "text", "Resume");
+
+  resuming_ = new QState();
+  resuming_->setObjectName("resuming");
+  resuming_->assignProperty(start_stop_button_, "enabled", true);
+  resuming_->assignProperty(pause_resume_button_, "text", "Pause");
 
   QObject::connect(starting_, SIGNAL(entered()), this, SLOT(onStartup()));
   QObject::connect(stopping_, SIGNAL(entered()), this, SLOT(onShutdown()));
+  QObject::connect(pausing_, SIGNAL(entered()), this, SLOT(onPause()));
+  QObject::connect(resuming_, SIGNAL(entered()), this, SLOT(onResume()));
 
-  initial_->addTransition(start_stop_button, SIGNAL(clicked()), starting_);
-  starting_->addTransition(start_stop_button, SIGNAL(clicked()), stopping_);
+  initial_->addTransition(start_stop_button_, SIGNAL(clicked()), starting_);
+  starting_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
+  starting_->addTransition(pause_resume_button_, SIGNAL(clicked()), pausing_);
+  pausing_->addTransition(pause_resume_button_, SIGNAL(clicked()), resuming_);
+  resuming_->addTransition(pause_resume_button_, SIGNAL(clicked()), pausing_);
+  resuming_->addTransition(start_stop_button_, SIGNAL(clicked()), stopping_);
 
   machine_.addState(initial_);
   machine_.addState(starting_);
   machine_.addState(stopping_);
+  machine_.addState(pausing_);
+  machine_.addState(resuming_);
+
   machine_.setInitialState(initial_);
   machine_.start();
 
@@ -81,8 +106,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
         std::string basename = filename.substr(0, lastindex);
 
         new QListWidgetItem(tr(basename.c_str()), listWidget);
-
-
       }
     }
     closedir (dir);
@@ -94,8 +117,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   // Lay out the items in the panel
 
-  QHBoxLayout * button_layout = new QHBoxLayout;
-  button_layout->addWidget(start_stop_button);
+  QVBoxLayout * button_layout = new QVBoxLayout;
+  button_layout->addWidget(pause_resume_button_);
+  button_layout->addWidget(start_stop_button_);
   button_layout->setContentsMargins(2, 0, 2, 2);
 
   QVBoxLayout * main_layout = new QVBoxLayout;
@@ -135,6 +159,20 @@ Nav2Panel::onShutdown()
 {
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
+}
+
+void
+Nav2Panel::onPause()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::pause, &client_));
+}
+
+void
+Nav2Panel::onResume()
+{
+  QFuture<void> future =
+    QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::resume, &client_));
 }
 
 void

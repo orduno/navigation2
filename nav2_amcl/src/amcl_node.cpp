@@ -203,6 +203,11 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   lasers_update_.clear();
   frame_to_laser_.clear();
 
+  // Monitors
+  amcl_pose_monitor_.reset();
+  laser_scan_monitor_.reset();
+  odom_monitor_.reset();
+
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 

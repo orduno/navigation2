@@ -212,6 +212,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   clear_costmap_service_.reset();
 
+  rtm_.reset();
+
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 

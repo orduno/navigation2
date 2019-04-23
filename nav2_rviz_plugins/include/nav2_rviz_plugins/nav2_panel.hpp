@@ -43,19 +43,25 @@ public:
 private Q_SLOTS:
   void onStartup();
   void onShutdown();
+  void onPause();
+  void onResume();
+
   void itemDoubleClicked(QListWidgetItem *list_item);
 
 private:
   // The client used to control the nav2 stack
   nav2_controller::Nav2ControllerClient client_;
 
-  QPushButton * start_stop_button{nullptr};
+  QPushButton * start_stop_button_{nullptr};
+  QPushButton * pause_resume_button_{nullptr};
 
   QStateMachine machine_;
 
   QState * initial_{nullptr};
   QState * starting_{nullptr};
   QState * stopping_{nullptr};
+  QState * pausing_{nullptr};
+  QState * resuming_{nullptr};
 
   //bool double_clicked_{false};
 };

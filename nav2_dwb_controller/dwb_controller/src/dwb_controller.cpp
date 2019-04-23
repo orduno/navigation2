@@ -20,6 +20,7 @@
 
 #include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
+#include "nav2_util/rate_monitor.hpp"
 
 using namespace std::chrono_literals;
 
@@ -63,10 +64,6 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
       std::bind(&DwbController::followPath, this, std::placeholders::_1));
-
-  rtm_ = std::make_unique<nav2_util::RateMonitor>("dwb_output__cmd_vel",
-    10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
-    std::placeholders::_1, std::placeholders::_2));
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -112,7 +109,6 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   vel_pub_.reset();
   loop_time_pub_.reset();
   action_server_.reset();
-  rtm_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -141,6 +137,10 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
   rclcpp::Rate loop_rate(100ms);	// period vs. hz
 
+  nav2_util::RateMonitor rtm("dwb_output__cmd_vel", 
+    10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
+    std::placeholders::_1, std::placeholders::_2));
+
 preempted:
   auto goal = current_goal_handle->get_goal();
 
@@ -166,7 +166,7 @@ preempted:
 
         //RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
         publishVelocity(cmd_vel_2d);
-        rtm_->calc_looptime();
+        rtm.calc_looptime();
 
         if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");

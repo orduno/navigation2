@@ -26,7 +26,6 @@
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/msg/loop_time.hpp"
-#include "nav2_util/rate_monitor.hpp"
 #include "nav2_util/simple_action_server.hpp"
 
 namespace nav2_dwb_controller
@@ -73,8 +72,6 @@ protected:
 
   // The local planner
   std::unique_ptr<dwb_core::DWBLocalPlanner> planner_;
-
-  std::unique_ptr<nav2_util::RateMonitor> rtm_;
 };
 
 }  // namespace nav2_dwb_controller
