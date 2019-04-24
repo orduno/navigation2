@@ -118,9 +118,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Add cleaning service
   clear_costmap_service_ = std::make_shared<ClearCostmapService>(shared_from_this(), *this);
 
-  rtm_ = std::make_unique<nav2_util::RateMonitor>(name_ + "__costmap_update",
-    5, 10, std::bind(&Costmap2DROS::cbLooptimeOverrun, this,
-    std::placeholders::_1, std::placeholders::_2));
+  costmap_update_monitor_ = std::make_unique<nav2_util::RateConstraint>(
+    name_ + "_output_costmap_update_rate", 5, 10, nullptr);
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -212,7 +211,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   clear_costmap_service_.reset();
 
-  rtm_.reset();
+  costmap_update_monitor_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -341,8 +340,8 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     // Measure the execution time of the updateMap method
     timer.start();
     updateMap();
-    rtm_->calc_looptime();
     timer.end();
+    costmap_update_monitor_->calc_looptime();
 
     RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
 
@@ -531,12 +530,6 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
   }
 
   return true;
-}
-
-void
-Costmap2DROS::cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime)
-{
-//  printf("Costmap2DROS::cbLooptimeOverrun: Iteration: %d, looptime: %ldns \n", iter_num, long(looptime.nanoseconds()));
 }
 
 }  // namespace nav2_costmap_2d

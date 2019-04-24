@@ -39,10 +39,10 @@ def read(logfile):
             m = re.search('Name: (.*)$', line)
             title = m.group(1)
 
-        # Get the desired looptime
+        # Get the desired rate
         line = f.readline()
-        if line.startswith('Desired looptime:'):
-            m = re.search('Desired looptime: (\d+)', line)
+        if line.startswith('Desired rate:'):
+            m = re.search('Desired rate: (\d+)', line)
             desired = int(m.group(1)) / 1000000
 
         # Get the jitter margin

@@ -78,16 +78,7 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initOdometry();
   initParticleFilter();
   initLaserScan();
-
-  amcl_pose_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_output__pose", 
-    10, 10, std::bind(&AmclNode::cbLooptimeOverrun, this,
-    std::placeholders::_1, std::placeholders::_2));
-
-  laser_scan_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_input__laser_scan", 
-    5, 10, nullptr);
-
-  odom_monitor_ = std::make_unique<nav2_util::RateMonitor>("amcl_input__odometry", 
-    5, 10, nullptr);
+  initConstraints();
 
   RCLCPP_INFO(get_logger(), "return from on_configure");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -203,10 +194,10 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   lasers_update_.clear();
   frame_to_laser_.clear();
 
-  // Monitors
-  amcl_pose_monitor_.reset();
-  laser_scan_monitor_.reset();
-  odom_monitor_.reset();
+  // Constraints
+  amcl_pose_rate_.reset();
+  laser_scan_rate_.reset();
+  odom_rate_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -278,7 +269,7 @@ AmclNode::getOdomPose(
   y = odom_pose.pose.position.y;
   yaw = tf2::getYaw(odom_pose.pose.orientation);
 
-  odom_monitor_->calc_looptime();
+  odom_rate_->calc_looptime();
   return true;
 }
 
@@ -442,7 +433,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   last_laser_received_ts_ = rclcpp_node_->now();
   int laser_index = -1;
 
-  laser_scan_monitor_->calc_looptime();
+  laser_scan_rate_->calc_looptime();
 
   // Do we have the base->base_laser Tx yet?
   if (frame_to_laser_.find(laser_scan_frame_id) == frame_to_laser_.end()) {
@@ -702,7 +693,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       RCLCPP_INFO(get_logger(), "Publishing pose");
       first_pose_sent_ = true;
       pose_pub_->publish(p);
-      amcl_pose_monitor_->calc_looptime();
+      amcl_pose_rate_->calc_looptime();
       last_published_pose_ = p;
 
       RCLCPP_DEBUG(get_logger(), "New pose: %6.3f %6.3f %6.3f",
@@ -1020,10 +1011,16 @@ AmclNode::initLaserScan()
 }
 
 void
-AmclNode::cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime)
+AmclNode::initConstraints()
 {
-  printf("AmclNode::cbLooptimeOverrun: Iteration: %d looptime: %ldns \n", iter_num, long(looptime.nanoseconds()));
-}
+  amcl_pose_rate_ = std::make_unique<nav2_util::RateConstraint>("amcl_output_pose_rate", 
+    10, 10, nullptr);
 
+  laser_scan_rate_ = std::make_unique<nav2_util::RateConstraint>("amcl_input_laser_scan_rate", 
+    5, 10, nullptr);
+
+  odom_rate_ = std::make_unique<nav2_util::RateConstraint>("amcl_input_odom_rate", 
+    5, 10, nullptr);
+}
 
 }  // namespace nav2_amcl

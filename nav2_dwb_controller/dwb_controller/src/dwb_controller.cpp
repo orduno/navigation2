@@ -20,7 +20,7 @@
 
 #include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
-#include "nav2_util/rate_monitor.hpp"
+#include "nav2_util/rate_constraint.hpp"
 
 using namespace std::chrono_literals;
 
@@ -137,7 +137,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
   rclcpp::Rate loop_rate(100ms);	// period vs. hz
 
-  nav2_util::RateMonitor rtm("dwb_output__cmd_vel", 
+  nav2_util::RateConstraint cmd_vel_monitor("dwb_output_cmd_vel_rate", 
     10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
 
@@ -166,7 +166,7 @@ preempted:
 
         //RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
         publishVelocity(cmd_vel_2d);
-        rtm.calc_looptime();
+        cmd_vel_monitor.calc_looptime();
 
         if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");

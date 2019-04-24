@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__RATE_MONITOR_HPP_
-#define NAV2_UTIL__RATE_MONITOR_HPP_
+#ifndef NAV2_UTIL__RATE_CONSTRAINT_HPP_
+#define NAV2_UTIL__RATE_CONSTRAINT_HPP_
 
 #include "builtin_interfaces/msg/time.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -21,28 +21,31 @@
 namespace nav2_util
 {
 
-class RateMonitor
+class RateConstraint
 {
 public:
-  RateMonitor(
-    std::string id, uint32_t rate, uint32_t jitter_margin,
-    std::function<void(int iter_num, rclcpp::Duration looptime)> cb = nullptr);
-  RateMonitor() = delete;
-  ~RateMonitor();
+  RateConstraint(
+    std::string constraint_id, uint32_t target_rate, uint32_t jitter_margin,
+    std::function<void(int iter_num, rclcpp::Duration actual)> violation_cb = nullptr);
+  RateConstraint() = delete;
+  ~RateConstraint();
 
   void calc_looptime();
 
-private:
+protected:
   void print_duration(rclcpp::Duration dur);
   void print_metrics();
 
   uint32_t iter_cnt_{0};
   uint32_t rate_{0};
   uint32_t jitter_margin_{0};
+
   rclcpp::Time start_{0, 0};
   rclcpp::Time prev_looptime_{0, 0};
   rclcpp::Duration acceptable_looptime_{0, 0};
+
   std::function<void(int, rclcpp::Duration)> overrun_cb_;
+
   FILE * log_file_;
   bool first_time_{true};
   rclcpp::Clock clock_;
@@ -50,4 +53,4 @@ private:
 
 }  // namespace nav2_util
 
-#endif  // NAV2_UTIL__RATE_MONITOR_HPP_
+#endif  // NAV2_UTIL__RATE_CONSTRAINT_HPP_

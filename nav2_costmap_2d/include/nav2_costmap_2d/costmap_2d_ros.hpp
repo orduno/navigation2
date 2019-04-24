@@ -50,7 +50,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_lifecycle/lifecycle_node.hpp"
-#include "nav2_util/rate_monitor.hpp"
+#include "nav2_util/rate_constraint.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Transform.h"
@@ -293,9 +293,7 @@ protected:
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   std::shared_ptr<ClearCostmapService> clear_costmap_service_;
-
-  std::unique_ptr<nav2_util::RateMonitor> rtm_;
-  void cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime);
+  std::unique_ptr<nav2_util::RateConstraint> costmap_update_monitor_;
 };
 
 }  // namespace nav2_costmap_2d

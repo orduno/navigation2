@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_util/rate_monitor.hpp"
+#include "nav2_util/rate_constraint.hpp"
 
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -22,7 +22,7 @@
 namespace nav2_util
 {
 
-RateMonitor::RateMonitor(
+RateConstraint::RateConstraint(
   std::string id, uint32_t rate, uint32_t jitter_margin,
   std::function<void(int iter_num, rclcpp::Duration looptime)> cb)
 
@@ -44,17 +44,17 @@ RateMonitor::RateMonitor(
   }
 
   fprintf(log_file_, "Name: %s\n", id.c_str());
-  fprintf(log_file_, "Desired looptime: %ldns \n", (long)period_ns);
+  fprintf(log_file_, "Desired rate: %ldns \n", (long)period_ns);
   fprintf(log_file_, "Jitter margin: %ld%% \n", (long)jitter_margin);
 }
 
-RateMonitor::~RateMonitor()
+RateConstraint::~RateConstraint()
 {
   fclose(log_file_);
 }
 
 void
-RateMonitor::calc_looptime()
+RateConstraint::calc_looptime()
 {
   if (first_time_) {
     start_ = prev_looptime_ = clock_.now();
@@ -81,7 +81,7 @@ RateMonitor::calc_looptime()
 }
 
 void
-RateMonitor::print_duration(rclcpp::Duration duration)
+RateConstraint::print_duration(rclcpp::Duration duration)
 {
   uint32_t nsecs = (duration.nanoseconds()) % 1000000000;
   uint32_t secs = ((duration.nanoseconds()) - nsecs) / 1000000000;
@@ -90,7 +90,7 @@ RateMonitor::print_duration(rclcpp::Duration duration)
 }
 
 void
-RateMonitor::print_metrics()
+RateConstraint::print_metrics()
 {
   struct rusage r_usage;
   if (getrusage(RUSAGE_SELF, &r_usage) != 0) {
@@ -101,30 +101,6 @@ RateMonitor::print_metrics()
   fprintf(log_file_, "Major pagefaults: %lu\n", r_usage.ru_majflt);
   fprintf(log_file_, "Memory usage: %lu\n", r_usage.ru_maxrss);
 }
-
-#if 0
-nav2_msgs::msg::LoopTime loop_time_msg;
-loop_time_msg.header.stamp = now();
-loop_time_msg.header.frame_id = "map";
-loop_time_msg.topic = "Foobar";
-loop_time_msg.pub = true;
-loop_time_msg.rate = 0;
-loop_time_msg.jitter = 0;
-loop_time_msg.iteration = 0;
-loop_time_msg.looptime = 0;
-
-loop_time_pub_->publish(loop_time_msg);
-
-std_msgs / Header header              // timestamp in header is the time when msg was dispatched
-string topic                        // Name of the topic
-bool pub                            // True if time captured at publisher end, false if subscription
-int32 rate                          // Desired rate
-int32 jitter                        // Acceptable jitter in percentage
-int32 iteration                     // Iteration count
-uint64 looptime                     // Looptime value in nanosecs
-
-loop_time_pub_.publish(loop_time_msg);
-#endif
 
 #if 0
   rclcpp::Duration looptime(0, 0);
