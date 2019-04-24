@@ -99,29 +99,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QLabel *label = new QLabel(this);
   label->setText("Rate Monitors:");
 
-  QListWidget * listWidget = new QListWidget(this);
-  listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  listWidget_ = new QListWidget(this);
+  listWidget_->setSelectionMode(QAbstractItemView::SingleSelection);
+  connect(listWidget_, SIGNAL(itemDoubleClicked(QListWidgetItem *)),
+    this, SLOT(itemDoubleClicked(QListWidgetItem *)));
 
-  DIR *dir;
-  if ((dir = opendir ("/tmp/nav2")) != nullptr) {
-    struct dirent *ent;
-    while ((ent = readdir (dir)) != nullptr) {
-	  if (ent->d_name[0] != '.') {
-
-	    std::string filename(ent->d_name);
-
-		size_t lastindex = filename.find_last_of(".");
-        std::string basename = filename.substr(0, lastindex);
-
-        new QListWidgetItem(tr(basename.c_str()), listWidget);
-      }
-    }
-    closedir (dir);
-    listWidget->sortItems(Qt::AscendingOrder);
-    QObject::connect(listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(itemDoubleClicked(QListWidgetItem *)));
-  } else {
-    printf("Could not open directory: /tmp/nav2\n");
-  }
+  loadLogFiles();
 
   // Lay out the items in the panel
 
@@ -133,7 +116,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QVBoxLayout * main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(10, 10, 10, 10);
   main_layout->addWidget(label);
-  main_layout->addWidget(listWidget);
+  main_layout->addWidget(listWidget_);
   main_layout->addLayout(button_layout);
   setLayout(main_layout);
 }
@@ -146,6 +129,33 @@ Nav2Panel::itemDoubleClicked(QListWidgetItem * list_item)
   cmd += filename + ".log";
   int rc = system(cmd.c_str());
   (void)rc;
+}
+
+void
+Nav2Panel::loadLogFiles()
+{
+  listWidget_->clear();
+
+  DIR *dir;
+  if ((dir = opendir ("/tmp/nav2")) != nullptr) {
+    struct dirent *ent;
+    while ((ent = readdir (dir)) != nullptr) {
+	  if (ent->d_name[0] != '.') {
+
+	    std::string filename(ent->d_name);
+
+		size_t lastindex = filename.find_last_of(".");
+        std::string basename = filename.substr(0, lastindex);
+
+		QList<QListWidgetItem *> items = listWidget_->findItems(basename.c_str(), Qt::MatchExactly);
+        if (items.size() == 0) {
+          new QListWidgetItem(tr(basename.c_str()), listWidget_);
+        }
+      }
+    }
+    closedir (dir);
+    listWidget_->sortItems(Qt::AscendingOrder);
+  }
 }
 
 void
@@ -164,6 +174,8 @@ Nav2Panel::onStartup()
 void
 Nav2Panel::onShutdown()
 {
+  loadLogFiles();
+
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
 }
@@ -171,6 +183,8 @@ Nav2Panel::onShutdown()
 void
 Nav2Panel::onPause()
 {
+  loadLogFiles();
+
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::pause, &client_));
 }
