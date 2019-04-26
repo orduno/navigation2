@@ -133,7 +133,7 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Send goal call failed");
-    goal_handle->set_aborted(result);
+    goal_handle->abort(result);
     return;
   }
 
@@ -141,7 +141,7 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   auto planner_goal_handle = planner_future_goal_handle.get();
   if (!planner_goal_handle) {
     RCLCPP_ERROR(get_logger(), "Goal was rejected by server");
-    goal_handle->set_aborted(result);
+    goal_handle->abort(result);
     return;
   }
 
@@ -151,7 +151,7 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Get result call failed");
-    goal_handle->set_aborted(result);
+    goal_handle->abort(result);
     return;
   }
 
@@ -159,7 +159,7 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   auto planner_result = planner_future_result.get();
   if (planner_result.code != rclcpp_action::ResultCode::SUCCEEDED) {
     RCLCPP_ERROR(get_logger(), "Get wrapped result call failed");
-    goal_handle->set_aborted(result);
+    goal_handle->abort(result);
     return;
   }
 
@@ -187,7 +187,7 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Send goal call failed");
-    goal_handle->set_aborted(result);
+    goal_handle->abort(result);
     return;
   }
 
@@ -195,7 +195,7 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   auto controller_goal_handle = controller_future_goal_handle.get();
   if (!controller_goal_handle) {
     RCLCPP_ERROR(get_logger(), "Goal was rejected by server");
-    goal_handle->set_aborted(result);
+    goal_handle->abort(result);
     return;
   }
 
@@ -213,7 +213,7 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
         RCLCPP_ERROR(client_node_->get_logger(), "failed to cancel controller goal");
       }
 
-      goal_handle->set_canceled(result);
+      goal_handle->canceled(result);
       return;
     }
   } while (rc == rclcpp::executor::FutureReturnCode::TIMEOUT);
@@ -222,15 +222,15 @@ SimpleNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   auto controller_result = controller_future_result.get();
   switch (controller_result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
-      goal_handle->set_succeeded(result);
+      goal_handle->succeed(result);
       break;
 
     case rclcpp_action::ResultCode::ABORTED:
-      goal_handle->set_aborted(result);
+      goal_handle->abort(result);
       break;
 
     case rclcpp_action::ResultCode::CANCELED:
-      goal_handle->set_canceled(result);
+      goal_handle->canceled(result);
       break;
 
     default:

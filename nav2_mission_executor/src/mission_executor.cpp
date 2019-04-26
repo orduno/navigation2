@@ -115,17 +115,17 @@ MissionExecutor::executeMission(const std::shared_ptr<GoalHandle> goal_handle)
   switch (rc) {
     case nav2_tasks::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Mission succeeded");
-      goal_handle->set_succeeded(result);
+      goal_handle->succeed(result);
       return;
 
     case nav2_tasks::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Mission failed");
-      goal_handle->set_aborted(result);
+      goal_handle->abort(result);
       return;
 
     case nav2_tasks::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Mission canceled");
-      goal_handle->set_canceled(result);
+      goal_handle->canceled(result);
       return;
 
     default:

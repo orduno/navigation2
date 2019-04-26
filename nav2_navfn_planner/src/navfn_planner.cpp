@@ -163,7 +163,7 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
 
     if (!robot_->getCurrentPose(start)) {
       RCLCPP_ERROR(get_logger(), "Current robot pose is not available.");
-      goal_handle->set_aborted(result);
+      goal_handle->abort(result);
       return;
     }
 
@@ -177,14 +177,14 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
     // TODO(orduno): should check for cancel within the makePlan() method?
     if (goal_handle->is_canceling()) {
       RCLCPP_INFO(get_logger(), "Canceling global planning task");
-      goal_handle->set_canceled(result);
+      goal_handle->canceled(result);
       return;
     }
 
     if (!foundPath) {
       RCLCPP_WARN(get_logger(), "Planning algorithm failed to generate a valid"
         " path to (%.2f, %.2f)", goal->pose.pose.position.x, goal->pose.pose.position.y);
-      goal_handle->set_aborted(result);
+      goal_handle->abort(result);
       return;
     }
 
@@ -200,7 +200,7 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
     RCLCPP_INFO(get_logger(),
       "Successfully computed a path to (%.2f, %.2f) with tolerance %.2f",
       goal->pose.pose.position.x, goal->pose.pose.position.y, tolerance_);
-    goal_handle->set_succeeded(result);
+    goal_handle->succeed(result);
     return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(get_logger(), "Plan calculation to (%.2f, %.2f) failed: \"%s\"",
@@ -208,14 +208,14 @@ NavfnPlanner::computePathToPose(const std::shared_ptr<GoalHandle> goal_handle)
 
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
-    goal_handle->set_aborted(result);
+    goal_handle->abort(result);
     return;
   } catch (...) {
     RCLCPP_WARN(get_logger(), "Plan calculation failed");
 
     // TODO(orduno): provide information about the failure to the parent task,
     //               for example: couldn't get costmap update
-    goal_handle->set_aborted(result);
+    goal_handle->abort(result);
     return;
   }
 }

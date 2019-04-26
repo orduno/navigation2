@@ -170,7 +170,7 @@ preempted:
 
         if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");
-          current_goal_handle->set_canceled(result);
+          current_goal_handle->canceled(result);
           publishZeroVelocity();
           return;
         }
@@ -192,12 +192,12 @@ preempted:
   } catch (nav_core2::PlannerException & e) {
     RCLCPP_INFO(this->get_logger(), e.what());
     publishZeroVelocity();
-    current_goal_handle->set_aborted(result);
+    current_goal_handle->abort(result);
     return;
   }
 
   RCLCPP_DEBUG(get_logger(), "DWB succeeded, setting result");
-  current_goal_handle->set_succeeded(result);
+  current_goal_handle->succeed(result);
   publishZeroVelocity();
 }
 

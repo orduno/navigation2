@@ -44,6 +44,8 @@ LifecycleNode::LifecycleNode(
 : rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
   use_rclcpp_node_(use_rclcpp_node)
 {
+  //options_.automatically_declare_initial_parameters(true);
+
   if (use_rclcpp_node_) {
     rclcpp_node_ = std::make_shared<rclcpp::Node>(node_name + "_rclcpp_node", namespace_);
     rclcpp_thread_ = std::make_unique<std::thread>(

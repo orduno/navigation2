@@ -173,17 +173,17 @@ BtNavigator::navigateToPose(const std::shared_ptr<GoalHandle> goal_handle)
   switch (rc) {
     case nav2_tasks::BtStatus::SUCCEEDED:
       RCLCPP_INFO(get_logger(), "Navigation succeeded");
-      goal_handle->set_succeeded(result);
+      goal_handle->succeed(result);
       break;
 
     case nav2_tasks::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
-      goal_handle->set_aborted(result);
+      goal_handle->abort(result);
       break;
 
     case nav2_tasks::BtStatus::CANCELED:
       RCLCPP_INFO(get_logger(), "Navigation canceled");
-      goal_handle->set_canceled(result);
+      goal_handle->canceled(result);
       // Reset the BT so that it can be run again in the future
       bt_->resetTree(tree_->root_node);
       break;

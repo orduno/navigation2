@@ -74,7 +74,7 @@ preempted:
       // Check if this action has been canceled
       if (current_goal_handle->is_canceling()) {
         result->sequence = sequence;
-        current_goal_handle->set_canceled(result);
+        current_goal_handle->canceled(result);
         return;
       }
 
@@ -95,7 +95,7 @@ preempted:
     // Check if goal is done
     if (rclcpp::ok()) {
       result->sequence = sequence;
-      current_goal_handle->set_succeeded(result);
+      current_goal_handle->succeed(result);
     }
   }
 
