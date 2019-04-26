@@ -71,7 +71,7 @@ protected:
 
   // Support functions for bring-up
   void createLifecycleServiceClients();
-  void bringupNode(const std::string & node_name);
+  bool bringupNode(const std::string & node_name);
 
   // Support functions for shutdown
   void shutdownAllNodes();
@@ -80,8 +80,9 @@ protected:
   // For each node in the map, transition to the new target state
   void changeStateForAllNodes(std::uint8_t transition);
 
-  // A convenience function to highlight the output on the console
+  // A convenience functions to highlight the output on the console
   void message(const std::string & msg);
+  void error(const std::string & msg);
 
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;

@@ -97,12 +97,19 @@ StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
 
-  node_->get_parameter_or("track_unknown_space", track_unknown_space_, true);
-  node_->get_parameter_or("use_maximum", use_maximum_, false);
-  node_->get_parameter_or("lethal_cost_threshold", temp_lethal_threshold, 100);
-  node_->get_parameter_or("unknown_cost_value", unknown_cost_value_,
-    static_cast<unsigned char>(0xff));
-  node_->get_parameter_or("trinary_costmap", trinary_costmap_, true);
+  node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
+  //node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(true));
+  //node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+  //node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  //node_->declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+  //node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+
+  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node_->get_parameter("track_unknown_space", track_unknown_space_);
+  node_->get_parameter("use_maximum", use_maximum_);
+  node_->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
+  node_->get_parameter("unknown_cost_value", unknown_cost_value_);
+  node_->get_parameter("trinary_costmap", trinary_costmap_);
 
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
 }

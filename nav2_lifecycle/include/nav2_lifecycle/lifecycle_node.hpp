@@ -39,12 +39,15 @@ public:
     const std::string & namespace_ = "",
     bool use_rclcpp_node = false,
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+    //const rclcpp::NodeOptions & options = get_node_options());
   virtual ~LifecycleNode();
 
 protected:
   // Whether or not to create a local rclcpp::Node which can be used for ROS2 classes that don't
   // yet support lifecycle nodes
   bool use_rclcpp_node_;
+
+  //static rclcpp::NodeOptions get_node_options();
 
   // The local node
   rclcpp::Node::SharedPtr rclcpp_node_;
