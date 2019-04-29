@@ -98,11 +98,6 @@ StaticLayer::getParameters()
   int temp_lethal_threshold = 0;
 
   node_->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  //node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(true));
-  //node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
-  //node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-  //node_->declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
-  //node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter("track_unknown_space", track_unknown_space_);

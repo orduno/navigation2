@@ -56,7 +56,6 @@ void StandardTrajectoryGenerator::initialize(const nav2_lifecycle::LifecycleNode
 
   nh->declare_parameter("sim_time", rclcpp::ParameterValue(1.7));
   nh->declare_parameter("discretize_by_time", rclcpp::ParameterValue(false));
-  //nh->declare_parameter("use_dwa", rclcpp::ParameterValue(false));
 
   nh->get_parameter("sim_time", sim_time_);
   checkUseDwaParam(nh);

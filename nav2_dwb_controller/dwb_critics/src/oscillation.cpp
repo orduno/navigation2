@@ -111,7 +111,6 @@ void OscillationCritic::onInit()
     nav_2d_utils::searchAndGetParam(nh_, "oscillation_reset_time", -1.0));
 
   nh_->declare_parameter(name_ + ".x_only_threshold", rclcpp::ParameterValue(0.05));
-  //nh_->declare_parameter("max_vel_y", rclcpp::ParameterValue(0.0));
 
   /**
    * Historical Parameter Loading

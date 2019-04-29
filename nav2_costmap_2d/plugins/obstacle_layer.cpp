@@ -73,7 +73,6 @@ void ObstacleLayer::onInitialize()
   node_->declare_parameter(name_ + "." + "footprint_clearing_enabled", rclcpp::ParameterValue(true));
   node_->declare_parameter(name_ + "." + "max_obstacle_height", rclcpp::ParameterValue(2.0));
   node_->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
-  //node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(layered_costmap_->isTrackingUnknown()));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);

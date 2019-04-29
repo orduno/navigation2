@@ -31,7 +31,7 @@ MapServer::MapServer()
 : nav2_lifecycle::LifecycleNode("map_server")
 {
   RCLCPP_INFO(get_logger(), "Creating");
-  declare_parameter(std::string("yaml_filename"), rclcpp::ParameterValue(std::string("map.yaml")));
+  declare_parameter("yaml_filename", rclcpp::ParameterValue(std::string("map.yaml")));
 }
 
 MapServer::~MapServer()
