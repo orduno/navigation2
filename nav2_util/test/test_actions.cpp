@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,13 +57,13 @@ public:
     // The goal may be pre-empted, so keep a pointer to the current goal
     std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
 
+    rclcpp::Rate loop_rate(10);
+
 preempted:
     // Initialize the goal, feedback, and result
     auto goal = current_goal_handle->get_goal();
     auto feedback = std::make_shared<Fibonacci::Feedback>();
     auto result = std::make_shared<Fibonacci::Result>();
-
-    rclcpp::Rate loop_rate(10);
 
     // Fibonacci-specific initialization
     auto & sequence = feedback->sequence;
@@ -245,116 +245,3 @@ TEST_F(ActionTest, test_simple_action_with_feedback)
   ASSERT_EQ(sum, 143);
   ASSERT_GE(feedback_sum, 0);  // We should have received *some* feedback
 }
-
-#if 0
-TEST_F(ActionTest, test_action_with_feedback)
-{
-  int feedback_sum = 0;
-
-  // A callback to accumulate the intermediate values
-  auto feedback_callback = [&feedback_sum](
-    rclcpp_action::ClientGoalHandle<Fibonacci>::SharedPtr /*goal_handle*/,
-    const std::shared_ptr<const Fibonacci::Feedback> feedback)
-    {
-      feedback_sum += feedback->sequence.back();
-    };
-
-  // The goal for this invocation
-  auto goal = Fibonacci::Goal();
-
-  auto goal_handle = future_goal_handle.get();
-
-  for (bool done = false; !done; ) {
-    auto result = node_->action_client_->async_get_result(std::chrono::milliseconds(250));
-
-    if (rclcpp::spin_until_future_complete(node_, future_result) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
-    {
-      throw std::runtime_error("spin_until_future_complete failed");
-    }
-
-    result = future_result.get();
-
-
-    switch (result) {
-      case nav2_util::ActionStatus::SUCCEEDED:
-        {
-          auto rc = node_->action_client_->get_result();
-
-          for (auto number : rc.result->sequence) {
-            sum += number;
-          }
-
-          done = true;
-          break;
-        }
-
-      case nav2_util::ActionStatus::FAILED:
-      case nav2_util::ActionStatus::CANCELED:
-        done = true;
-        break;
-
-      case nav2_util::ActionStatus::RUNNING:
-        break;
-
-      default:
-        throw std::logic_error("Invalid status value");
-    }
-  }
-
-  ASSERT_EQ(sum, 143);
-
-  // We should have received some feedback
-  ASSERT_GE(feedback_sum, 0);
-}
-
-TEST_F(ActionTest, test_async_cancel_no_feedback)
-{
-  auto goal = Fibonacci::Goal();
-  goal.order = 10;
-
-  int sum = 0;
-
-  node_->action_client_->send_goal(goal);
-
-  bool cancel_received = false;
-
-  for (bool done = false; !done; ) {
-    auto result = node_->action_client_->wait_for_result(std::chrono::milliseconds(250));
-    switch (result) {
-      case nav2_util::ActionStatus::SUCCEEDED:
-        {
-          auto rc = node_->action_client_->get_result();
-
-          for (auto number : rc.result->sequence) {
-            sum += number;
-          }
-
-          done = true;
-          break;
-        }
-
-      case nav2_util::ActionStatus::FAILED:
-        done = true;
-        break;
-
-      case nav2_util::ActionStatus::CANCELED:
-        done = true;
-        cancel_received = true;
-        break;
-
-      case nav2_util::ActionStatus::RUNNING:
-        node_->action_client_->cancel();
-        break;
-
-      default:
-        throw std::logic_error("Invalid status value");
-    }
-  }
-
-  ASSERT_EQ(cancel_received, true);
-
-  // We should not have succeeded so the sum should be zero
-  ASSERT_EQ(sum, 0);
-}
-#endif

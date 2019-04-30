@@ -141,7 +141,6 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
     10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
     std::placeholders::_1, std::placeholders::_2));
 
-preempted:
   auto goal = current_goal_handle->get_goal();
 
   try {
@@ -179,11 +178,7 @@ preempted:
         if (action_server_->update_requested()) {
           RCLCPP_INFO(get_logger(), "Received a new goal, pre-empting the old one");
           current_goal_handle = action_server_->get_updated_goal_handle();
-
-          // Maintain the correct loop rate even when we get a path update
-          loop_rate.sleep();
-
-          goto preempted;
+          goal = current_goal_handle->get_goal();
         }
       }
 
