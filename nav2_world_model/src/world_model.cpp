@@ -27,7 +27,7 @@ WorldModel::WorldModel()
   // The costmap node is used in the implementation of the world model
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("world_model_global_costmap");
 
-  // Create a thread to run the costmap node
+  // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<std::thread>(
     [](rclcpp_lifecycle::LifecycleNode::SharedPtr node)
     {rclcpp::spin(node->get_node_base_interface());}, costmap_ros_);
@@ -86,14 +86,14 @@ WorldModel::on_cleanup(const rclcpp_lifecycle::State & state)
 }
 
 nav2_lifecycle::CallbackReturn
-WorldModel::on_error(const rclcpp_lifecycle::State &/*state*/)
+WorldModel::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-WorldModel::on_shutdown(const rclcpp_lifecycle::State &/*state*/)
+WorldModel::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
