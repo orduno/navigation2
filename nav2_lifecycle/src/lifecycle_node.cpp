@@ -36,16 +36,6 @@ namespace nav2_lifecycle
 // and then provide the rclcpp_node_ to the helper classes, like MessageFilter.
 //
 
-#if 0
-rclcpp::NodeOptions
-LifecycleNode::get_node_options()
-{
-  rclcpp::NodeOptions options;
-  options.automatically_declare_initial_parameters(false);
-  return options;
-}
-#endif
-
 LifecycleNode::LifecycleNode(
   const std::string & node_name,
   const std::string & namespace_,

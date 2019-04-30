@@ -39,7 +39,6 @@ public:
     const std::string & namespace_ = "",
     bool use_rclcpp_node = false,
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
-    //const rclcpp::NodeOptions & options = get_node_options());
   virtual ~LifecycleNode();
 
 protected:
@@ -47,15 +46,11 @@ protected:
   // yet support lifecycle nodes
   bool use_rclcpp_node_;
 
-  //static rclcpp::NodeOptions get_node_options();
-
   // The local node
   rclcpp::Node::SharedPtr rclcpp_node_;
 
   // When creating a local node, this class will launch a separate thread created to spin the node
   std::unique_ptr<std::thread> rclcpp_thread_;
-
-  rclcpp::NodeOptions options_;
 };
 
 }  // namespace nav2_lifecycle
