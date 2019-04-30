@@ -45,7 +45,6 @@ private Q_SLOTS:
   void onShutdown();
   void onPause();
   void onResume();
-  void itemDoubleClicked(QListWidgetItem *list_item);
 
 private:
   void loadLogFiles();
@@ -55,7 +54,6 @@ private:
 
   QPushButton * start_stop_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
-  QListWidget * listWidget_{nullptr};
 
   QStateMachine machine_;
 

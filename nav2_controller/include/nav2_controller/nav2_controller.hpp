@@ -80,7 +80,7 @@ protected:
   // For each node in the map, transition to the new target state
   void changeStateForAllNodes(std::uint8_t transition);
 
-  // A convenience functions to highlight the output on the console
+  // Convenience functions to highlight the output on the console
   void message(const std::string & msg);
   void error(const std::string & msg);
 

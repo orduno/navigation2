@@ -17,7 +17,6 @@
 #include <dirent.h>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QListWidgetItem>
 #include <QPushButton>
 #include <QtConcurrent/QtConcurrent>
 #include <QVBoxLayout>
@@ -94,68 +93,13 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   machine_.setInitialState(initial_);
   machine_.start();
 
-  // Display the available log files
-
-  QLabel *label = new QLabel(this);
-  label->setText("Rate Monitors:");
-
-  listWidget_ = new QListWidget(this);
-  listWidget_->setSelectionMode(QAbstractItemView::SingleSelection);
-  connect(listWidget_, SIGNAL(itemDoubleClicked(QListWidgetItem *)),
-    this, SLOT(itemDoubleClicked(QListWidgetItem *)));
-
-  loadLogFiles();
-
   // Lay out the items in the panel
 
-  QVBoxLayout * button_layout = new QVBoxLayout;
-  button_layout->addWidget(pause_resume_button_);
-  button_layout->addWidget(start_stop_button_);
-  button_layout->setContentsMargins(2, 0, 2, 2);
-
   QVBoxLayout * main_layout = new QVBoxLayout;
+  main_layout->addWidget(pause_resume_button_);
+  main_layout->addWidget(start_stop_button_);
   main_layout->setContentsMargins(10, 10, 10, 10);
-  main_layout->addWidget(label);
-  main_layout->addWidget(listWidget_);
-  main_layout->addLayout(button_layout);
   setLayout(main_layout);
-}
-
-void
-Nav2Panel::itemDoubleClicked(QListWidgetItem * list_item)
-{
-  std::string filename(list_item->text().toStdString());
-  std::string cmd("python3 ~/src/navigation2/nav2_util/src/real_time/plot_bar.py -f /tmp/nav2/");
-  cmd += filename + ".log";
-  int rc = system(cmd.c_str());
-  (void)rc;
-}
-
-void
-Nav2Panel::loadLogFiles()
-{
-  listWidget_->clear();
-
-  DIR *dir;
-  if ((dir = opendir ("/tmp/nav2")) != nullptr) {
-    struct dirent *ent;
-    while ((ent = readdir (dir)) != nullptr) {
-	  if (ent->d_name[0] != '.') {
-
-	    std::string filename(ent->d_name);
-
-		size_t lastindex = filename.find_last_of(".");
-        std::string basename = filename.substr(0, lastindex);
-
-		QList<QListWidgetItem *> items = listWidget_->findItems(basename.c_str(), Qt::MatchExactly);
-        if (items.size() == 0) {
-          new QListWidgetItem(tr(basename.c_str()), listWidget_);
-        }
-      }
-    }
-    closedir (dir);
-    listWidget_->sortItems(Qt::AscendingOrder);
-  }
 }
 
 void
@@ -174,8 +118,6 @@ Nav2Panel::onStartup()
 void
 Nav2Panel::onShutdown()
 {
-  loadLogFiles();
-
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::shutdown, &client_));
 }
@@ -183,8 +125,6 @@ Nav2Panel::onShutdown()
 void
 Nav2Panel::onPause()
 {
-  loadLogFiles();
-
   QFuture<void> future =
     QtConcurrent::run(std::bind(&nav2_controller::Nav2ControllerClient::pause, &client_));
 }

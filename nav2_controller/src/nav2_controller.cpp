@@ -121,8 +121,8 @@ Nav2Controller::changeStateForAllNodes(std::uint8_t transition)
 {
   for (const auto & kv : node_map_) {
     if (!kv.second->change_state(transition)) {
-        std::string error_msg = std::string("Failed to change state for ") + kv.first.c_str();
-        error(error_msg);
+      std::string error_msg = std::string("Failed to change state for ") + kv.first.c_str();
+      error(error_msg);
       return;
     }
   }
@@ -164,9 +164,10 @@ Nav2Controller::startup()
   createLifecycleServiceClients();
   for (auto & node_name : node_names_) {
     if (!bringupNode(node_name)) {
-        std::string error_msg = std::string("Failed to bring up node: ") + node_name + ", aborting bringup";
-        error(error_msg);
-      }
+      std::string error_msg =
+        std::string("Failed to bring up node: ") + node_name + ", aborting bringup";
+      error(error_msg);
+    }
   }
   message("The system is active");
 }

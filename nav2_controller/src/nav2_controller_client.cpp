@@ -65,7 +65,8 @@ Nav2ControllerClient::resume()
   callService(resume_client_, "nav2_controller/resume");
 }
 
-geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
+geometry_msgs::msg::Quaternion
+Nav2ControllerClient::orientationAroundZAxis(double angle)
 {
   auto orientation = geometry_msgs::msg::Quaternion();
 
