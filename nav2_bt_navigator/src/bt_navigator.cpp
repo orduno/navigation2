@@ -30,6 +30,7 @@ BtNavigator::BtNavigator()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
+  // Declare this node's parameters
   declare_parameter("bt_xml_filename", rclcpp::ParameterValue(std::string("bt_navigator.xml")));
 }
 
@@ -107,7 +108,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_activate(const rclcpp_lifecycle::State &)
+BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -115,7 +116,7 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_deactivate(const rclcpp_lifecycle::State &)
+BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -123,7 +124,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_cleanup(const rclcpp_lifecycle::State &)
+BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -141,14 +142,14 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_error(const rclcpp_lifecycle::State &)
+BtNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-BtNavigator::on_shutdown(const rclcpp_lifecycle::State &)
+BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;

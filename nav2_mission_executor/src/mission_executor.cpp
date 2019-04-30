@@ -34,7 +34,7 @@ MissionExecutor::~MissionExecutor()
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_configure(const rclcpp_lifecycle::State &)
+MissionExecutor::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -48,21 +48,21 @@ MissionExecutor::on_configure(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_activate(const rclcpp_lifecycle::State &)
+MissionExecutor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_deactivate(const rclcpp_lifecycle::State &)
+MissionExecutor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_cleanup(const rclcpp_lifecycle::State &)
+MissionExecutor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -73,14 +73,14 @@ MissionExecutor::on_cleanup(const rclcpp_lifecycle::State &)
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_error(const rclcpp_lifecycle::State &)
+MissionExecutor::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-MissionExecutor::on_shutdown(const rclcpp_lifecycle::State &)
+MissionExecutor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -102,7 +102,8 @@ MissionExecutor::executeMission(const std::shared_ptr<GoalHandle> goal_handle)
 
   // Set a couple values on the blackboard that all of the nodes require
   blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard->set<std::chrono::milliseconds>("node_loop_timeout", std::chrono::milliseconds(100));  // NOLINT
+  blackboard->set<std::chrono::milliseconds>("node_loop_timeout",  // NOLINT
+    std::chrono::milliseconds(100));
 
   // Create the Behavior Tree for this mission
   ExecuteMissionBehaviorTree bt;

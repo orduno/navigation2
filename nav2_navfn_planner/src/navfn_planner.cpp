@@ -49,6 +49,7 @@ NavfnPlanner::NavfnPlanner()
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
+  // Declare this node's parameters
   declare_parameter("tolerance", rclcpp::ParameterValue(0.0));
   declare_parameter("use_astar", rclcpp::ParameterValue(false));
 }
