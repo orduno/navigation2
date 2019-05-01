@@ -136,18 +136,20 @@ def generate_launch_description():
     # Create the launch description and populate
     ld = launch.LaunchDescription()
 
-    # First, declare the launch options
+    # Declare the launch options
     ld.add_action(declare_use_simulation_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
 
-    # Then, add the actions to launch the simulator-related nodes (conditioned on 'use_simulation')
+    # Add any actions to launch in simulation (conditioned on 'use_simulation')
     ld.add_action(start_gazebo_cmd)
+
+    # Add other nodes and processes we need
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_rviz_cmd)
     ld.add_action(exit_event_handler)
 
-    # Next, add the actions to launch all of the navigation nodes
+    # Add the actions to launch all of the navigation nodes
     ld.add_action(start_controller_cmd)
     ld.add_action(start_map_server_cmd)
     ld.add_action(start_localizer_cmd)
