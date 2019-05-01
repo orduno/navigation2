@@ -58,7 +58,6 @@ def generate_launch_description():
         cwd=[launch_dir], output='screen')
 
     start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_simulation),
         cmd=[
             os.path.join(
                 get_package_prefix('robot_state_publisher'),
