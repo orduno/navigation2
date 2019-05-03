@@ -17,44 +17,78 @@ import os
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 from launch.conditions import IfCondition
+from tempfile import NamedTemporaryFile
 
 import launch.actions
+import launch_ros.actions
+import yaml
+
+
+def create_params_file_from_dict(node_name, namespace, params):
+    with NamedTemporaryFile(mode='w', prefix='launch_params_', delete=False) as h:
+        param_file_path = h.name
+        param_dict = {node_name: {'ros__parameters': params}}
+        if namespace:
+            param_dict = {namespace: param_dict}
+        yaml.dump(param_dict, h, default_flow_style=False)
+        return param_file_path
 
 
 def generate_launch_description():
+    # Get the launch directory
+    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
+
+    print(launch_dir)
+
+    # Create the launch configuration variables
+    map_yaml_file = launch.substitutions.LaunchConfiguration('map')
+    use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
     use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
-    params_file = launch.substitutions.LaunchConfiguration(
-        'params', default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
+    params_file = launch.substitutions.LaunchConfiguration('params')
+
+    # Declare the launch arguments
+    declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
+        'map',
+		default_value='test_map.yaml',
+        description='Full path to map file to load')
+
+    declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
+        'use_sim_time', 
+		default_value='false',
+        description='Use simulation (Gazebo) clock if true')
 
     declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
         'use_simulation', condition=IfCondition('True'),
-        default_value='True', description='Whether to run in simulation')
+        default_value='True', 
+		description='Whether to run in simulation')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
         'simulator',
-        default_value='gzserver', description='The simulator to use (gazebo or gzserver)')
+        default_value='gzserver', 
+		description='The simulator to use (gazebo or gzserver)')
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(
-            get_package_share_directory('turtlebot3_gazebo'),
-            'worlds/turtlebot3_worlds/burger.model'),
+        default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds/turtlebot3_worlds/burger.model'),
         description='Full path to world file to load')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
-        'params_file',
+        'params',
+        default_value='nav2_params.yaml',
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
-    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
-    gz = launch.substitutions.LaunchConfiguration('gz', default=['gzserver'])
+    map_server_params = {
+        "yaml_filename" : "/home/mjeronimo/src/navigation2/nav2_bringup/launch/test_map.yaml"
+    }
+
+    map_server_params_filename = create_params_file_from_dict("map_server", "", map_server_params)
 
     # Specify the actions
-
     start_gazebo_cmd = launch.actions.ExecuteProcess(
         condition=IfCondition(use_simulation),
-        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world, ['__params:=', params_file]],
+        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
         cwd=[launch_dir], output='screen')
 
     start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
@@ -82,6 +116,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('nav2_map_server'),
                 'lib/nav2_map_server/map_server'),
+            #['__params:=', params_file], ['__params:=', map_server_params_filename]],
             ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
@@ -137,9 +172,12 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     # Declare the launch options
+    ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_simulation_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
+    ld.add_action(declare_params_file_cmd)
 
     # Add any actions to launch in simulation (conditioned on 'use_simulation')
     ld.add_action(start_gazebo_cmd)
