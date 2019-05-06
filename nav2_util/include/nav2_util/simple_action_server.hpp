@@ -15,7 +15,9 @@
 #ifndef NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
 #define NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
 
+#include <atomic>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
@@ -50,10 +52,12 @@ public:
 
     auto handle_accepted = [this](std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
       {
+        std::lock_guard<std::mutex> lock(update_mutex_);
+
         // If we're currently working on a task, set a flag so that the
         // action server can grab the pre-empting request in its loop
         if (received_handle_ != nullptr && received_handle_->is_active()) {
-          update_requested_ = true;
+          preempt_requested_ = true;
           received_handle_ = handle;
         } else {
           // Otherwise, safe to start a new task
@@ -70,15 +74,17 @@ public:
       handle_accepted);
   }
 
-  bool update_requested()
+  bool preempt_requested()
   {
-    return update_requested_;
+    std::lock_guard<std::mutex> lock(update_mutex_);
+    return preempt_requested_;
   }
 
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>
   get_updated_goal_handle()
   {
-    update_requested_ = false;
+    std::lock_guard<std::mutex> lock(update_mutex_);
+    preempt_requested_ = false;
     return received_handle_;
   }
 
@@ -88,11 +94,11 @@ protected:
 
   ExecuteCallback execute_callback_;
 
-  bool update_requested_{false};
+  std::mutex update_mutex_;
+  bool preempt_requested_{false};
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> received_handle_;
 
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
-
-  std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> received_handle_;
 };
 
 }  // namespace nav2_util

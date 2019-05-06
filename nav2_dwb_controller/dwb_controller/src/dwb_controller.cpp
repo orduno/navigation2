@@ -163,7 +163,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
         auto velocity = odom_sub_->getTwist();
         auto cmd_vel_2d = planner_->computeVelocityCommands(pose2d, velocity);
 
-        //RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
+        RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
         publishVelocity(cmd_vel_2d);
         cmd_vel_monitor.calc_looptime();
 
@@ -175,7 +175,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
         }
 
         // Check if there is an update to the path to follow
-        if (action_server_->update_requested()) {
+        if (action_server_->preempt_requested()) {
           RCLCPP_INFO(get_logger(), "Received a new goal, pre-empting the old one");
           current_goal_handle = action_server_->get_updated_goal_handle();
           goal = current_goal_handle->get_goal();
