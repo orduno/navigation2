@@ -347,7 +347,7 @@ Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & orie
 void
 Costmap2DROS::mapUpdateLoop(double frequency)
 {
-  RCLCPP_INFO(get_logger(), "mapUpdateLoop frequency: %lf", frequency);
+  RCLCPP_DEBUG(get_logger(), "mapUpdateLoop frequency: %lf", frequency);
 
   // the user might not want to run the loop every cycle
   if (frequency == 0.0) {
@@ -506,7 +506,7 @@ Costmap2DROS::resetLayers()
 }
 
 bool
-Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
+Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose) const
 {
   geometry_msgs::msg::PoseStamped robot_pose;
 
