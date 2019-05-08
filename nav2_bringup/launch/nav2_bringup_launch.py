@@ -163,8 +163,8 @@ def generate_launch_description():
     start_controller_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
-                get_package_prefix('nav2_controller'),
-                'lib/nav2_controller/nav2_controller'),
+                get_package_prefix('nav2_lifecycle_manager'),
+                'lib/nav2_lifecycle_manager/lifecycle_manager'),
             ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 

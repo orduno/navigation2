@@ -110,13 +110,13 @@ map_server:
     use_sim_time: True
     yaml_filename: "test_map.yaml"
 
-nav2_controller:
+lifecycle_manager:
   ros__parameters:
     use_sim_time: True
 
-nav2_controller_lifecycle_client_node:
-  ros__parameters:
-    use_sim_time: True
+#nav2_controller_lifecycle_client_node:
+#  ros__parameters:
+#    use_sim_time: True
 
 navfn_planner:
   ros__parameters:
