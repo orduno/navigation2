@@ -265,8 +265,6 @@ protected:
   rclcpp::Duration publish_cycle_{1, 0};
   pluginlib::ClassLoader<Layer> plugin_loader_{"nav2_costmap_2d", "nav2_costmap_2d::Layer"};
 
-  std::recursive_mutex configuration_mutex_;
-
   // Parameters
   void getParameters();
   bool always_send_full_costmap_{false};
