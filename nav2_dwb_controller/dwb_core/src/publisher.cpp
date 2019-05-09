@@ -64,8 +64,6 @@ DWBPublisher::DWBPublisher(nav2_lifecycle::LifecycleNode::SharedPtr node)
 nav2_lifecycle::CallbackReturn
 DWBPublisher::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
-  // TODO(mjeronimo): can we get rid of these parameters? If no one is listening the values
-  // won't be published anyways
   node_->get_parameter("publish_evaluation", publish_evaluation_);
   node_->get_parameter("publish_global_plan", publish_global_plan_);
   node_->get_parameter("publish_transformed_plan", publish_transformed_);
@@ -74,7 +72,7 @@ DWBPublisher::on_configure(const rclcpp_lifecycle::State & /*state*/)
   node_->get_parameter("publish_cost_grid_pc", publish_cost_grid_pc_);
 
   eval_pub_ = node_->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
-  global_pub_ = node_->create_publisher<nav_msgs::msg::Path>("global_plan", 1);
+  global_pub_ = node_->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   transformed_pub_ = node_->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
   local_pub_ = node_->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
   marker_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
@@ -191,6 +189,7 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
   }
   addDeleteMarkers(ma, currentValidId, validNamespace);
   addDeleteMarkers(ma, currentInvalidId, invalidNamespace);
+  prev_marker_count_ = max(currentValidId, currentInvalidId);
   marker_pub_->publish(ma);
 }
 
@@ -299,6 +298,5 @@ DWBPublisher::addDeleteMarkers(
     ma.markers.push_back(m);
   }
 }
-
 
 }  // namespace dwb_core
