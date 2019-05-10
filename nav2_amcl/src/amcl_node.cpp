@@ -970,16 +970,14 @@ AmclNode::initPubSub()
   RCLCPP_INFO(get_logger(), "initPubSub");
 
   particlecloud_pub_ = create_publisher<geometry_msgs::msg::PoseArray>("particlecloud",
-      rmw_qos_profile_sensor_data);
-
-  rmw_qos_profile_t amcl_qos_profile = rmw_qos_profile_default;
-  amcl_qos_profile.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+      rclcpp::SensorDataQoS());
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("amcl_pose",
-      amcl_qos_profile);
+      rclcpp::SystemDefaultsQoS().transient_local());
 
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "initialpose", std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
+    "initialpose", rclcpp::SystemDefaultsQoS(),
+    std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
 }
 
 void

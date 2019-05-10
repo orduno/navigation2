@@ -59,7 +59,7 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-  loop_time_pub_ = create_publisher<nav2_msgs::msg::LoopTime>("/loop_time");
+  loop_time_pub_ = create_publisher<nav2_msgs::msg::LoopTime>("/loop_time", rclcpp::SystemDefaultsQoS());
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
