@@ -117,8 +117,9 @@ NavigationDialog::startNavigation(double x, double y, double theta, std::string 
   goal_.pose = pose;
 
   // Enable result awareness by providing an empty lambda function
-  auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
-  send_goal_options.result_callback = [](auto){};
+  auto send_goal_options =
+    rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+  send_goal_options.result_callback = [](auto) {};
 
   auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
