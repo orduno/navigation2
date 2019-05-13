@@ -19,6 +19,8 @@
 
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
+#include "rviz_common/viewport_mouse_event.hpp"
+#include "rviz_common/window_manager_interface.hpp"
 
 namespace nav2_rviz_plugins
 {
@@ -36,11 +38,23 @@ GoalTool::~GoalTool()
 {
 }
 
-void GoalTool::onInitialize()
+void
+GoalTool::onInitialize()
 {
   PoseTool::onInitialize();
   setName("Navigation2 Goal");
   setIcon(rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/SetGoal.png"));
+}
+
+int
+GoalTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
+{
+  if (event.leftUp()) {
+    x_ = event.x;
+    y_ = event.y;
+  }
+
+  return PoseTool::processMouseEvent(event);
 }
 
 void
@@ -48,6 +62,10 @@ GoalTool::onPoseSet(double x, double y, double theta)
 {
   std::string fixed_frame = context_->getFixedFrame().toStdString();
 
+  auto parent = context_->getWindowManager()->getParentWindow();
+  auto global_pos = parent->mapToGlobal(QPoint(x_,y_));
+
+  navigation_dialog_->move(global_pos);
   navigation_dialog_->startNavigation(x, y, theta, fixed_frame);
   navigation_dialog_->show();
   navigation_dialog_->raise();

@@ -49,6 +49,9 @@ public:
 
 protected:
   void onPoseSet(double x, double y, double theta) override;
+  int processMouseEvent(rviz_common::ViewportMouseEvent & event);
+int x_;
+int y_;
 
 private:
   std::unique_ptr<NavigationDialog> navigation_dialog_;
