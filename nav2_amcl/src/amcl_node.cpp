@@ -123,28 +123,21 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 void
 AmclNode::waitForTransforms()
 {
-  rclcpp::Time last_error = rclcpp_node_->now();
   std::string tf_error;
 
   RCLCPP_INFO(get_logger(), "Checking that transform thread is ready");
 
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(global_frame_id_, odom_frame_id_, tf2::TimePointZero,
-    tf2::durationFromSec(0.1), &tf_error))
+    tf2::durationFromSec(1.0), &tf_error))
   {
-    if (last_error + nav2_util::duration_from_seconds(1.0) < rclcpp_node_->now()) {
-      RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
-        " to become available, tf error: %s",
-        odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
-      last_error = rclcpp_node_->now();
-    }
+    RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
+      " to become available, tf error: %s",
+      odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
 
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation.
     tf_error.clear();
-
-    // Let the transforms populate, then retry
-    std::this_thread::sleep_for(10ms);
   }
 }
 

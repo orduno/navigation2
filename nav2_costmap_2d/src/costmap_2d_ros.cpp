@@ -136,27 +136,20 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // First, make sure that the transform between the robot base frame
   // and the global frame is available
 
-  rclcpp::Time last_error = rclcpp_node_->now();
   std::string tf_error;
 
   RCLCPP_INFO(get_logger(), "Checking transform");
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero,
-    tf2::durationFromSec(0.1), &tf_error))
+    tf2::durationFromSec(1.0), &tf_error))
   {
-    if (last_error + nav2_util::duration_from_seconds(1.0) < rclcpp_node_->now()) {
-      RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
-        " to become available, tf error: %s",
-        robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
-      last_error = rclcpp_node_->now();
-    }
+    RCLCPP_INFO(get_logger(), "Timed out waiting for transform from %s to %s"
+      " to become available, tf error: %s",
+      robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
 
     // The error string will accumulate and errors will typically be the same, so the last
-    // will do for the warning above. Reset the string here to avoid accumulation.
+    // will do for the warning above. Reset the string here to avoid accumulation
     tf_error.clear();
-
-    // Let the transforms populate, then retry
-    std::this_thread::sleep_for(10ms);
   }
 
   // Create a thread to handle updating the map
