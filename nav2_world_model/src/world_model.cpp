@@ -79,7 +79,10 @@ WorldModel::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+fprintf(stderr, "WorldModel::on_cleanup: calling costmap on_cleanup\n");
   costmap_ros_->on_cleanup(state);
+fprintf(stderr, "WorldModel::on_cleanup: after calling costmap on_cleanup\n");
+
   costmap_service_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;

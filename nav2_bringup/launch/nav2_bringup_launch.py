@@ -51,23 +51,23 @@ def generate_launch_description():
     # Declare the launch arguments
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map',
-		default_value='test_map.yaml',
+        default_value='test_map.yaml',
         description='Full path to map file to load')
 
     declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
         'use_sim_time', 
-		default_value='false',
+        default_value='false',
         description='Use simulation (Gazebo) clock if true')
 
     declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
         'use_simulation', condition=IfCondition('True'),
         default_value='True', 
-		description='Whether to run in simulation')
+        description='Whether to run in simulation')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
         'simulator',
         default_value='gzserver', 
-		description='The simulator to use (gazebo or gzserver)')
+        description='The simulator to use (gazebo or gzserver)')
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
         'world',

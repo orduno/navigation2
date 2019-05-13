@@ -57,10 +57,8 @@ node_name_ = node_name;
 
 LifecycleNode::~LifecycleNode()
 {
-//TODO:
-printf("LifecycleNode::~LifecycleNode: %s\n", node_name_.c_str());
+  // In case this lifecycle node wasn't properly shut down, do it here
   if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-    printf("LifecycleNode::~LifecycleNode: %s: automatically cleaning up node!!!!!!!!!!!!!!!!!!\n", node_name_.c_str());
     on_deactivate(get_current_state());
     on_cleanup(get_current_state());
   }

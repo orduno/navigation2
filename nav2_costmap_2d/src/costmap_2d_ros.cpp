@@ -196,22 +196,22 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  delete layered_costmap_;
+  layered_costmap_ = nullptr;
+
   tf_buffer_.reset();
   tf_listener_.reset();
 
   footprint_sub_.reset();
   footprint_pub_.reset();
 
+  footprint_sub_.reset();
   if (costmap_publisher_ != nullptr) {
     delete costmap_publisher_;
     costmap_publisher_ = nullptr;
   }
 
-  delete layered_costmap_;
-  layered_costmap_ = nullptr;
-
   clear_costmap_service_.reset();
-
   costmap_update_monitor_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
