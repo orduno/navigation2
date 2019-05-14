@@ -20,7 +20,6 @@
 
 #include "dwb_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
-#include "nav2_util/rate_constraint.hpp"
 
 using namespace std::chrono_literals;
 
@@ -59,7 +58,6 @@ DwbController::on_configure(const rclcpp_lifecycle::State & state)
 
   odom_sub_ = std::make_shared<nav_2d_utils::OdomSubscriber>(*this);
   vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
-  loop_time_pub_ = create_publisher<nav2_msgs::msg::LoopTime>("/loop_time", rclcpp::SystemDefaultsQoS());
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(rclcpp_node_, "FollowPath",
@@ -76,7 +74,6 @@ DwbController::on_activate(const rclcpp_lifecycle::State & state)
   planner_->on_activate(state);
   costmap_ros_->on_activate(state);
   vel_pub_->on_activate();
-  loop_time_pub_->on_activate();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -89,7 +86,6 @@ DwbController::on_deactivate(const rclcpp_lifecycle::State & state)
   planner_->on_deactivate(state);
   costmap_ros_->on_deactivate(state);
   vel_pub_->on_deactivate();
-  loop_time_pub_->on_deactivate();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
@@ -107,7 +103,6 @@ DwbController::on_cleanup(const rclcpp_lifecycle::State & state)
   planner_.reset();
   odom_sub_.reset();
   vel_pub_.reset();
-  loop_time_pub_.reset();
   action_server_.reset();
 
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -135,11 +130,7 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
   std::shared_ptr<GoalHandle> current_goal_handle = goal_handle;
 
-  rclcpp::Rate loop_rate(100ms);	// period vs. hz
-
-  nav2_util::RateConstraint cmd_vel_monitor("dwb_output_cmd_vel_rate", 
-    10, 10, std::bind(&DwbController::cbLooptimeOverrun, this,
-    std::placeholders::_1, std::placeholders::_2));
+  rclcpp::Rate loop_rate(100ms);    // period vs. hz
 
   auto goal = current_goal_handle->get_goal();
 
@@ -165,7 +156,6 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
 
         RCLCPP_INFO(get_logger(), "Publishing velocity at time %.2f", now().seconds());
         publishVelocity(cmd_vel_2d);
-        cmd_vel_monitor.calc_looptime();
 
         if (current_goal_handle->is_canceling()) {
           RCLCPP_INFO(this->get_logger(), "Canceling execution of the local planner");
@@ -179,6 +169,10 @@ DwbController::followPath(const std::shared_ptr<GoalHandle> goal_handle)
           RCLCPP_INFO(get_logger(), "Received a new goal, pre-empting the old one");
           current_goal_handle = action_server_->get_updated_goal_handle();
           goal = current_goal_handle->get_goal();
+
+          // If so, pass the new path to the local planner
+          auto path = nav_2d_utils::pathToPath2D(goal->path);
+          planner_->setPlan(path);
         }
       }
 
@@ -227,11 +221,6 @@ bool DwbController::getRobotPose(nav_2d_msgs::msg::Pose2DStamped & pose2d)
   }
   pose2d = nav_2d_utils::poseStampedToPose2D(current_pose);
   return true;
-}
-
-void DwbController::cbLooptimeOverrun(int iter_num, rclcpp::Duration looptime)
-{
-  printf("cbLooptimeOverrun Iteration:%d looptime:%ld ns \n", iter_num, long(looptime.nanoseconds()));
 }
 
 }  // namespace nav2_dwb_controller
