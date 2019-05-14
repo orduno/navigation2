@@ -231,14 +231,14 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_lifecycle::CallbackReturn
-AmclNode::on_error(const rclcpp_lifecycle::State &)
+AmclNode::on_error(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_ERROR(get_logger(), "Handling error state");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
 }
 
 nav2_lifecycle::CallbackReturn
-AmclNode::on_shutdown(const rclcpp_lifecycle::State &)
+AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_lifecycle::CallbackReturn::SUCCESS;
@@ -272,12 +272,12 @@ bool
 AmclNode::getOdomPose(
   geometry_msgs::msg::PoseStamped & odom_pose,
   double & x, double & y, double & yaw,
-  const rclcpp::Time & t, const std::string & f)
+  const rclcpp::Time & sensor_timestamp, const std::string & frame_id)
 {
   // Get the robot's pose
   geometry_msgs::msg::PoseStamped ident;
-  ident.header.frame_id = nav2_util::strip_leading_slash(f);
-  ident.header.stamp = t;
+  ident.header.frame_id = nav2_util::strip_leading_slash(frame_id);
+  ident.header.stamp = sensor_timestamp;
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
 
   try {
@@ -793,7 +793,9 @@ AmclNode::createLaserObject()
   if (sensor_model_type_ == "beam") {
     return new nav2_util::BeamModel(z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
              0.0, max_beams_, map_);
-  } else if (sensor_model_type_ == "likelihood_field_prob") {
+  } 
+  
+  if (sensor_model_type_ == "likelihood_field_prob") {
     return new nav2_util::LikelihoodFieldModelProb(z_hit_, z_rand_, sigma_hit_,
              laser_likelihood_max_dist_, do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
              beam_skip_error_threshold_, max_beams_, map_);
@@ -846,7 +848,7 @@ AmclNode::initParameters()
   get_parameter("z_rand", z_rand_);
   get_parameter("z_short", z_short_);
 
-  save_pose_period = tf2::durationFromSec(1.0 / save_pose_rate);
+  save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
 
   odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
@@ -986,6 +988,9 @@ AmclNode::initServices()
 void
 AmclNode::initOdometry()
 {
+  // TODO(mjeronimo): We should handle persistance of the last known pose of the robot. We could
+  // then read that pose here and initialize using that.
+
   // When pausing and resuming, remember the last robot pose so we don't start at 0:0 again
   init_pose_[0] = last_published_pose_.pose.pose.position.x;
   init_pose_[1] = last_published_pose_.pose.pose.position.y;
