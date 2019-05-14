@@ -34,7 +34,6 @@
 #include "nav2_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/map_service_client.hpp"
 #include "nav2_util/motion_model/motion_model.hpp"
-#include "nav2_util/rate_constraint.hpp"
 #include "nav2_util/sensors/laser/laser.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -159,12 +158,6 @@ protected:
   rclcpp::Time last_laser_received_ts_;
   void checkLaserReceived();
   std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
-
-  // Constraints
-  void initConstraints();
-  std::unique_ptr<nav2_util::RateConstraint> amcl_pose_rate_;
-  std::unique_ptr<nav2_util::RateConstraint> laser_scan_rate_;
-  std::unique_ptr<nav2_util::RateConstraint> odom_rate_;
 
   // Node parameters (initialized via initParameters)
   void initParameters();
