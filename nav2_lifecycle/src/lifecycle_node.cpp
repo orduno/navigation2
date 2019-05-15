@@ -46,9 +46,8 @@ LifecycleNode::LifecycleNode(
 : rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
   use_rclcpp_node_(use_rclcpp_node)
 {
-node_name_ = node_name;
   if (use_rclcpp_node_) {
-    rclcpp_node_ = std::make_shared<rclcpp::Node>(node_name + "_rclcpp_node", namespace_);
+    rclcpp_node_ = std::make_shared<rclcpp::Node>(node_name + "_rclcpp_node");
     rclcpp_thread_ = std::make_unique<std::thread>(
       [](rclcpp::Node::SharedPtr node) {rclcpp::spin(node);}, rclcpp_node_
     );
