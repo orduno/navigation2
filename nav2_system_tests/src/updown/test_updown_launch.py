@@ -25,15 +25,23 @@ def generate_launch_description():
     # Configuration parameters for the launch
 
     world = launch.substitutions.LaunchConfiguration('world')
+    urdf = launch.substitutions.LaunchConfiguration('urdf')
+
     params_file = launch.substitutions.LaunchConfiguration(
         'params',
         default=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'])
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
-                                   'worlds/turtlebot3_worlds/burger.model'),
+        default_value=[launch.substitutions.ThisLaunchFileDir(),
+                       '/../../worlds/turtlebot3_ros2_demo.world'],
         description='Full path to world file to load')
+
+    declare_urdf_cmd = launch.actions.DeclareLaunchArgument(
+        'urdf',
+        default_value=[launch.substitutions.ThisLaunchFileDir(),
+                       '/../../urdf/turtlebot3_burger.urdf'],
+        description='Full path to model file to load')
 
     launch_dir = os.path.join(
         get_package_share_directory('nav2_bringup'), 'launch')
@@ -50,10 +58,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_prefix('robot_state_publisher'),
                 'lib/robot_state_publisher/robot_state_publisher'),
-            os.path.join(
-                get_package_share_directory('turtlebot3_description'),
-                'urdf', 'turtlebot3_burger.urdf'),
-            ['__params:=', params_file]],
+            urdf, ['__params:=', params_file]],
         cwd=[launch_dir], output='screen')
 
     start_map_server_cmd = launch.actions.ExecuteProcess(
@@ -129,6 +134,7 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     ld.add_action(declare_world_cmd)
+    ld.add_action(declare_urdf_cmd)
     ld.add_action(start_controller_cmd)
     ld.add_action(start_gazebo_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
