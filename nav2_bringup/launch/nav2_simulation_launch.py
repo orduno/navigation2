@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This is all-in-one launch script intended for use by nav2 developers.
+""" This is all-in-one launch script intended for use by nav2 developers """
 
 import os
 
@@ -103,21 +103,20 @@ def generate_launch_description():
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     # Specify the actions
-    start_gazebo_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_simulation),
-        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
-        cwd=[launch_dir], output='screen')
+    # start_gazebo_cmd = launch.actions.ExecuteProcess(
+    #     condition=IfCondition(use_simulation),
+    #     cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
+    #     cwd=[launch_dir], output='screen')
 
-    start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('robot_state_publisher'),
-                'lib/robot_state_publisher/robot_state_publisher'),
-            os.path.join(
-                get_package_share_directory('turtlebot3_description'),
-                'urdf', 'turtlebot3_waffle.urdf'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    # start_robot_state_publisher_cmd = launch_ros.actions.Node(
+    #     package='robot_state_publisher',
+    #     node_executable='robot_state_publisher',
+    #     node_name='robot_state_publisher',
+    #     output='screen',
+    #     parameters=[configured_params],
+    #     arguments=[os.path.join(
+    #                    get_package_share_directory('turtlebot3_description'),
+    #                    'urdf', 'turtlebot3_waffle.urdf')])
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
@@ -129,6 +128,7 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
+<<<<<<< HEAD
     start_map_server_cmd = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
@@ -192,6 +192,61 @@ def generate_launch_description():
                 'lib/nav2_lifecycle_manager/lifecycle_manager'),
             ['__params:=', configured_params]],
         cwd=[launch_dir], output='screen')
+=======
+    start_map_server_cmd = launch_ros.actions.Node(
+        package='nav2_map_server',
+        node_executable='map_server',
+        node_name='map_server',
+        output='screen',
+        parameters=[configured_params])
+
+    start_localizer_cmd = launch_ros.actions.Node(
+        package='nav2_amcl',
+        node_executable='amcl',
+        node_name='amcl',
+        output='screen',
+        parameters=[configured_params])
+
+    start_world_model_cmd = launch_ros.actions.Node(
+        package='nav2_world_model',
+        node_executable='world_model',
+        output='screen',
+        parameters=[configured_params])
+
+    start_dwb_cmd = launch_ros.actions.Node(
+        package='dwb_controller',
+        node_executable='dwb_controller',
+        output='screen',
+        parameters=[configured_params])
+
+    start_planner_cmd = launch_ros.actions.Node(
+        package='nav2_navfn_planner',
+        node_executable='navfn_planner',
+        node_name='navfn_planner',
+        output='screen',
+        parameters=[configured_params])
+
+    start_navigator_cmd = launch_ros.actions.Node(
+        package='nav2_bt_navigator',
+        node_executable='bt_navigator',
+        node_name='bt_navigator',
+        output='screen',
+        parameters=[configured_params])
+
+    start_motion_primitives_cmd = launch_ros.actions.Node(
+        package='nav2_motion_primitives',
+        node_executable='motion_primitives_node',
+        node_name='motion_primitives',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}])
+
+    start_lifecycle_manager_cmd = launch_ros.actions.Node(
+        package='nav2_lifecycle_manager',
+        node_executable='lifecycle_manager',
+        node_name='lifecycle_manager',
+        output='screen',
+        parameters=[configured_params])
+>>>>>>> Enabling namespaces
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
@@ -211,12 +266,12 @@ def generate_launch_description():
     ld.add_action(stdout_linebuf_envvar)
 
     # Add any actions to launch in simulation (conditioned on 'use_simulation')
-    ld.add_action(start_gazebo_cmd)
+    # ld.add_action(start_gazebo_cmd)
 
     # Add other nodes and processes we need
-    ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(start_rviz_cmd)
-    ld.add_action(exit_event_handler)
+    # ld.add_action(start_robot_state_publisher_cmd)
+    # ld.add_action(start_rviz_cmd)
+    # ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_lifecycle_manager_cmd)
