@@ -131,6 +131,8 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
+    navigation_ns = launch_ros.actions.PushRosNamespace("navigation_ns")
+
     start_map_server_cmd = launch_ros.actions.Node(
         package='nav2_map_server',
         node_executable='map_server',
@@ -145,24 +147,11 @@ def generate_launch_description():
         output='screen',
         parameters=[configured_params])
 
-    # start_world_model_cmd = launch.actions.ExecuteProcess(
-    #     cmd=[
-    #         os.path.join(
-    #             get_package_prefix('nav2_world_model'),
-    #             'lib/nav2_world_model/world_model'),
-    #         ['__params:=', configured_params]],
-    #     cwd=[launch_dir], output='screen')
-
     start_world_model_cmd = launch_ros.actions.Node(
         package='nav2_world_model',
         node_executable='world_model',
         output='screen',
-        parameters=[configured_params],
-        node_namespace='world_model')
-
-    # world_model_sim = launch.actions.ExecuteProcess(
-    #         cmd=['ros2', 'param', 'set', '/world_model', 'use_sim_time', use_sim_time],
-    #         output='screen')
+        parameters=[configured_params])
 
     start_dwb_cmd = launch.actions.ExecuteProcess(
         cmd=[
@@ -230,11 +219,11 @@ def generate_launch_description():
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
+    ld.add_action(navigation_ns)
     ld.add_action(start_lifecycle_manager_cmd)
     ld.add_action(start_map_server_cmd)
     ld.add_action(start_localizer_cmd)
     ld.add_action(start_world_model_cmd)
-    # ld.add_action(world_model_sim)
     ld.add_action(start_dwb_cmd)
     ld.add_action(start_planner_cmd)
     ld.add_action(start_navigator_cmd)
