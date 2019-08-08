@@ -105,21 +105,21 @@ def generate_launch_description():
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     # Specify the actions
-    start_gazebo_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_simulation),
-        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
-        cwd=[launch_dir], output='screen')
+    # start_gazebo_cmd = launch.actions.ExecuteProcess(
+    #     condition=IfCondition(use_simulation),
+    #     cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
+    #     cwd=[launch_dir], output='screen')
 
-    start_robot_state_publisher_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('robot_state_publisher'),
-                'lib/robot_state_publisher/robot_state_publisher'),
-            os.path.join(
-                get_package_share_directory('turtlebot3_description'),
-                'urdf', 'turtlebot3_waffle.urdf'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    urdf = os.path.join(
+        get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
+
+    start_robot_state_publisher_cmd = launch_ros.actions.Node(
+            package='robot_state_publisher',
+            node_executable='robot_state_publisher',
+            node_name='robot_state_publisher',
+            output='screen',
+            parameters=[configured_params],
+            arguments=[urdf])
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
@@ -131,7 +131,8 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
-    navigation_ns = launch_ros.actions.PushRosNamespace("navigation_ns")
+    robot_id = "Robot1"
+    robot_ns = launch_ros.actions.PushRosNamespace(robot_id)
 
     start_map_server_cmd = launch_ros.actions.Node(
         package='nav2_map_server',
@@ -153,45 +154,44 @@ def generate_launch_description():
         output='screen',
         parameters=[configured_params])
 
-    start_dwb_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('dwb_controller'),
-                'lib/dwb_controller/dwb_controller'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_dwb_cmd  = launch_ros.actions.Node(
+            package='dwb_controller',
+            node_executable='dwb_controller',
+            output='screen',
+            parameters=[configured_params])
 
-    start_planner_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_navfn_planner'),
-                'lib/nav2_navfn_planner/navfn_planner'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_planner_cmd = launch_ros.actions.Node(
+        package='nav2_navfn_planner',
+        node_executable='navfn_planner',
+        node_name='navfn_planner',
+        output='screen',
+        parameters=[configured_params])
 
-    start_navigator_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_bt_navigator'),
-                'lib/nav2_bt_navigator/bt_navigator'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_navigator_cmd = launch_ros.actions.Node(
+        package='nav2_bt_navigator',
+        node_executable='bt_navigator',
+        node_name='bt_navigator',
+        output='screen',
+        parameters=[configured_params])
 
-    start_recovery_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_recoveries'),
-                'lib/nav2_recoveries/recoveries_node'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_recovery_cmd = launch_ros.actions.Node(
+            package='nav2_recoveries',
+            node_executable='recoveries_node',
+            node_name='recoveries',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time}])
 
-    start_lifecycle_manager_cmd = launch.actions.ExecuteProcess(
-        cmd=[
-            os.path.join(
-                get_package_prefix('nav2_lifecycle_manager'),
-                'lib/nav2_lifecycle_manager/lifecycle_manager'),
-            ['__params:=', configured_params]],
-        cwd=[launch_dir], output='screen')
+    start_lifecycle_manager_cmd = launch_ros.actions.Node(
+        package='nav2_lifecycle_manager',
+        node_executable='lifecycle_manager',
+        node_name='lifecycle_manager_control',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time},
+                    {'autostart': autostart},
+                    {'node_names': ['/' + robot_id + '/world_model',
+                                    '/' + robot_id + '/dwb_controller',
+                                    '/' + robot_id + '/navfn_planner',
+                                    '/' + robot_id + '/bt_navigator']}])
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
@@ -211,15 +211,15 @@ def generate_launch_description():
     ld.add_action(stdout_linebuf_envvar)
 
     # Add any actions to launch in simulation (conditioned on 'use_simulation')
-    ld.add_action(start_gazebo_cmd)
+    # ld.add_action(start_gazebo_cmd)
 
     # Add other nodes and processes we need
-    ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_rviz_cmd)
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
-    ld.add_action(navigation_ns)
+    ld.add_action(robot_ns)
+    ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_lifecycle_manager_cmd)
     ld.add_action(start_map_server_cmd)
     ld.add_action(start_localizer_cmd)
