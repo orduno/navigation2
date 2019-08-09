@@ -105,10 +105,10 @@ def generate_launch_description():
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     # Specify the actions
-    # start_gazebo_cmd = launch.actions.ExecuteProcess(
-    #     condition=IfCondition(use_simulation),
-    #     cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
-    #     cwd=[launch_dir], output='screen')
+    start_gazebo_cmd = launch.actions.ExecuteProcess(
+        condition=IfCondition(use_simulation),
+        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
+        cwd=[launch_dir], output='screen')
 
     urdf = os.path.join(
         get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
@@ -123,6 +123,7 @@ def generate_launch_description():
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
+            [ "__log_level:=fatal"],
             ['-d', rviz_config_file]],
         cwd=[launch_dir], output='screen')
 
@@ -131,7 +132,7 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
-    robot_id = "Robot1"
+    robot_id = ""
     robot_ns = launch_ros.actions.PushRosNamespace(robot_id)
 
     start_map_server_cmd = launch_ros.actions.Node(
@@ -188,10 +189,18 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': use_sim_time},
                     {'autostart': autostart},
-                    {'node_names': ['/' + robot_id + '/world_model',
-                                    '/' + robot_id + '/dwb_controller',
-                                    '/' + robot_id + '/navfn_planner',
-                                    '/' + robot_id + '/bt_navigator']}])
+                    # {'node_names': ['map_server',
+                    #                 'amcl',
+                    #                 'world_model',
+                    #                 'dwb_controller',
+                    #                 'navfn_planner',
+                    #                 'bt_navigator']}])
+                    {'node_names': [robot_id + '/map_server',
+                                    robot_id + '/amcl',
+                                    robot_id + '/world_model',
+                                    robot_id + '/dwb_controller',
+                                    robot_id + '/navfn_planner',
+                                    robot_id + '/bt_navigator']}])
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
