@@ -29,6 +29,13 @@ def generate_launch_description():
     # Get the launch directory
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
 
+    # Robot specific settings
+    robot_id = "Robot1"
+    robot_ns = launch_ros.actions.PushRosNamespace(robot_id)
+    # Node inputs followed by outputs
+    remappings = [(robot_id + '/tf', '/tf'), (robot_id + '/tf_static', '/tf_static'),
+                  ('/tf', 'tf'), ('/tf_static', 'tf_static'), ('/cmd_vel', 'cmd_vel')]
+
     # Create the launch configuration variables
     autostart = launch.substitutions.LaunchConfiguration('autostart')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt')
@@ -77,7 +84,7 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
         'rviz_config',
-        default_value=os.path.join(launch_dir, 'nav2_default_view.rviz'),
+        default_value=os.path.join(launch_dir, 'nav2_multi_robot_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
@@ -105,11 +112,6 @@ def generate_launch_description():
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     # Specify the actions
-    start_gazebo_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_simulation),
-        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
-        cwd=[launch_dir], output='screen')
-
     urdf = os.path.join(
         get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
 
@@ -119,6 +121,7 @@ def generate_launch_description():
             node_name='robot_state_publisher',
             output='screen',
             parameters=[configured_params],
+            remappings=remappings,
             arguments=[urdf])
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
@@ -132,56 +135,61 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
-    robot_id = ""
-    robot_ns = launch_ros.actions.PushRosNamespace(robot_id)
-
     start_map_server_cmd = launch_ros.actions.Node(
         package='nav2_map_server',
         node_executable='map_server',
         node_name='map_server',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params],
+        remappings=remappings)
 
     start_localizer_cmd = launch_ros.actions.Node(
         package='nav2_amcl',
         node_executable='amcl',
         node_name='amcl',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params],
+        remappings=remappings)
 
     start_world_model_cmd = launch_ros.actions.Node(
         package='nav2_world_model',
         node_executable='world_model',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params],
+        remappings=remappings)
 
     start_dwb_cmd  = launch_ros.actions.Node(
-            package='dwb_controller',
-            node_executable='dwb_controller',
-            output='screen',
-            parameters=[configured_params])
+        package='dwb_controller',
+        node_executable='dwb_controller',
+        output='screen',
+        parameters=[configured_params],
+        remappings=remappings)
 
     start_planner_cmd = launch_ros.actions.Node(
         package='nav2_navfn_planner',
         node_executable='navfn_planner',
         node_name='navfn_planner',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params],
+        remappings=remappings)
 
     start_navigator_cmd = launch_ros.actions.Node(
         package='nav2_bt_navigator',
         node_executable='bt_navigator',
         node_name='bt_navigator',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params],
+        remappings=remappings)
 
     start_recovery_cmd = launch_ros.actions.Node(
-            package='nav2_recoveries',
-            node_executable='recoveries_node',
-            node_name='recoveries',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}])
+        package='nav2_recoveries',
+        node_executable='recoveries_node',
+        node_name='recoveries',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
+        remappings=remappings)
 
+    # TODO(orduno) check if autostart will still work when providing the node names
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
         node_executable='lifecycle_manager',
@@ -189,12 +197,8 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': use_sim_time},
                     {'autostart': autostart},
-                    # {'node_names': ['map_server',
-                    #                 'amcl',
-                    #                 'world_model',
-                    #                 'dwb_controller',
-                    #                 'navfn_planner',
-                    #                 'bt_navigator']}])
+                    # Append the robot id to the namespace
+                    # CONTINIUE HERE, pass namespace separate
                     {'node_names': [robot_id + '/map_server',
                                     robot_id + '/amcl',
                                     robot_id + '/world_model',
@@ -219,11 +223,8 @@ def generate_launch_description():
     # Set environment variables
     ld.add_action(stdout_linebuf_envvar)
 
-    # Add any actions to launch in simulation (conditioned on 'use_simulation')
-    # ld.add_action(start_gazebo_cmd)
-
     # Add other nodes and processes we need
-    ld.add_action(start_rviz_cmd)
+    # ld.add_action(start_rviz_cmd)
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
