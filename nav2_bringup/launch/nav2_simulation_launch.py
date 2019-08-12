@@ -196,13 +196,7 @@ def generate_launch_description():
         node_name='lifecycle_manager_control',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time},
-                    {'autostart': autostart},
-                    {'node_names': ['map_server',
-                                    'amcl',
-                                    'world_model',
-                                    'dwb_controller',
-                                    'navfn_planner',
-                                    'bt_navigator']}])
+                    {'autostart': autostart}])
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()

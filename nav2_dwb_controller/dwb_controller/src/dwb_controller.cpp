@@ -35,7 +35,7 @@ DwbController::DwbController()
 
   // The costmap node is used in the implementation of the DWB controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "local_costmap", nav2_util::add_namespaces(std::string{get_namespace()}, "local_costmap"));
+    "local_costmap", std::string{get_namespace()}, "local_costmap");
 
   // Create an executor that will be used to spin the costmap node
   costmap_executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
