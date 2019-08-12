@@ -29,13 +29,6 @@ def generate_launch_description():
     # Get the launch directory
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
 
-    # Robot specific settings
-    robot_id = "Robot1"
-    robot_ns = launch_ros.actions.PushRosNamespace(robot_id)
-    # Node inputs followed by outputs
-    remappings = [(robot_id + '/tf', '/tf'), (robot_id + '/tf_static', '/tf_static'),
-                  ('/tf', 'tf'), ('/tf_static', 'tf_static'), ('/cmd_vel', 'cmd_vel')]
-
     # Create the launch configuration variables
     autostart = launch.substitutions.LaunchConfiguration('autostart')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt')
@@ -110,6 +103,14 @@ def generate_launch_description():
 
     stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
+
+
+    # Robot specific settings
+    robot_name = 'Robot1'
+    robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
+    remappings = [(robot_name + '/tf', '/tf'), (robot_name + '/tf_static', '/tf_static'),
+                  ('/scan', 'scan'), ('/tf', 'tf'), ('/tf_static', 'tf_static'),
+                  ('/cmd_vel', 'cmd_vel'), ('/map', 'map')]
 
     # Specify the actions
     urdf = os.path.join(
@@ -189,7 +190,6 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
         remappings=remappings)
 
-    # TODO(orduno) check if autostart will still work when providing the node names
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
         node_executable='lifecycle_manager',
@@ -197,14 +197,12 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': use_sim_time},
                     {'autostart': autostart},
-                    # Append the robot id to the namespace
-                    # CONTINIUE HERE, pass namespace separate
-                    {'node_names': [robot_id + '/map_server',
-                                    robot_id + '/amcl',
-                                    robot_id + '/world_model',
-                                    robot_id + '/dwb_controller',
-                                    robot_id + '/navfn_planner',
-                                    robot_id + '/bt_navigator']}])
+                    {'node_names': ['map_server',
+                                    'amcl',
+                                    'world_model',
+                                    'dwb_controller',
+                                    'navfn_planner',
+                                    'bt_navigator']}])
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
@@ -224,6 +222,7 @@ def generate_launch_description():
     ld.add_action(stdout_linebuf_envvar)
 
     # Add other nodes and processes we need
+    # TODO(orduno) rviz crashing: Unknown option 'ros-args'
     # ld.add_action(start_rviz_cmd)
     ld.add_action(exit_event_handler)
 
