@@ -30,6 +30,7 @@ def generate_launch_description():
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
 
     # Create the launch configuration variables
+    robot_name = launch.substitutions.LaunchConfiguration('robot_name')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt')
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
@@ -41,17 +42,26 @@ def generate_launch_description():
     world = launch.substitutions.LaunchConfiguration('world')
 
     # Create our own temporary YAML files that include the following parameter substitutions
+    namespace_substitutions = {'robot_name': robot_name}
+
     param_substitutions = {
         'autostart': autostart,
         'bt_xml_filename': bt_xml_file,
         'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file
-    }
+        'yaml_filename': map_yaml_file}
 
     configured_params = RewrittenYaml(
-        source_file=params_file, rewrites=param_substitutions, convert_types=True)
+        source_file=params_file,
+        param_rewrites=param_substitutions,
+        key_rewrites=namespace_substitutions,
+        convert_types=True)
 
     # Declare the launch arguments
+    declare_robot_name_cmd = launch.actions.DeclareLaunchArgument(
+        'robot_name',
+        default_value='Robot1',
+        description='Identification name for the robot')
+
     declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
         'autostart',
         default_value='false',
@@ -106,9 +116,8 @@ def generate_launch_description():
 
 
     # Robot specific settings
-    robot_name = 'Robot1'
     robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
-    remappings = [(robot_name + '/tf', '/tf'), (robot_name + '/tf_static', '/tf_static'),
+    remappings = [((robot_name, '/tf'), '/tf'), ((robot_name, '/tf_static'), '/tf_static'),
                   ('/scan', 'scan'), ('/tf', 'tf'), ('/tf_static', 'tf_static'),
                   ('/cmd_vel', 'cmd_vel'), ('/map', 'map')]
 
@@ -117,13 +126,13 @@ def generate_launch_description():
         get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
 
     start_robot_state_publisher_cmd = launch_ros.actions.Node(
-            package='robot_state_publisher',
-            node_executable='robot_state_publisher',
-            node_name='robot_state_publisher',
-            output='screen',
-            parameters=[configured_params],
-            remappings=remappings,
-            arguments=[urdf])
+        package='robot_state_publisher',
+        node_executable='robot_state_publisher',
+        node_name='robot_state_publisher',
+        output='screen',
+        parameters=[configured_params],
+        remappings=remappings,
+        arguments=[urdf])
 
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
@@ -202,6 +211,7 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     # Declare the launch options
+    ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_map_yaml_cmd)

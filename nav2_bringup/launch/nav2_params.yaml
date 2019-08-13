@@ -1,4 +1,4 @@
-Robot1:
+robot_name:  # this is substituted with the actual robot name during launch
   amcl:
     ros__parameters:
       use_sim_time: True
