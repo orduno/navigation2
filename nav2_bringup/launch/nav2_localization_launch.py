@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import launch.actions
+
 from launch import LaunchDescription
-
-import launch_ros.actions
-
 from nav2_common.launch import RewrittenYaml
+
+import launch.actions
+import launch_ros.actions
 
 
 def generate_launch_description():

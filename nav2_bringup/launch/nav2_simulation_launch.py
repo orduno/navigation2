@@ -117,9 +117,14 @@ def generate_launch_description():
 
     # Robot specific settings
     robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
-    remappings = [((robot_name, '/tf'), '/tf'), ((robot_name, '/tf_static'), '/tf_static'),
-                  ('/scan', 'scan'), ('/tf', 'tf'), ('/tf_static', 'tf_static'),
-                  ('/cmd_vel', 'cmd_vel'), ('/map', 'map')]
+
+    remappings = [((robot_name, '/tf'), '/tf'),
+                  ((robot_name, '/tf_static'), '/tf_static'),
+                  ('/scan', 'scan'),
+                  ('/tf', 'tf'),
+                  ('/tf_static', 'tf_static'),
+                  ('/cmd_vel', 'cmd_vel'),
+                  ('/map', 'map')]
 
     # Specify the actions
     urdf = os.path.join(
@@ -134,10 +139,17 @@ def generate_launch_description():
         remappings=remappings,
         arguments=[urdf])
 
+    # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
-            [ "__log_level:=fatal"],
-            ['-d', rviz_config_file]],
+            # ['-d', rviz_config_file],
+            ['__ns:=/', robot_name],
+            ['/tf:=tf'],
+            ['/tf_static:=tf_static'],
+            ['/clicked_point:=clicked_point'],
+            ['/initialpose:=initialpose'],
+            ['/parameter_events:=parameter_events'],
+            ['/rosout:=rosout']],
         cwd=[launch_dir], output='screen')
 
     exit_event_handler = launch.actions.RegisterEventHandler(
@@ -226,8 +238,7 @@ def generate_launch_description():
     ld.add_action(stdout_linebuf_envvar)
 
     # Add other nodes and processes we need
-    # TODO(orduno) rviz crashing: Unknown option 'ros-args'
-    # ld.add_action(start_rviz_cmd)
+    ld.add_action(start_rviz_cmd)
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
