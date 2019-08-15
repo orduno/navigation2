@@ -18,7 +18,7 @@ import os
 
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
-from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from nav2_common.launch import RewrittenYaml
 
 import launch.actions
@@ -32,14 +32,14 @@ def generate_launch_description():
     # Create the launch configuration variables
     robot_name = launch.substitutions.LaunchConfiguration('robot_name')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
-    bt_xml_file = launch.substitutions.LaunchConfiguration('bt')
+    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
     params_file = launch.substitutions.LaunchConfiguration('params')
     rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
-    use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
     world = launch.substitutions.LaunchConfiguration('world')
+    remappings = launch.substitutions.LaunchConfiguration('remappings')
 
     # Create our own temporary YAML files that include the following parameter substitutions
     namespace_substitutions = {'robot_name': robot_name}
@@ -52,7 +52,7 @@ def generate_launch_description():
 
     configured_params = RewrittenYaml(
         source_file=params_file,
-        param_rewrites=param_substitutions,
+        param_rewrites=dict(),  #TODO(orduno) add this as an optional, set = None
         key_rewrites=namespace_substitutions,
         convert_types=True)
 
@@ -62,17 +62,12 @@ def generate_launch_description():
         default_value='Robot1',
         description='Identification name for the robot')
 
-    declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
-        'autostart',
-        default_value='false',
-        description='Automatically startup the nav2 stack')
-
     declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
-        'bt',
+        'bt_xml_file',
         default_value=os.path.join(
             get_package_prefix('nav2_bt_navigator'),
-            'behavior_trees/navigate_w_replanning.xml'),
-        description='Full path to the Behavior Tree XML file to use for the BT navigator')
+            'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
+        description='Full path to the behavior tree xml file to use')
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map',
@@ -84,6 +79,15 @@ def generate_launch_description():
         default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
         # default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
+
+    declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
+        'autostart', default_value='true',
+        description='Automatically startup the nav2 stack')
+
+    declare_remappings_cmd = launch.actions.DeclareLaunchArgument(
+        'remappings',
+        default_value={'/tf': 'tf'}.items(),
+        description='Remapping of node topics')
 
     declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
         'rviz_config',
@@ -111,20 +115,16 @@ def generate_launch_description():
                                    'worlds/turtlebot3_worlds/waffle.model'),
         description='Full path to world file to load')
 
-    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
-        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
-
-
-    # Robot specific settings
+    # # Robot specific settings
     robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
 
-    remappings = [((robot_name, '/tf'), '/tf'),
-                  ((robot_name, '/tf_static'), '/tf_static'),
-                  ('/scan', 'scan'),
-                  ('/tf', 'tf'),
-                  ('/tf_static', 'tf_static'),
-                  ('/cmd_vel', 'cmd_vel'),
-                  ('/map', 'map')]
+    # remappings = [((robot_name, '/tf'), '/tf'),
+    #               ((robot_name, '/tf_static'), '/tf_static'),
+    #               ('/scan', 'scan'),
+    #               ('/tf', 'tf'),
+    #               ('/tf_static', 'tf_static'),
+    #               ('/cmd_vel', 'cmd_vel'),
+    #               ('/map', 'map')]
 
     # Specify the actions
     urdf = os.path.join(
@@ -136,14 +136,15 @@ def generate_launch_description():
         node_name='robot_state_publisher',
         output='screen',
         parameters=[configured_params],
-        remappings=remappings,
+        # remappings=remappings,
         arguments=[urdf])
 
-    # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
+    # # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
             # ['-d', rviz_config_file],
             ['__ns:=/', robot_name],
+            ['/move_base_simple/goal:=move_base_simple/goal'],
             ['/tf:=tf'],
             ['/tf_static:=tf_static'],
             ['/clicked_point:=clicked_point'],
@@ -157,100 +158,39 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
-    start_map_server_cmd = launch_ros.actions.Node(
-        package='nav2_map_server',
-        node_executable='map_server',
-        node_name='map_server',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_localizer_cmd = launch_ros.actions.Node(
-        package='nav2_amcl',
-        node_executable='amcl',
-        node_name='amcl',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_world_model_cmd = launch_ros.actions.Node(
-        package='nav2_world_model',
-        node_executable='world_model',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_dwb_cmd  = launch_ros.actions.Node(
-        package='dwb_controller',
-        node_executable='dwb_controller',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_planner_cmd = launch_ros.actions.Node(
-        package='nav2_navfn_planner',
-        node_executable='navfn_planner',
-        node_name='navfn_planner',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_navigator_cmd = launch_ros.actions.Node(
-        package='nav2_bt_navigator',
-        node_executable='bt_navigator',
-        node_name='bt_navigator',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_recovery_cmd = launch_ros.actions.Node(
-        package='nav2_recoveries',
-        node_executable='recoveries_node',
-        node_name='recoveries',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
-        remappings=remappings)
-
-    start_lifecycle_manager_cmd = launch_ros.actions.Node(
-        package='nav2_lifecycle_manager',
-        node_executable='lifecycle_manager',
-        node_name='lifecycle_manager_control',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time},
-                    {'autostart': autostart}])
+    nav2_bringup_launch_cmd = launch.actions.IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_bringup_launch.py')),
+        launch_arguments={'map_yaml_file': map_yaml_file,
+                          'use_sim_time': use_sim_time,
+                          'params_file': params_file,
+                          'bt_xml_file': bt_xml_file,
+                          'autostart': autostart
+                        #   ,
+                        #   'remappings': remappings
+        }.items())
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
 
     # Declare the launch options
     ld.add_action(declare_robot_name_cmd)
-    ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_remappings_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_use_sim_time_cmd)
-    ld.add_action(declare_use_simulation_cmd)
     ld.add_action(declare_world_cmd)
 
-    # Set environment variables
-    ld.add_action(stdout_linebuf_envvar)
-
     # Add other nodes and processes we need
-    ld.add_action(start_rviz_cmd)
+    # ld.add_action(start_rviz_cmd)
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(robot_ns)
-    ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(start_lifecycle_manager_cmd)
-    ld.add_action(start_map_server_cmd)
-    ld.add_action(start_localizer_cmd)
-    ld.add_action(start_world_model_cmd)
-    ld.add_action(start_dwb_cmd)
-    ld.add_action(start_planner_cmd)
-    ld.add_action(start_navigator_cmd)
-    ld.add_action(start_recovery_cmd)
+    # ld.add_action(start_robot_state_publisher_cmd)
+    ld.add_action(nav2_bringup_launch_cmd)
 
     return ld
