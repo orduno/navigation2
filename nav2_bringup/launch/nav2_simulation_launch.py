@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This is all-in-one launch script intended for use by nav2 developers.
+''' This is all-in-one launch script intended for use by nav2 developers. '''
 
 import os
 
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from nav2_common.launch import RewrittenYaml
 
@@ -31,48 +32,33 @@ def generate_launch_description():
 
     # Create the launch configuration variables
     robot_name = launch.substitutions.LaunchConfiguration('robot_name')
-    autostart = launch.substitutions.LaunchConfiguration('autostart')
-    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     map_yaml_file = launch.substitutions.LaunchConfiguration('map')
-    params_file = launch.substitutions.LaunchConfiguration('params')
-    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
-    simulator = launch.substitutions.LaunchConfiguration('simulator')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
+    params_file = launch.substitutions.LaunchConfiguration('params')
+    bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
+    autostart = launch.substitutions.LaunchConfiguration('autostart')
+
+    # Launch configuration variables specific to simulation
+    rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
+    use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
+    simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
-    remappings = launch.substitutions.LaunchConfiguration('remappings')
-
-    # Create our own temporary YAML files that include the following parameter substitutions
-    namespace_substitutions = {'robot_name': robot_name}
-
-    param_substitutions = {
-        'autostart': autostart,
-        'bt_xml_filename': bt_xml_file,
-        'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file}
-
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        param_rewrites=dict(),  #TODO(orduno) add this as an optional, set = None
-        key_rewrites=namespace_substitutions,
-        convert_types=True)
 
     # Declare the launch arguments
     declare_robot_name_cmd = launch.actions.DeclareLaunchArgument(
         'robot_name',
-        default_value='Robot1',
+        default_value='',
         description='Identification name for the robot')
-
-    declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
-        'bt_xml_file',
-        default_value=os.path.join(
-            get_package_prefix('nav2_bt_navigator'),
-            'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
-        description='Full path to the behavior tree xml file to use')
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
         'map',
         default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
+
+    declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (Gazebo) clock if true')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
         'params',
@@ -81,33 +67,32 @@ def generate_launch_description():
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
-        'autostart', default_value='true',
+        'autostart', default_value='false',
         description='Automatically startup the nav2 stack')
 
-    declare_remappings_cmd = launch.actions.DeclareLaunchArgument(
-        'remappings',
-        default_value={'/tf': 'tf'}.items(),
-        description='Remapping of node topics')
+    declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
+        'bt_xml_file',
+        default_value=os.path.join(
+            get_package_prefix('nav2_bt_navigator'),
+            'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
+        description='Full path to the behavior tree xml file to use')
 
+    #TODO(orduno) modify to the default single robot view
+    #TODO(orduno) is there a way to pass the robot name so topics in RVIZ are namespaced correctly?
     declare_rviz_config_file_cmd = launch.actions.DeclareLaunchArgument(
         'rviz_config',
         default_value=os.path.join(launch_dir, 'nav2_multi_robot_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
+    declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
+            'use_simulation',
+            default_value='True',
+            description='Whether to run in simulation')
+
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
         'simulator',
         default_value='gazebo',
         description='The simulator to use (gazebo or gzserver)')
-
-    declare_use_sim_time_cmd = launch.actions.DeclareLaunchArgument(
-        'use_sim_time',
-        default_value='true',
-        description='Use simulation (Gazebo) clock if true')
-
-    declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
-        'use_simulation',
-        default_value='True',
-        description='Whether to run in simulation')
 
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
         'world',
@@ -115,18 +100,26 @@ def generate_launch_description():
                                    'worlds/turtlebot3_worlds/waffle.model'),
         description='Full path to world file to load')
 
-    # # Robot specific settings
+    # Robot specific settings
     robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
 
-    # remappings = [((robot_name, '/tf'), '/tf'),
-    #               ((robot_name, '/tf_static'), '/tf_static'),
-    #               ('/scan', 'scan'),
-    #               ('/tf', 'tf'),
-    #               ('/tf_static', 'tf_static'),
-    #               ('/cmd_vel', 'cmd_vel'),
-    #               ('/map', 'map')]
+    # If a robot name is provided, the transforms need to be namespaced
+    # Also, several topics where defined with an absolute namespace, i.e. /map
+    # TODO(orduno) change topics to relative namespaces
+    remappings = [((robot_name, '/tf'), '/tf'),
+                  ((robot_name, '/tf_static'), '/tf_static'),
+                  ('/scan', 'scan'),
+                  ('/tf', 'tf'),
+                  ('/tf_static', 'tf_static'),
+                  ('/cmd_vel', 'cmd_vel'),
+                  ('/map', 'map')]
 
     # Specify the actions
+    start_gazebo_cmd = launch.actions.ExecuteProcess(
+        condition=IfCondition(use_simulation),
+        cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
+        cwd=[launch_dir], output='screen')
+
     urdf = os.path.join(
         get_package_share_directory('turtlebot3_description'), 'urdf', 'turtlebot3_waffle.urdf')
 
@@ -135,8 +128,8 @@ def generate_launch_description():
         node_executable='robot_state_publisher',
         node_name='robot_state_publisher',
         output='screen',
-        parameters=[configured_params],
-        # remappings=remappings,
+        parameters=[{'use_sim_time': use_sim_time}],
+        remappings=remappings,
         arguments=[urdf])
 
     # # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
@@ -160,37 +153,39 @@ def generate_launch_description():
 
     nav2_bringup_launch_cmd = launch.actions.IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_bringup_launch.py')),
-        launch_arguments={'map_yaml_file': map_yaml_file,
+        launch_arguments={'robot_name': robot_name,
+                          'map_yaml_file': map_yaml_file,
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
                           'bt_xml_file': bt_xml_file,
-                          'autostart': autostart
-                        #   ,
-                        #   'remappings': remappings
-        }.items())
+                          'autostart': autostart}.items())
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
 
     # Declare the launch options
     ld.add_action(declare_robot_name_cmd)
-    ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_params_file_cmd)
-    ld.add_action(declare_autostart_cmd)
-    ld.add_action(declare_remappings_cmd)
-    ld.add_action(declare_rviz_config_file_cmd)
-    ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_bt_xml_cmd)
+    ld.add_action(declare_autostart_cmd)
+
+    ld.add_action(declare_rviz_config_file_cmd)
+    ld.add_action(declare_use_simulation_cmd)
+    ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
 
+    # Add any actions to launch in simulation (conditioned on 'use_simulation')
+    ld.add_action(start_gazebo_cmd)
+
     # Add other nodes and processes we need
-    # ld.add_action(start_rviz_cmd)
+    ld.add_action(start_rviz_cmd)
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(robot_ns)
-    # ld.add_action(start_robot_state_publisher_cmd)
+    ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(nav2_bringup_launch_cmd)
 
     return ld
