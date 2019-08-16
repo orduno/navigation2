@@ -17,13 +17,15 @@
 import os
 import sys
 import rclpy
+
 from ament_index_python.packages import get_package_share_directory
 from gazebo_msgs.srv import SpawnEntity
+
 import xml.etree.ElementTree as ET
 
 
 def main():
-    """ Main for spwaning turtlebot node """
+    """ Main for spawning turtlebot node """
     # Get input arguments from user
     argv = sys.argv[1:]
 

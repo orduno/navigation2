@@ -40,7 +40,7 @@ def generate_launch_description():
 
     # Launch configuration variables specific to simulation
     rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
-    use_simulation = launch.substitutions.LaunchConfiguration('use_simulation')
+    run_simulator = launch.substitutions.LaunchConfiguration('run_simulator')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
 
@@ -84,10 +84,10 @@ def generate_launch_description():
         default_value=os.path.join(launch_dir, 'nav2_multi_robot_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
-    declare_use_simulation_cmd = launch.actions.DeclareLaunchArgument(
-            'use_simulation',
+    declare_run_simulator_cmd = launch.actions.DeclareLaunchArgument(
+            'run_simulator',
             default_value='True',
-            description='Whether to run in simulation')
+            description='Whether to start the simulator')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
         'simulator',
@@ -116,7 +116,7 @@ def generate_launch_description():
 
     # Specify the actions
     start_gazebo_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(use_simulation),
+        condition=IfCondition(run_simulator),
         cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
         cwd=[launch_dir], output='screen')
 
@@ -151,7 +151,7 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='rviz exited'))))
 
-    nav2_bringup_launch_cmd = launch.actions.IncludeLaunchDescription(
+    bringup_cmd = launch.actions.IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_bringup_launch.py')),
         launch_arguments={'robot_name': robot_name,
                           'map_yaml_file': map_yaml_file,
@@ -172,11 +172,11 @@ def generate_launch_description():
     ld.add_action(declare_autostart_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
-    ld.add_action(declare_use_simulation_cmd)
+    ld.add_action(declare_run_simulator_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
 
-    # Add any actions to launch in simulation (conditioned on 'use_simulation')
+    # Add any actions to launch in simulation (conditioned on 'run_simulator')
     ld.add_action(start_gazebo_cmd)
 
     # Add other nodes and processes we need
@@ -186,6 +186,6 @@ def generate_launch_description():
     # Add the actions to launch all of the navigation nodes
     ld.add_action(robot_ns)
     ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(nav2_bringup_launch_cmd)
+    ld.add_action(bringup_cmd)
 
     return ld
