@@ -90,13 +90,15 @@ def generate_launch_description():
     # If a robot name is provided, the transforms need to be namespaced
     # Also, several topics where defined with an absolute namespace, i.e. /map
     # TODO(orduno) change topics to relative namespaces
-    remappings = [((robot_name, '/tf'), '/tf'),
-                  ((robot_name, '/tf_static'), '/tf_static'),
-                  ('/scan', 'scan'),
-                  ('/tf', 'tf'),
-                  ('/tf_static', 'tf_static'),
-                  ('/cmd_vel', 'cmd_vel'),
-                  ('/map', 'map')]
+    # remappings = [((robot_name, '/tf'), '/tf'),
+    #               ((robot_name, '/tf_static'), '/tf_static'),
+    #               ('/scan', 'scan'),
+    #               ('/tf', 'tf'),
+    #               ('/tf_static', 'tf_static'),
+    #               ('/cmd_vel', 'cmd_vel'),
+    #               ('/map', 'map')]
+
+    remappings = []
 
     # Specify the actions
     start_map_server_cmd = launch_ros.actions.Node(

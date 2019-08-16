@@ -60,6 +60,8 @@ Costmap2DROS::Costmap2DROS(const std::string & name,
 : nav2_util::LifecycleNode(name, "", true,
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
+    // TODO(orduno) Pass a sub-node instead of creating a new node for better handling
+    //              of the namespaces
     rclcpp::NodeOptions().arguments({std::string("__ns:=") +
       nav2_util::add_namespaces(parent_namespace, local_namespace)})),
   name_(name), parent_namespace_(parent_namespace)
@@ -79,7 +81,8 @@ Costmap2DROS::Costmap2DROS(const std::string & name,
   declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
   declare_parameter("height", rclcpp::ParameterValue(10));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-  declare_parameter("map_topic", rclcpp::ParameterValue(parent_namespace_ + std::string("/map")));
+  declare_parameter("map_topic", rclcpp::ParameterValue(
+    (parent_namespace_=="/" ? "" : parent_namespace_ ) + std::string("/map")));
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
@@ -132,6 +135,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     // TODO(mjeronimo): instead of get(), use a shared ptr
     plugin->initialize(layered_costmap_, plugin_names_[i], tf_buffer_.get(),
       shared_from_this(), client_node_, rclcpp_node_);
+
+    RCLCPP_INFO(get_logger(), "Initialized plugin \"%s\"", plugin_names_[i].c_str());
   }
 
   // Create the publishers and subscribers
