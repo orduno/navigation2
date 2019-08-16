@@ -1,6 +1,7 @@
 from typing import Dict
 from typing import List
 from typing import Text
+from typing import Optional
 import yaml
 import tempfile
 import launch
@@ -24,7 +25,7 @@ class RewrittenYaml(launch.Substitution):
   def __init__(self,
     source_file: launch.SomeSubstitutionsType,
     param_rewrites: Dict,
-    key_rewrites: Dict,
+    key_rewrites: Optional[Dict] = None,
     convert_types = False) -> None:
     super().__init__()
 
@@ -35,8 +36,9 @@ class RewrittenYaml(launch.Substitution):
     self.__convert_types = convert_types
     for key in param_rewrites:
         self.__param_rewrites[key] = normalize_to_list_of_substitutions(param_rewrites[key])
-    for key in key_rewrites:
-        self.__key_rewrites[key] = normalize_to_list_of_substitutions(key_rewrites[key])
+    if key_rewrites is not None:
+        for key in key_rewrites:
+          self.__key_rewrites[key] = normalize_to_list_of_substitutions(key_rewrites[key])
 
   @property
   def name(self) -> List[launch.Substitution]:
@@ -74,12 +76,13 @@ class RewrittenYaml(launch.Substitution):
         key.setValue(self.convert(raw_value))
 
   def substitute_keys(self, yaml, key_rewrites):
-    for key, val in yaml.items():
-      if isinstance(val, dict) and key in key_rewrites:
-        new_key = key_rewrites[key]
-        yaml[new_key] = yaml[key]
-        del yaml[key]
-        self.substitute_keys(val, key_rewrites)
+    if len(key_rewrites) != 0:
+      for key, val in yaml.items():
+        if isinstance(val, dict) and key in key_rewrites:
+          new_key = key_rewrites[key]
+          yaml[new_key] = yaml[key]
+          del yaml[key]
+          self.substitute_keys(val, key_rewrites)
 
   def getYamlLeafKeys(self, yamlData):
     try:

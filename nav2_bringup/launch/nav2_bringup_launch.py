@@ -16,12 +16,11 @@ import os
 
 from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
-from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from nav2_common.launch import RewrittenYaml
 
 import launch.actions
 import launch_ros.actions
-
-from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
@@ -36,8 +35,8 @@ def generate_launch_description():
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
 
-    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
-        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
+    # stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
+    #     'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     # Create our own temporary YAML files that include substitutions
     namespace_substitutions = {'robot_name': robot_name}
@@ -51,7 +50,7 @@ def generate_launch_description():
     configured_params = RewrittenYaml(
         source_file=params_file,
         param_rewrites=param_substitutions,
-        key_rewrites=namespace_substitutions,  #TODO(orduno) add this as an optional, set = None
+        key_rewrites=namespace_substitutions,
         convert_types=True)
 
     # Declare the launch arguments
@@ -101,21 +100,13 @@ def generate_launch_description():
     remappings = []
 
     # Specify the actions
-    start_map_server_cmd = launch_ros.actions.Node(
-        package='nav2_map_server',
-        node_executable='map_server',
-        node_name='map_server',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_localizer_cmd = launch_ros.actions.Node(
-        package='nav2_amcl',
-        node_executable='amcl',
-        node_name='amcl',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
+    start_localization_cmd = launch.actions.IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_localization_launch.py')),
+        launch_arguments={'robot_name': robot_name,
+                          'map_yaml_file': map_yaml_file,
+                          'use_sim_time': use_sim_time,
+                          'autostart': autostart,
+                          'params_file': params_file}.items())
 
     start_world_model_cmd = launch_ros.actions.Node(
         package='nav2_world_model',
@@ -161,8 +152,7 @@ def generate_launch_description():
         node_name='lifecycle_manager',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time},
-                    {'autostart': autostart}],
-        remappings=remappings)
+                    {'autostart': autostart}])
 
     log_robot_name_cmd = launch.actions.LogInfo(msg=['Robot name: ', robot_name])
     log_autostart_cmd = launch.actions.LogInfo(msg=['Autostart: ', autostart])
@@ -174,9 +164,10 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     # Set environment variables
-    ld.add_action(stdout_linebuf_envvar)
+    # ld.add_action(stdout_linebuf_envvar)
 
     # Declare the launch options
+    ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
@@ -185,8 +176,7 @@ def generate_launch_description():
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_lifecycle_manager_cmd)
-    ld.add_action(start_map_server_cmd)
-    ld.add_action(start_localizer_cmd)
+    ld.add_action(start_localization_cmd)
     ld.add_action(start_world_model_cmd)
     ld.add_action(start_dwb_cmd)
     ld.add_action(start_planner_cmd)
