@@ -30,9 +30,9 @@ def generate_launch_description():
 
     # Create the launch configuration variables
     robot_name = launch.substitutions.LaunchConfiguration('robot_name')
-    map_yaml_file = launch.substitutions.LaunchConfiguration('map')
+    map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml_file')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
-    params_file = launch.substitutions.LaunchConfiguration('params')
+    params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
 
@@ -61,7 +61,7 @@ def generate_launch_description():
         description='Identification name for the robot')
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
-        'map',
+        'map_yaml_file',
         default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
@@ -71,7 +71,7 @@ def generate_launch_description():
         description='Use simulation (Gazebo) clock if true')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
-        'params',
+        'params_file',
         default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
         # default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
@@ -163,7 +163,10 @@ def generate_launch_description():
         remappings=remappings)
 
     log_robot_name_cmd = launch.actions.LogInfo(msg=['Robot name: ', robot_name])
+    log_autostart_cmd = launch.actions.LogInfo(msg=['Autostart: ', autostart])
     log_use_sim_time_cmd = launch.actions.LogInfo(msg=['Use sim time: ', use_sim_time])
+    log_map_yaml_cmd = launch.actions.LogInfo(msg=['Map yaml: ', map_yaml_file])
+    log_params_yaml_cmd = launch.actions.LogInfo(msg=['Params yaml: ', params_file])
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
@@ -189,6 +192,9 @@ def generate_launch_description():
     ld.add_action(start_navigator_cmd)
 
     ld.add_action(log_robot_name_cmd)
-    ld.add.action(log_use_sim_time_cmd)
+    ld.add_action(log_autostart_cmd)
+    ld.add_action(log_use_sim_time_cmd)
+    ld.add_action(log_map_yaml_cmd)
+    ld.add_action(log_params_yaml_cmd)
 
     return ld

@@ -32,9 +32,9 @@ def generate_launch_description():
 
     # Create the launch configuration variables
     robot_name = launch.substitutions.LaunchConfiguration('robot_name')
-    map_yaml_file = launch.substitutions.LaunchConfiguration('map')
+    map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml_file')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
-    params_file = launch.substitutions.LaunchConfiguration('params')
+    params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
 
@@ -51,7 +51,7 @@ def generate_launch_description():
         description='Identification name for the robot')
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
-        'map',
+        'map_yaml_file',
         default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
@@ -61,7 +61,7 @@ def generate_launch_description():
         description='Use simulation (Gazebo) clock if true')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
-        'params',
+        'params_file',
         default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
         # default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
@@ -85,9 +85,9 @@ def generate_launch_description():
         description='Full path to the RVIZ config file to use')
 
     declare_run_simulator_cmd = launch.actions.DeclareLaunchArgument(
-            'run_simulator',
-            default_value='True',
-            description='Whether to start the simulator')
+        'run_simulator',
+        default_value='True',
+        description='Whether to start the simulator')
 
     declare_simulator_cmd = launch.actions.DeclareLaunchArgument(
         'simulator',
