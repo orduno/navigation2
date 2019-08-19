@@ -62,8 +62,7 @@ def generate_launch_description():
             'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
         launch.actions.DeclareLaunchArgument(
-            'robot_name',
-            default_value='',
+            'robot_name', default_value='',
             description='Identification name for the robot'),
 
         launch.actions.DeclareLaunchArgument(
@@ -107,7 +106,7 @@ def generate_launch_description():
             condition=IfCondition(use_lifecycle_mgr),
             package='nav2_lifecycle_manager',
             node_executable='lifecycle_manager',
-            node_name='lifecycle_manager_localize',
+            node_name='lifecycle_manager_localization',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},

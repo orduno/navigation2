@@ -18,6 +18,7 @@ from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from nav2_common.launch import RewrittenYaml
+from launch.conditions import IfCondition
 
 import launch.actions
 import launch_ros.actions
@@ -34,24 +35,11 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
+    log_settings = launch.substitutions.LaunchConfiguration('log_settings',
+                                                             default='false')
 
-    # stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
-    #     'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
-
-    # Create our own temporary YAML files that include substitutions
-    namespace_substitutions = {'robot_name': robot_name}
-
-    param_substitutions = {
-        'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file,
-        'bt_xml_filename': bt_xml_file,
-        'autostart': autostart}
-
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        param_rewrites=param_substitutions,
-        key_rewrites=namespace_substitutions,
-        convert_types=True)
+    stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
+        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     # Declare the launch arguments
     declare_robot_name_cmd = launch.actions.DeclareLaunchArgument(
@@ -109,43 +97,14 @@ def generate_launch_description():
                           'params_file': params_file,
                           'use_lifecycle_mgr': 'false'}.items())
 
-    start_world_model_cmd = launch_ros.actions.Node(
-        package='nav2_world_model',
-        node_executable='world_model',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_dwb_cmd = launch_ros.actions.Node(
-        package='dwb_controller',
-        node_executable='dwb_controller',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_planner_cmd = launch_ros.actions.Node(
-        package='nav2_navfn_planner',
-        node_executable='navfn_planner',
-        node_name='navfn_planner',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
-
-    start_recovery_cmd = launch_ros.actions.Node(
-        package='nav2_recoveries',
-        node_executable='recoveries_node',
-        node_name='recoveries',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
-        remappings=remappings)
-
-    start_navigator_cmd = launch_ros.actions.Node(
-        package='nav2_bt_navigator',
-        node_executable='bt_navigator',
-        node_name='bt_navigator',
-        output='screen',
-        parameters=[configured_params],
-        remappings=remappings)
+    start_navigation_cmd = launch.actions.IncludeLaunchDescription(
+      PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_navigation_launch.py')),
+      launch_arguments={'robot_name': robot_name,
+                        'use_sim_time': use_sim_time,
+                        'autostart': autostart,
+                        'params_file': params_file,
+                        'bt_xml_file': bt_xml_file,
+                        'use_lifecycle_mgr': 'false'}.items())
 
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
@@ -155,17 +114,27 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time},
                     {'autostart': autostart}])
 
-    log_robot_name_cmd = launch.actions.LogInfo(msg=['Robot name: ', robot_name])
-    log_autostart_cmd = launch.actions.LogInfo(msg=['Autostart: ', autostart])
-    log_use_sim_time_cmd = launch.actions.LogInfo(msg=['Use sim time: ', use_sim_time])
-    log_map_yaml_cmd = launch.actions.LogInfo(msg=['Map yaml: ', map_yaml_file])
-    log_params_yaml_cmd = launch.actions.LogInfo(msg=['Params yaml: ', params_file])
+    log_robot_name_cmd = launch.actions.LogInfo(
+        condition=IfCondition(log_settings),
+        msg=['Robot name: ', robot_name])
+    log_autostart_cmd = launch.actions.LogInfo(
+        condition=IfCondition(log_settings),
+        msg=['Autostart: ', autostart])
+    log_use_sim_time_cmd = launch.actions.LogInfo(
+        condition=IfCondition(log_settings),
+        msg=['Use sim time: ', use_sim_time])
+    log_map_yaml_cmd = launch.actions.LogInfo(
+        condition=IfCondition(log_settings),
+        msg=['Map yaml: ', map_yaml_file])
+    log_params_yaml_cmd = launch.actions.LogInfo(
+        condition=IfCondition(log_settings),
+        msg=['Params yaml: ', params_file])
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
 
     # Set environment variables
-    # ld.add_action(stdout_linebuf_envvar)
+    ld.add_action(stdout_linebuf_envvar)
 
     # Declare the launch options
     ld.add_action(declare_robot_name_cmd)
@@ -178,11 +147,7 @@ def generate_launch_description():
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_lifecycle_manager_cmd)
     ld.add_action(start_localization_cmd)
-    ld.add_action(start_world_model_cmd)
-    ld.add_action(start_dwb_cmd)
-    ld.add_action(start_planner_cmd)
-    ld.add_action(start_recovery_cmd)
-    ld.add_action(start_navigator_cmd)
+    ld.add_action(start_navigation_cmd)
 
     ld.add_action(log_robot_name_cmd)
     ld.add_action(log_autostart_cmd)
