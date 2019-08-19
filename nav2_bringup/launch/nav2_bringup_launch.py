@@ -106,7 +106,8 @@ def generate_launch_description():
                           'map_yaml_file': map_yaml_file,
                           'use_sim_time': use_sim_time,
                           'autostart': autostart,
-                          'params_file': params_file}.items())
+                          'params_file': params_file,
+                          'use_lifecycle_mgr': 'false'}.items())
 
     start_world_model_cmd = launch_ros.actions.Node(
         package='nav2_world_model',
