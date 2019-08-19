@@ -30,6 +30,9 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     use_lifecycle_mgr = launch.substitutions.LaunchConfiguration('use_lifecycle_mgr')
+    #TODO(orduno) alternatively rename substitution to `use_namespaced_topics`
+    remap_transforms = launch.substitutions.LaunchConfiguration('remap_transforms',
+                                                                 default='hello')
 
     # Create our own temporary YAML files that include substitutions
     namespace_substitutions = {'robot_name': robot_name}
@@ -47,16 +50,26 @@ def generate_launch_description():
 
     # If a robot name is provided, the transforms need to be namespaced
     # Also, several topics where defined with an absolute namespace, i.e. /map
-    # TODO(orduno) change topics to relative namespaces
-    # remappings = [((robot_name, '/tf'), '/tf'),
-    #               ((robot_name, '/tf_static'), '/tf_static'),
-    #               ('/scan', 'scan'),
-    #               ('/tf', 'tf'),
-    #               ('/tf_static', 'tf_static'),
-    #               ('/cmd_vel', 'cmd_vel'),
-    #               ('/map', 'map')]
 
+    # Unfortunately, TF2 doesn't provide a way to namespace tranforms
+    # https://github.com/ros/geometry2/issues/32
+    # The solution for now is to remap the transform topics
+
+    # TODO(orduno) Ideally we'd like to directly obtain the remapping from the parent launch
+    #              but there doesn't seem to be a way to do this cleanly in the `launch` pkg
     remappings = []
+    if IfCondition(remap_transforms):
+        remappings.append(((robot_name, '/tf'), '/tf'))
+        remappings.append(((robot_name, '/tf_static'), '/tf_static'))
+        remappings.append(('/scan', 'scan'))
+        remappings.append(('/tf', 'tf'))
+        remappings.append(('/tf_static', 'tf_static'))
+        # TODO(orduno) change topics to relative namespaces in the stack
+        remappings.append(('/cmd_vel', 'cmd_vel'))
+        remappings.append(('/map', 'map'))
+
+    # TODO(orduno)
+    # remappings = get_nav2_remappings if IfCondition(remap_transforms) else []
 
     return LaunchDescription([
         # Set env var to print messages to stdout immediately
@@ -90,6 +103,12 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(
             'use_lifecycle_mgr', default_value='true',
             description='Whether to launch the lifecycle manager'),
+
+        launch.actions.DeclareLaunchArgument(
+                'remap_transforms', default_value='hello',
+                description='Whether to namespace topics'),
+
+        launch.actions.LogInfo(msg=['Remapping: ', remap_transforms]),
 
         launch_ros.actions.Node(
             package='nav2_world_model',

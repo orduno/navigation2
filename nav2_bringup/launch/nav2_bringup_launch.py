@@ -35,8 +35,10 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
+    remap_transforms = launch.substitutions.LaunchConfiguration('remap_transforms',
+                                                                 default='false')
     log_settings = launch.substitutions.LaunchConfiguration('log_settings',
-                                                             default='false')
+                                                             default='true')
 
     stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
@@ -60,7 +62,6 @@ def generate_launch_description():
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
         'params_file',
         default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
-        # default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
@@ -82,7 +83,8 @@ def generate_launch_description():
                           'use_sim_time': use_sim_time,
                           'autostart': autostart,
                           'params_file': params_file,
-                          'use_lifecycle_mgr': 'false'}.items())
+                          'use_lifecycle_mgr': 'false',
+                          'remap_transforms': remap_transforms}.items())
 
     start_navigation_cmd = launch.actions.IncludeLaunchDescription(
       PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_navigation_launch.py')),
@@ -91,7 +93,8 @@ def generate_launch_description():
                         'autostart': autostart,
                         'params_file': params_file,
                         'bt_xml_file': bt_xml_file,
-                        'use_lifecycle_mgr': 'false'}.items())
+                        'use_lifecycle_mgr': 'false',
+                        'remap_transforms': remap_transforms}.items())
 
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
@@ -121,6 +124,10 @@ def generate_launch_description():
         condition=IfCondition(log_settings),
         msg=['Params yaml: ', params_file])
 
+    log_remapping_cmd = launch.actions.LogInfo(
+            condition=IfCondition(log_settings),
+            msg=['Remapping: ', remap_transforms])
+
     # Create the launch description and populate
     ld = launch.LaunchDescription()
 
@@ -145,5 +152,6 @@ def generate_launch_description():
     ld.add_action(log_use_sim_time_cmd)
     ld.add_action(log_map_yaml_cmd)
     ld.add_action(log_params_yaml_cmd)
+    ld.add_action(log_remapping_cmd)
 
     return ld

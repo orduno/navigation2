@@ -37,6 +37,8 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
+    remap_transforms = launch.substitutions.LaunchConfiguration('remap_transforms',
+                                                                 default='false')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
@@ -100,19 +102,32 @@ def generate_launch_description():
                                    'worlds/turtlebot3_worlds/waffle.model'),
         description='Full path to world file to load')
 
+    # TODO(orduno) move this to the multi-robot launch script?
     # Robot specific settings
     robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
 
     # If a robot name is provided, the transforms need to be namespaced
     # Also, several topics where defined with an absolute namespace, i.e. /map
-    # TODO(orduno) change topics to relative namespaces
-    remappings = [((robot_name, '/tf'), '/tf'),
-                  ((robot_name, '/tf_static'), '/tf_static'),
-                  ('/scan', 'scan'),
-                  ('/tf', 'tf'),
-                  ('/tf_static', 'tf_static'),
-                  ('/cmd_vel', 'cmd_vel'),
-                  ('/map', 'map')]
+
+    # Unfortunately, TF2 doesn't provide a way to namespace tranforms
+    # https://github.com/ros/geometry2/issues/32
+    # The solution for now is to remap the transform topics
+
+    # TODO(orduno) Ideally we'd like to directly obtain the remapping from the parent launch
+    #              but there doesn't seem to be a way to do this cleanly in the `launch` pkg
+    remappings = []
+    if IfCondition(remap_transforms):
+        remappings.append(((robot_name, '/tf'), '/tf'))
+        remappings.append(((robot_name, '/tf_static'), '/tf_static'))
+        remappings.append(('/scan', 'scan'))
+        remappings.append(('/tf', 'tf'))
+        remappings.append(('/tf_static', 'tf_static'))
+        # TODO(orduno) change topics to relative namespaces in the stack
+        remappings.append(('/cmd_vel', 'cmd_vel'))
+        remappings.append(('/map', 'map'))
+
+    # TODO(orduno)
+    # remappings = get_nav2_remappings if IfCondition(remap_transforms) else []
 
     # Specify the actions
     start_gazebo_cmd = launch.actions.ExecuteProcess(
@@ -135,6 +150,7 @@ def generate_launch_description():
     # # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
+            # TODO(orduno) re-enable
             # ['-d', rviz_config_file],
             ['__ns:=/', robot_name],
             ['/move_base_simple/goal:=move_base_simple/goal'],
@@ -158,7 +174,8 @@ def generate_launch_description():
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
                           'bt_xml_file': bt_xml_file,
-                          'autostart': autostart}.items())
+                          'autostart': autostart,
+                          'remap_transforms': remap_transforms}.items())
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
