@@ -74,19 +74,6 @@ def generate_launch_description():
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
 
-    # If a robot name is provided, the transforms need to be namespaced
-    # Also, several topics where defined with an absolute namespace, i.e. /map
-    # TODO(orduno) change topics to relative namespaces
-    # remappings = [((robot_name, '/tf'), '/tf'),
-    #               ((robot_name, '/tf_static'), '/tf_static'),
-    #               ('/scan', 'scan'),
-    #               ('/tf', 'tf'),
-    #               ('/tf_static', 'tf_static'),
-    #               ('/cmd_vel', 'cmd_vel'),
-    #               ('/map', 'map')]
-
-    remappings = []
-
     # Specify the actions
     start_localization_cmd = launch.actions.IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_localization_launch.py')),
@@ -117,15 +104,19 @@ def generate_launch_description():
     log_robot_name_cmd = launch.actions.LogInfo(
         condition=IfCondition(log_settings),
         msg=['Robot name: ', robot_name])
+
     log_autostart_cmd = launch.actions.LogInfo(
         condition=IfCondition(log_settings),
         msg=['Autostart: ', autostart])
+
     log_use_sim_time_cmd = launch.actions.LogInfo(
         condition=IfCondition(log_settings),
         msg=['Use sim time: ', use_sim_time])
+
     log_map_yaml_cmd = launch.actions.LogInfo(
         condition=IfCondition(log_settings),
         msg=['Map yaml: ', map_yaml_file])
+
     log_params_yaml_cmd = launch.actions.LogInfo(
         condition=IfCondition(log_settings),
         msg=['Params yaml: ', params_file])
