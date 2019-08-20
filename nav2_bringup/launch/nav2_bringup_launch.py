@@ -35,8 +35,7 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
-    remap_transforms = launch.substitutions.LaunchConfiguration('remap_transforms',
-                                                                 default='false')
+    nodes_args = launch.substitutions.LaunchConfiguration('nodes_args')
     log_settings = launch.substitutions.LaunchConfiguration('log_settings',
                                                              default='true')
 
@@ -64,16 +63,20 @@ def generate_launch_description():
         default_value=[launch.substitutions.ThisLaunchFileDir(), '/nav2_params.yaml'],
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
-    declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
-        'autostart', default_value='true',
-        description='Automatically startup the nav2 stack')
-
     declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
             get_package_prefix('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
+
+    declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
+        'autostart', default_value='true',
+        description='Automatically startup the nav2 stack')
+
+    declare_nodes_args_cmd = launch.actions.DeclareLaunchArgument(
+        'nodes_args', default_value='',
+        description='Arguments to pass to all nodes launched by the file')
 
     # Specify the actions
     start_localization_cmd = launch.actions.IncludeLaunchDescription(
@@ -84,7 +87,7 @@ def generate_launch_description():
                           'autostart': autostart,
                           'params_file': params_file,
                           'use_lifecycle_mgr': 'false',
-                          'remap_transforms': remap_transforms}.items())
+                          'nodes_args': nodes_args}.items())
 
     start_navigation_cmd = launch.actions.IncludeLaunchDescription(
       PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_navigation_launch.py')),
@@ -94,7 +97,7 @@ def generate_launch_description():
                         'params_file': params_file,
                         'bt_xml_file': bt_xml_file,
                         'use_lifecycle_mgr': 'false',
-                        'remap_transforms': remap_transforms}.items())
+                        'nodes_args': nodes_args}.items())
 
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
@@ -102,7 +105,8 @@ def generate_launch_description():
         node_name='lifecycle_manager',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time},
-                    {'autostart': autostart}])
+                    {'autostart': autostart}],
+        arguments=[nodes_args])
 
     log_robot_name_cmd = launch.actions.LogInfo(
         condition=IfCondition(log_settings),
@@ -124,10 +128,6 @@ def generate_launch_description():
         condition=IfCondition(log_settings),
         msg=['Params yaml: ', params_file])
 
-    log_remapping_cmd = launch.actions.LogInfo(
-            condition=IfCondition(log_settings),
-            msg=['Remapping: ', remap_transforms])
-
     # Create the launch description and populate
     ld = launch.LaunchDescription()
 
@@ -141,6 +141,7 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_bt_xml_cmd)
+    ld.add_action(declare_nodes_args_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_lifecycle_manager_cmd)
@@ -152,6 +153,5 @@ def generate_launch_description():
     ld.add_action(log_use_sim_time_cmd)
     ld.add_action(log_map_yaml_cmd)
     ld.add_action(log_params_yaml_cmd)
-    ld.add_action(log_remapping_cmd)
 
     return ld

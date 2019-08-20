@@ -30,9 +30,7 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     use_lifecycle_mgr = launch.substitutions.LaunchConfiguration('use_lifecycle_mgr')
-    #TODO(orduno) alternatively rename substitution to `use_namespaced_topics`
-    remap_transforms = launch.substitutions.LaunchConfiguration('remap_transforms',
-                                                                 default='hello')
+    nodes_args = launch.substitutions.LaunchConfiguration('nodes_args')
 
     # Create our own temporary YAML files that include substitutions
     namespace_substitutions = {'robot_name': robot_name}
@@ -48,37 +46,14 @@ def generate_launch_description():
             key_rewrites=namespace_substitutions,
             convert_types=True)
 
-    # If a robot name is provided, the transforms need to be namespaced
-    # Also, several topics where defined with an absolute namespace, i.e. /map
-
-    # Unfortunately, TF2 doesn't provide a way to namespace tranforms
-    # https://github.com/ros/geometry2/issues/32
-    # The solution for now is to remap the transform topics
-
-    # TODO(orduno) Ideally we'd like to directly obtain the remapping from the parent launch
-    #              but there doesn't seem to be a way to do this cleanly in the `launch` pkg
-    remappings = []
-    if IfCondition(remap_transforms):
-        remappings.append(((robot_name, '/tf'), '/tf'))
-        remappings.append(((robot_name, '/tf_static'), '/tf_static'))
-        remappings.append(('/scan', 'scan'))
-        remappings.append(('/tf', 'tf'))
-        remappings.append(('/tf_static', 'tf_static'))
-        # TODO(orduno) change topics to relative namespaces in the stack
-        remappings.append(('/cmd_vel', 'cmd_vel'))
-        remappings.append(('/map', 'map'))
-
-    # TODO(orduno)
-    # remappings = get_nav2_remappings if IfCondition(remap_transforms) else []
-
     return LaunchDescription([
         # Set env var to print messages to stdout immediately
         launch.actions.SetEnvironmentVariable(
             'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
         launch.actions.DeclareLaunchArgument(
-                'robot_name', default_value='',
-                description='Identification name for the robot'),
+            'robot_name', default_value='',
+            description='Identification name for the robot'),
 
         launch.actions.DeclareLaunchArgument(
             'use_sim_time', default_value='false',
@@ -105,24 +80,22 @@ def generate_launch_description():
             description='Whether to launch the lifecycle manager'),
 
         launch.actions.DeclareLaunchArgument(
-                'remap_transforms', default_value='hello',
-                description='Whether to namespace topics'),
-
-        launch.actions.LogInfo(msg=['Remapping: ', remap_transforms]),
+            'nodes_args', default_value='',
+            description='Arguments to pass to all nodes launched by the file'),
 
         launch_ros.actions.Node(
             package='nav2_world_model',
             node_executable='world_model',
             output='screen',
             parameters=[configured_params],
-            remappings=remappings),
+            arguments=[nodes_args]),
 
         launch_ros.actions.Node(
             package='dwb_controller',
             node_executable='dwb_controller',
             output='screen',
             parameters=[configured_params],
-            remappings=remappings),
+            arguments=[nodes_args]),
 
         launch_ros.actions.Node(
             package='nav2_navfn_planner',
@@ -130,7 +103,7 @@ def generate_launch_description():
             node_name='navfn_planner',
             output='screen',
             parameters=[configured_params],
-            remappings=remappings),
+            arguments=[nodes_args]),
 
         launch_ros.actions.Node(
             package='nav2_recoveries',
@@ -138,7 +111,7 @@ def generate_launch_description():
             node_name='recoveries',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
-            remappings=remappings),
+            arguments=[nodes_args]),
 
         launch_ros.actions.Node(
             package='nav2_bt_navigator',
@@ -146,7 +119,7 @@ def generate_launch_description():
             node_name='bt_navigator',
             output='screen',
             parameters=[configured_params],
-            remappings=remappings),
+            arguments=[nodes_args]),
 
         launch_ros.actions.Node(
             condition=IfCondition(use_lifecycle_mgr),
@@ -159,6 +132,7 @@ def generate_launch_description():
                         {'node_names': ['world_model',
                                         'dwb_controller',
                                         'navfn_planner',
-                                        'bt_navigator']}]),
+                                        'bt_navigator']}],
+            arguments=[nodes_args]),
 
     ])

@@ -37,12 +37,11 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
-    remap_transforms = launch.substitutions.LaunchConfiguration('remap_transforms',
-                                                                 default='false')
+    nodes_args = launch.substitutions.LaunchConfiguration('nodes_args')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = launch.substitutions.LaunchConfiguration('rviz_config')
-    run_simulator = launch.substitutions.LaunchConfiguration('run_simulator')
+    use_simulator = launch.substitutions.LaunchConfiguration('use_simulator')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
     world = launch.substitutions.LaunchConfiguration('world')
 
@@ -68,16 +67,20 @@ def generate_launch_description():
         # default_value=os.path.join(launch_dir, 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
-    declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
-        'autostart', default_value='false',
-        description='Automatically startup the nav2 stack')
-
     declare_bt_xml_cmd = launch.actions.DeclareLaunchArgument(
         'bt_xml_file',
         default_value=os.path.join(
             get_package_prefix('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
         description='Full path to the behavior tree xml file to use')
+
+    declare_autostart_cmd = launch.actions.DeclareLaunchArgument(
+        'autostart', default_value='false',
+        description='Automatically startup the nav2 stack')
+
+    declare_nodes_args_cmd = launch.actions.DeclareLaunchArgument(
+        'nodes_args', default_value='',
+        description='Arguments to pass to all nodes launched by the file')
 
     #TODO(orduno) modify to the default single robot view
     #TODO(orduno) is there a way to pass the robot name so topics in RVIZ are namespaced correctly?
@@ -86,8 +89,8 @@ def generate_launch_description():
         default_value=os.path.join(launch_dir, 'nav2_multi_robot_view.rviz'),
         description='Full path to the RVIZ config file to use')
 
-    declare_run_simulator_cmd = launch.actions.DeclareLaunchArgument(
-        'run_simulator',
+    declare_use_simulator_cmd = launch.actions.DeclareLaunchArgument(
+        'use_simulator',
         default_value='True',
         description='Whether to start the simulator')
 
@@ -103,35 +106,13 @@ def generate_launch_description():
         description='Full path to world file to load')
 
     # TODO(orduno) move this to the multi-robot launch script?
+    # Instances are separated using different
     # Robot specific settings
     robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
 
-    # If a robot name is provided, the transforms need to be namespaced
-    # Also, several topics where defined with an absolute namespace, i.e. /map
-
-    # Unfortunately, TF2 doesn't provide a way to namespace tranforms
-    # https://github.com/ros/geometry2/issues/32
-    # The solution for now is to remap the transform topics
-
-    # TODO(orduno) Ideally we'd like to directly obtain the remapping from the parent launch
-    #              but there doesn't seem to be a way to do this cleanly in the `launch` pkg
-    remappings = []
-    if IfCondition(remap_transforms):
-        remappings.append(((robot_name, '/tf'), '/tf'))
-        remappings.append(((robot_name, '/tf_static'), '/tf_static'))
-        remappings.append(('/scan', 'scan'))
-        remappings.append(('/tf', 'tf'))
-        remappings.append(('/tf_static', 'tf_static'))
-        # TODO(orduno) change topics to relative namespaces in the stack
-        remappings.append(('/cmd_vel', 'cmd_vel'))
-        remappings.append(('/map', 'map'))
-
-    # TODO(orduno)
-    # remappings = get_nav2_remappings if IfCondition(remap_transforms) else []
-
     # Specify the actions
     start_gazebo_cmd = launch.actions.ExecuteProcess(
-        condition=IfCondition(run_simulator),
+        condition=IfCondition(use_simulator),
         cmd=[simulator, '-s', 'libgazebo_ros_init.so', world],
         cwd=[launch_dir], output='screen')
 
@@ -144,10 +125,9 @@ def generate_launch_description():
         node_name='robot_state_publisher',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
-        remappings=remappings,
-        arguments=[urdf])
+        arguments=[urdf, nodes_args])
 
-    # # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
+    # TODO(orduno) rviz crashing if launched as a node: Unknown option 'ros-args'
     start_rviz_cmd = launch.actions.ExecuteProcess(
         cmd=[os.path.join(get_package_prefix('rviz2'), 'lib/rviz2/rviz2'),
             # TODO(orduno) re-enable
@@ -175,7 +155,7 @@ def generate_launch_description():
                           'params_file': params_file,
                           'bt_xml_file': bt_xml_file,
                           'autostart': autostart,
-                          'remap_transforms': remap_transforms}.items())
+                          'nodes_args': nodes_args}.items())
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
@@ -187,13 +167,14 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_nodes_args_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
-    ld.add_action(declare_run_simulator_cmd)
+    ld.add_action(declare_use_simulator_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
 
-    # Add any actions to launch in simulation (conditioned on 'run_simulator')
+    # Add any actions to launch in simulation (conditioned on 'use_simulator')
     ld.add_action(start_gazebo_cmd)
 
     # Add other nodes and processes we need

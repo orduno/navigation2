@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from nav2_common.launch import RewrittenYaml
 from launch.conditions import IfCondition
@@ -23,15 +25,16 @@ import launch_ros.actions
 
 
 def generate_launch_description():
+    # Get the launch directory
+    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
+
     robot_name = launch.substitutions.LaunchConfiguration('robot_name')
     map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml_file')
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     use_lifecycle_mgr = launch.substitutions.LaunchConfiguration('use_lifecycle_mgr')
-    #TODO(orduno) alternatively rename substitution to `use_namespaced_topics`
-    remap_transforms = launch.substitutions.LaunchConfiguration('remap_transforms',
-                                                                 default='false')
+    nodes_args = launch.substitutions.LaunchConfiguration('nodes_args')
 
     # Create our own temporary YAML files that include substitutions
     namespace_substitutions = {'robot_name': robot_name}
@@ -46,29 +49,6 @@ def generate_launch_description():
         key_rewrites=namespace_substitutions,
         convert_types=True)
 
-    # If a robot name is provided, the transforms need to be namespaced
-    # Also, several topics where defined with an absolute namespace, i.e. /map
-
-    # Unfortunately, TF2 doesn't provide a way to namespace tranforms
-    # https://github.com/ros/geometry2/issues/32
-    # The solution for now is to remap the transform topics
-
-    # TODO(orduno) Ideally we'd like to directly obtain the remapping from the parent launch
-    #              but there doesn't seem to be a way to do this cleanly in the `launch` pkg
-    remappings = []
-    if IfCondition(remap_transforms):
-        remappings.append(((robot_name, '/tf'), '/tf'))
-        remappings.append(((robot_name, '/tf_static'), '/tf_static'))
-        remappings.append(('/scan', 'scan'))
-        remappings.append(('/tf', 'tf'))
-        remappings.append(('/tf_static', 'tf_static'))
-        # TODO(orduno) change topics to relative namespaces in the stack
-        remappings.append(('/cmd_vel', 'cmd_vel'))
-        remappings.append(('/map', 'map'))
-
-    # TODO(orduno)
-    # remappings = get_nav2_remappings if IfCondition(remap_transforms) else []
-
     return LaunchDescription([
         # Set env var to print messages to stdout immediately
         launch.actions.SetEnvironmentVariable(
@@ -79,7 +59,8 @@ def generate_launch_description():
             description='Identification name for the robot'),
 
         launch.actions.DeclareLaunchArgument(
-            'map_yaml_file', description='Full path to map file to load'),
+            'map_yaml_file', default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
+            description='Full path to map file to load'),
 
         launch.actions.DeclareLaunchArgument(
             'use_sim_time', default_value='false',
@@ -99,13 +80,17 @@ def generate_launch_description():
             'use_lifecycle_mgr', default_value='true',
             description='Whether to launch the lifecycle manager'),
 
+        launch.actions.DeclareLaunchArgument(
+            'nodes_args', default_value='',
+            description='Arguments to pass to all nodes launched by the file'),
+
         launch_ros.actions.Node(
             package='nav2_map_server',
             node_executable='map_server',
             node_name='map_server',
             output='screen',
             parameters=[configured_params],
-            remappings=remappings),
+            arguments=[nodes_args]),
 
         launch_ros.actions.Node(
             package='nav2_amcl',
@@ -113,7 +98,7 @@ def generate_launch_description():
             node_name='amcl',
             output='screen',
             parameters=[configured_params],
-            remappings=remappings),
+            arguments=[nodes_args]),
 
         launch_ros.actions.Node(
             condition=IfCondition(use_lifecycle_mgr),
@@ -123,6 +108,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['map_server', 'amcl']}]),
+                        {'node_names': ['map_server', 'amcl']}],
+            arguments=[nodes_args]),
 
     ])
