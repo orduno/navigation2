@@ -105,11 +105,6 @@ def generate_launch_description():
                                    'worlds/turtlebot3_worlds/waffle.model'),
         description='Full path to world file to load')
 
-    # TODO(orduno) move this to the multi-robot launch script?
-    # Instances are separated using different
-    # Robot specific settings
-    robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
-
     # Specify the actions
     start_gazebo_cmd = launch.actions.ExecuteProcess(
         condition=IfCondition(use_simulator),
@@ -182,7 +177,6 @@ def generate_launch_description():
     ld.add_action(exit_event_handler)
 
     # Add the actions to launch all of the navigation nodes
-    ld.add_action(robot_ns)
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(bringup_cmd)
 

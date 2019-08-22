@@ -24,8 +24,9 @@ def generate_launch_description():
     return LaunchDescription([
         launch.actions.LogInfo(
             msg=launch.substitutions.LaunchConfiguration('robot_name')),
+        #TODO(orduno) might not be necessary to have it's own package
         launch_ros.actions.Node(
-            package='nav2_bringup',
+            package='spawn_turtlebot3',
             node_executable='spawn_turtlebot',
             output='screen',
             arguments=[

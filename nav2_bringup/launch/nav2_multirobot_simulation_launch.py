@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-''' This is an example on how to spawn multiple robots into Gazebo
-    and launch multiple instances of the navigation stack,
-    each controlling one robot. Robots co-exist on the same environment. '''
+''' This is an example on how to create a launch file for spawning multiple robots into Gazebo
+    and launch multiple instances of the navigation stack, each controlling one robot.
+    The robots co-exist on a shared environment and are controlled by independent nav stacks '''
 
 import os
 
@@ -26,6 +26,7 @@ from launch.actions import LogInfo
 from launch.actions import GroupAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
+from launch_ros.actions import PushRosNamespace
 
 import launch.actions
 import launch_ros.actions
@@ -33,6 +34,7 @@ import launch_ros.actions
 
 def generate_launch_description():
     # Get the launch directory
+    # TODO(orduno) Try ThisLaunchFileDir
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
 
     # Names and poses of the robots
@@ -45,8 +47,8 @@ def generate_launch_description():
     world = launch.substitutions.LaunchConfiguration('world')
     simulator = launch.substitutions.LaunchConfiguration('simulator')
 
-    map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml')
-    params_file = launch.substitutions.LaunchConfiguration('params_yaml')
+    map_yaml_file = launch.substitutions.LaunchConfiguration('map_yaml_file')
+    params_file = launch.substitutions.LaunchConfiguration('params_file')
 
     # Declare the launch arguments
     declare_world_cmd = launch.actions.DeclareLaunchArgument(
@@ -60,13 +62,13 @@ def generate_launch_description():
         description='The simulator to use (gazebo or gzserver)')
 
     declare_map_yaml_cmd = launch.actions.DeclareLaunchArgument(
-        'map_yaml',
+        'map_yaml_file',
         default_value=os.path.join(launch_dir, 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
     declare_params_file_cmd = launch.actions.DeclareLaunchArgument(
-        'params_yaml',
-        default_value=[ThisLaunchFileDir(), '/nav2_params.yaml'],
+        'params_file',
+        default_value=[ThisLaunchFileDir(), '/nav2_params_namespaced.yaml'],
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
    # Start Gazebo with plugin providing the robot spawing service
@@ -75,9 +77,9 @@ def generate_launch_description():
         output='screen')
 
     # Spawn two robots into Gazebo
-    spawn_robots_cmd = []
+    spawn_robots_cmds = []
     for robot in robots:
-        spawn_robots_cmd.append(
+        spawn_robots_cmds.append(
             launch.actions.IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(launch_dir, 'spawn_robot_launch.py')),
                 launch_arguments={
@@ -86,42 +88,55 @@ def generate_launch_description():
                                   'y_pose': robot['y_pose'],
                                   'z_pose': robot['z_pose'],
                                   'robot_name': robot['name']
-                                  }.items()
-            )
-        )
+                                  }.items()))
 
-    # TODO(orduno)
-    # robot_ns = launch_ros.actions.PushRosNamespace(robot_name)
+    simulation_instances_cmds = []
+    for robot in robots:
+        # TODO(orduno) We're passing the remapping as an argument to the node.
+        #              A better mechanism would be to have a PushNodeRemapping() action:
+        #              https://github.com/ros2/launch_ros/issues/56
+        #              For more on why we're remapping topics, see below
+        remappings = (robot['name'] + '/tf:=/tf ' + robot['name'] + '/tf_static:=/tf_static '
+                     '/tf:=tf /tf_static:=tf_static /scan:=scan /cmd_vel:=cmd_vel /map:=map')
 
-    # If a robot name is provided, the transforms need to be namespaced
-    # Also, several topics where defined with an absolute namespace, i.e. /map
+        # TODO(orduno) Define an action group and push the ros namespace there
 
-    # Unfortunately, TF2 doesn't provide a way to namespace tranforms
+        group = GroupAction([
+            # Instances use the robot's name for namespace
+            PushRosNamespace(robot['name']),
+            launch.actions.IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_simulation_launch.py')),
+                #TODO(orduno) pass the rviz config file
+                launch_arguments={
+                                  #TODO(orduno) might not be necessary to pass the robot name
+                                  'robot_name': robot['name'],
+                                  'use_simulator': 'False',
+                                  'map_yaml_file': map_yaml_file,
+                                  'params_file': params_file,
+                                  'nodes_args': remappings}.items())
+        ])
+
+        simulation_instances_cmds.append(group)
+
+        # simulation_instances_cmds.append(
+        #     launch.actions.IncludeLaunchDescription(
+        #         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_simulation_launch.py')),
+        #         #TODO(orduno) pass the rviz config file
+        #         launch_arguments={
+        #                           #TODO(orduno) might not be necessary to pass the robot name
+        #                           'robot_name': robot['name'],
+        #                           'use_simulator': 'False',
+        #                           'map_yaml_file': map_yaml_file,
+        #                           'params_file': params_file,
+        #                           'node_args': remappings}.items()))
+
+    # A note on the `remappings` variable defined above and the fact it's passed as a node arg.
+    # A few topics have fully qualified names (have a leading '/'), these need to be remapped
+    # to relative ones so the node's namespace can be prepended.
+    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
+    # for multi-robot transforms:
     # https://github.com/ros/geometry2/issues/32
-    # The solution for now is to remap the transform topics
-
-    # TODO(orduno) Ideally we'd like to directly obtain the remapping from the parent launch
-    #              but there doesn't seem to be a way to do this cleanly in the `launch` pkg
-
-    # remappings = []
-    # if IfCondition(remap_transforms):
-    #     remappings.append(((robot_name, '/tf'), '/tf'))
-    #     remappings.append(((robot_name, '/tf_static'), '/tf_static'))
-    #     remappings.append(('/scan', 'scan'))
-    #     remappings.append(('/tf', 'tf'))
-    #     remappings.append(('/tf_static', 'tf_static'))
-    #     # TODO(orduno) change topics to relative namespaces in the stack
-    #     remappings.append(('/cmd_vel', 'cmd_vel'))
-    #     remappings.append(('/map', 'map'))
-
-    # start_simulation_instances_cmd = launch.actions.IncludeLaunchDescription(
-    #     # TODO(orduno) Try ThisLaunchFileDir
-    #     PythonLaunchDescriptionSource(os.path.join(launch_dir, 'simulations_launch.py')),
-    #     launch_arguments={'num_robots': num_robots,
-    #                       'world': world,
-    #                       'simulator': simulator,
-    #                       'map_yaml_file': map_yaml,
-    #                       'params_file': params_yaml}.items())
+    # https://github.com/ros/robot_state_publisher/pull/30
 
     # Create the launch description and populate
     ld = launch.LaunchDescription()
@@ -135,9 +150,10 @@ def generate_launch_description():
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(start_gazebo_cmd)
 
-    for spawn_robot in spawn_robots_cmd:
-        ld.add_action(spawn_robot)
+    for spawn_robot_cmd in spawn_robots_cmds:
+        ld.add_action(spawn_robot_cmd)
 
-    # ld.add_action(start_simulation_instances_cmd)
+    for simulation_instance_cmd in simulation_instances_cmds:
+        ld.add_action(simulation_instance_cmd)
 
     return ld
