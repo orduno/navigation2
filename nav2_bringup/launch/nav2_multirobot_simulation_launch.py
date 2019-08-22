@@ -34,14 +34,14 @@ import launch_ros.actions
 
 def generate_launch_description():
     # Get the launch directory
-    # TODO(orduno) Try ThisLaunchFileDir
+    # TODO(orduno) Switch to ThisLaunchFileDir
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
 
     # Names and poses of the robots
-    # TODO(orduno) provide pose as a number not text and use text substitution down
+    # TODO(orduno) provide pose as a number not text and use text substitution instead
     robots = [
-        {'name': 'Robot1', 'x_pose': '-2.0', 'y_pose': '-0.5', 'z_pose': '0.01'},
-        {'name': 'Robot2', 'x_pose': '2.0', 'y_pose': '0.5', 'z_pose': '0.01'}]
+        {'name': 'Robot1', 'x_pose': '0.0', 'y_pose': '0.5', 'z_pose': '0.01'},
+        {'name': 'Robot2', 'x_pose': '0.0', 'y_pose': '-0.5', 'z_pose': '0.01'}]
 
     # Create the launch configuration variables
     world = launch.substitutions.LaunchConfiguration('world')
@@ -92,16 +92,14 @@ def generate_launch_description():
 
     simulation_instances_cmds = []
     for robot in robots:
-        # TODO(orduno) We're passing the remapping as an argument to the node.
-        #              A better mechanism would be to have a PushNodeRemapping() action:
-        #              https://github.com/ros2/launch_ros/issues/56
-        #              For more on why we're remapping topics, see below
-        remappings = (robot['name'] + '/tf:=/tf ' + robot['name'] + '/tf_static:=/tf_static '
-                     '/tf:=tf /tf_static:=tf_static /scan:=scan /cmd_vel:=cmd_vel /map:=map')
-
-        # TODO(orduno) Define an action group and push the ros namespace there
-
         group = GroupAction([
+            # TODO(orduno) Each action.Node has two versions one with the required remaps and one
+            #              without. The `use_remappings` flag specifies which runs.
+            #              A better mechanism would be to have a PushNodeRemapping() action:
+            #              https://github.com/ros2/launch_ros/issues/56
+            #              For more on why we're remapping topics, see below
+            # PushNodeRemapping(remappings)
+
             # Instances use the robot's name for namespace
             PushRosNamespace(robot['name']),
             launch.actions.IncludeLaunchDescription(
@@ -113,22 +111,10 @@ def generate_launch_description():
                                   'use_simulator': 'False',
                                   'map_yaml_file': map_yaml_file,
                                   'params_file': params_file,
-                                  'nodes_args': remappings}.items())
+                                  'use_remappings': 'True'}.items())
         ])
 
         simulation_instances_cmds.append(group)
-
-        # simulation_instances_cmds.append(
-        #     launch.actions.IncludeLaunchDescription(
-        #         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_simulation_launch.py')),
-        #         #TODO(orduno) pass the rviz config file
-        #         launch_arguments={
-        #                           #TODO(orduno) might not be necessary to pass the robot name
-        #                           'robot_name': robot['name'],
-        #                           'use_simulator': 'False',
-        #                           'map_yaml_file': map_yaml_file,
-        #                           'params_file': params_file,
-        #                           'node_args': remappings}.items()))
 
     # A note on the `remappings` variable defined above and the fact it's passed as a node arg.
     # A few topics have fully qualified names (have a leading '/'), these need to be remapped

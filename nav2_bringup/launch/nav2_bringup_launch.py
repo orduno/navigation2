@@ -19,6 +19,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from nav2_common.launch import RewrittenYaml
 from launch.conditions import IfCondition
+from launch.conditions import UnlessCondition
 
 import launch.actions
 import launch_ros.actions
@@ -35,9 +36,19 @@ def generate_launch_description():
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     bt_xml_file = launch.substitutions.LaunchConfiguration('bt_xml_file')
     autostart = launch.substitutions.LaunchConfiguration('autostart')
-    nodes_args = launch.substitutions.LaunchConfiguration('nodes_args')
+    use_remappings = launch.substitutions.LaunchConfiguration('use_remappings')
     log_settings = launch.substitutions.LaunchConfiguration('log_settings',
                                                              default='true')
+
+    # TODO(orduno) Remove once `PushNodeRemapping` is resolved
+    #              https://github.com/ros2/launch_ros/issues/56
+    remappings = [((robot_name, '/tf'), '/tf'),
+                  ((robot_name, '/tf_static'), '/tf_static'),
+                  ('/scan', 'scan'),
+                  ('/tf', 'tf'),
+                  ('/tf_static', 'tf_static'),
+                  ('/cmd_vel', 'cmd_vel'),
+                  ('/map', 'map')]
 
     stdout_linebuf_envvar = launch.actions.SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
@@ -74,8 +85,8 @@ def generate_launch_description():
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
 
-    declare_nodes_args_cmd = launch.actions.DeclareLaunchArgument(
-        'nodes_args', default_value='',
+    declare_use_remappings_cmd = launch.actions.DeclareLaunchArgument(
+        'use_remappings', default_value='false',
         description='Arguments to pass to all nodes launched by the file')
 
     # Specify the actions
@@ -87,17 +98,17 @@ def generate_launch_description():
                           'autostart': autostart,
                           'params_file': params_file,
                           'use_lifecycle_mgr': 'false',
-                          'nodes_args': nodes_args}.items())
+                          'use_remappings': use_remappings}.items())
 
     start_navigation_cmd = launch.actions.IncludeLaunchDescription(
-      PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_navigation_launch.py')),
-      launch_arguments={'robot_name': robot_name,
-                        'use_sim_time': use_sim_time,
-                        'autostart': autostart,
-                        'params_file': params_file,
-                        'bt_xml_file': bt_xml_file,
-                        'use_lifecycle_mgr': 'false',
-                        'nodes_args': nodes_args}.items())
+        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'nav2_navigation_launch.py')),
+        launch_arguments={'robot_name': robot_name,
+                          'use_sim_time': use_sim_time,
+                          'autostart': autostart,
+                          'params_file': params_file,
+                          'bt_xml_file': bt_xml_file,
+                          'use_lifecycle_mgr': 'false',
+                          'use_remappings': use_remappings}.items())
 
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
@@ -105,8 +116,7 @@ def generate_launch_description():
         node_name='lifecycle_manager',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time},
-                    {'autostart': autostart}],
-        arguments=[nodes_args])
+                    {'autostart': autostart}])
 
     log_robot_name_cmd = launch.actions.LogInfo(
         condition=IfCondition(log_settings),
@@ -141,7 +151,7 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_bt_xml_cmd)
-    ld.add_action(declare_nodes_args_cmd)
+    ld.add_action(declare_use_remappings_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_lifecycle_manager_cmd)

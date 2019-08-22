@@ -19,6 +19,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from nav2_common.launch import RewrittenYaml
 from launch.conditions import IfCondition
+from launch.conditions import UnlessCondition
 
 import launch.actions
 import launch_ros.actions
@@ -34,7 +35,17 @@ def generate_launch_description():
     autostart = launch.substitutions.LaunchConfiguration('autostart')
     params_file = launch.substitutions.LaunchConfiguration('params_file')
     use_lifecycle_mgr = launch.substitutions.LaunchConfiguration('use_lifecycle_mgr')
-    nodes_args = launch.substitutions.LaunchConfiguration('nodes_args')
+    use_remappings = launch.substitutions.LaunchConfiguration('use_remappings')
+
+    # TODO(orduno) Remove once `PushNodeRemapping` is resolved
+    #              https://github.com/ros2/launch_ros/issues/56
+    remappings = [((robot_name, '/tf'), '/tf'),
+                  ((robot_name, '/tf_static'), '/tf_static'),
+                  ('/scan', 'scan'),
+                  ('/tf', 'tf'),
+                  ('/tf_static', 'tf_static'),
+                  ('/cmd_vel', 'cmd_vel'),
+                  ('/map', 'map')]
 
     # Create our own temporary YAML files that include substitutions
     namespace_substitutions = {'robot_name': robot_name}
@@ -81,24 +92,46 @@ def generate_launch_description():
             description='Whether to launch the lifecycle manager'),
 
         launch.actions.DeclareLaunchArgument(
-            'nodes_args', default_value='',
+            'use_remappings', default_value='false',
             description='Arguments to pass to all nodes launched by the file'),
 
         launch_ros.actions.Node(
+            condition=UnlessCondition(use_remappings),
+            package='nav2_map_server',
+            node_executable='map_server',
+            node_name='map_server',
+            output='screen',
+            parameters=[configured_params]),
+
+        # TODO(orduno) Remove once `PushNodeRemapping` is resolved
+        #              https://github.com/ros2/launch_ros/issues/56
+        launch_ros.actions.Node(
+            condition=IfCondition(use_remappings),
             package='nav2_map_server',
             node_executable='map_server',
             node_name='map_server',
             output='screen',
             parameters=[configured_params],
-            arguments=[nodes_args]),
+            remappings=remappings),
 
         launch_ros.actions.Node(
+            condition=UnlessCondition(use_remappings),
+            package='nav2_amcl',
+            node_executable='amcl',
+            node_name='amcl',
+            output='screen',
+            parameters=[configured_params]),
+
+        # TODO(orduno) Remove once `PushNodeRemapping` is resolved
+        #              https://github.com/ros2/launch_ros/issues/56
+        launch_ros.actions.Node(
+            condition=IfCondition(use_remappings),
             package='nav2_amcl',
             node_executable='amcl',
             node_name='amcl',
             output='screen',
             parameters=[configured_params],
-            arguments=[nodes_args]),
+            remappings=remappings),
 
         launch_ros.actions.Node(
             condition=IfCondition(use_lifecycle_mgr),
@@ -108,7 +141,5 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['map_server', 'amcl']}],
-            arguments=[nodes_args]),
-
+                        {'node_names': ['map_server', 'amcl']}])
     ])
