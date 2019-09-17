@@ -45,8 +45,7 @@ PlannerServer::PlannerServer()
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "global_costmap", nav2_util::add_namespaces(std::string{get_namespace()},
-    "global_costmap"));
+   "global_costmap", std::string{get_namespace()}, "global_costmap");
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<std::thread>(
@@ -88,7 +87,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_INFO(get_logger(), "Created global planner plugin %s",
       planner_plugin_name_.c_str());
     planner_->configure(node,
-      gp_loader_.getName(planner_plugin_name_), tf_.get(), costmap_ros_.get());
+      gp_loader_.getName(planner_plugin_name_), tf_.get(), costmap_ros_);
   } catch (const pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(get_logger(), "Failed to create global planner. Exception: %s",
       ex.what());
