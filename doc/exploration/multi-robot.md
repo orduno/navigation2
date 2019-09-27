@@ -7,14 +7,15 @@ Engage on an exploratory discussion of opportunities and challenges within Multi
 
 The `nav2` stack supports multiple robots co-existing on a simulated environment sharing a ROS domain.
 
-A launch file (`nav2_multi_tb3_simulation_launch.py`) is provided as an example in `nav2_bringup` that will:
+The `nav2_multi_tb3_simulation_launch.py` launch file in the `nav2_bringup` package is provided as an example for launching a multi-robot system in simulation. The following steps are executed during launch-time:
 - Spawn two robots into a Gazebo instance.
 - Launch a namespaced `nav2` instance per robot.
 - Launch an RVIZ instance per robot with plugins to start, stop, reset, etc the stacks independently, and provide initial and goal poses.
 
 ## Key Questions
 
-Here are some of the key areas we've identified so far:
+- Consider the system below
+
 
 - Beyond supporting multiple `nav2` instances on a shared ROS domain, what other aspects should be considered...
 
