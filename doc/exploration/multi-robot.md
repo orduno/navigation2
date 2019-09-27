@@ -1,63 +1,104 @@
-# Navigation on Multi-robot Systems
-
+# Navigation for Multi-robot Systems
+---
 ## Objective
-Engage on an exploratory discussion of opportunities and challenges within Multi-Robot Systems (MRS) under ROS2.
 
+Understand the **level of support** that `ros2/nav2` should/can provide for developing Multi-Robot Systems (*MRS*).
+
+Additionally, engage on an exploratory discussion to identify challenges and opportunities for developing an MRS under ROS2.
+
+---
 ## Current status
 
-The `nav2` stack supports multiple robots co-existing on a simulated environment sharing a ROS domain.
+The `nav2` stack currently supports multiple robots co-existing on a simulated environment sharing a ROS domain.
 
 The `nav2_multi_tb3_simulation_launch.py` launch file in the `nav2_bringup` package is provided as an example for launching a multi-robot system in simulation. The following steps are executed during launch-time:
 - Spawn two robots into a Gazebo instance.
 - Launch a namespaced `nav2` instance per robot.
 - Launch an RVIZ instance per robot with plugins to start, stop, reset, etc the stacks independently, and provide initial and goal poses.
 
+---
 ## Key Questions
 
-- Consider the system below
+<u>Navigation support for MRS:</u>
 
+- What is **within scope** for navigation considering an environment with multiple robots?
+  - *Reliable and safe execution of navigation tasks.*
+  - *Collision and deadlock avoidance between robots -> Traffic control.*
+  - *Execution of mission with navigation tasks involving multiple robots.*
+<br>
 
-- Beyond supporting multiple `nav2` instances on a shared ROS domain, what other aspects should be considered...
+- What is **out of scope**?
+  - *Execution of other types of tasks, i.e. manipulation, perception.*
+  - *Execution of a mission with multiple types fo tasks involving one or more robots.*
+<br>
 
-- Are changes needed in `nav2` to support/adapt to MRS?
+- What elements within scope are **currently not handled**?
+  - *Mission execution, Traffic control*
+<br>
 
-- What are the use cases to consider?
+- What other elements, features, capabilities should be considered to ensure successful navigation on an environment with multiple robots?
+<br>
 
-- What is within scope? What is out of scope?
+- What are some key **use cases** to consider?
+  - *Robots delivering product on a warehouse or retail space.*
+  - *Robots cleaning the floor of large building.*
+  - *Robots collecting trash from bins.*
+  - *Robots searching for objects.*
+  - *Robots performing surveillance.*
+  - *Robots creating a map of an area.*
+  - *Two robots moving an object.*
+<br>
 
-- What are some of the most important features and capabilities?
+<u>ROS2 support for MRS:</u>
 
-- What approach should we take?
+- What components or features are needed from the middleware to develop an MRS?
+  - *Communication mechanism for robots in separate domains.*
+  - *Partitioning within a shared ROS domain:*
+<br>
 
-- How to partition the system?
+- What is available?
+  - *Logical partitioning using namespaces on a shared domain.*
+<br>
 
-    ROS2 is missing some [features](https://index.ros.org//doc/ros2/Roadmap/#new-features) to partition multi-robot systems.
+- What is currently missing?
+  - *Complete [partitioning](https://index.ros.org//doc/ros2/Roadmap/#new-features). Currently, nodes sharing a domain must discover each other (DDS discovery) which presents limitations. Also data is accessible across nodes of different robots which can be undesirable. Use of DDS features have been suggested to extend teh partitioning:*
+    - *DDS Keyed Data*
+    - *DDS Domain and Participants*
+    *Besides logical partitioning, there might be other physical solutions.
+<br>
 
-    Currently, instances of the nav stack are partition using namespaces. However,
-    nodes across robots share the same domain and therefore have to discover each other (DDS discovery) and data is accessible across it's undesired that nodes across robots share the same domain. Other logical partitioning methods have been suggested:
-    - DDS Keyed Data
-    - DDS Domain and Participants
+- What packages are available for MRS coordination? What capabilities are offered?
+<br>
 
-    Real hardware systems might have separate ROS domains but will have to define a channel through which data is shared.
+- What capabilities are needed?
+  - *A model for describing and developing a full multi-robot system:*
+    - *Collective behavior (cooperative, competitive)*
+    - *Robot awareness -- information that each robot has about it's team mates*
+    - *Coordination protocol -- explicit interaction rules.*
+    - *Organization level (centralized, distributed, hybrid)*
+    - *Mission Planning and Execution. Task decomposition and allocation model.*
+    - *Fleet management*
+<br>
 
-  - Besides logical partitioning, there might be other physical solutions.
-
-- Any other considerations?
-
+---
 ## Known risks/issues
-- Limitations with the number of robots we're able simulate successfully. Bringup of individual systems becomes slow as it grows (discovery issues with DDS?)
+- Limitations with the number of robots we're able simulate successfully. Bringup of individual systems becomes slow or eventually halts as it grows (discovery issues with DDS?)
 
-## Existing Solutions
+---
+## Approach
+- Improve some of the existing capabilities, see next section.
 
+
+---
 ## Next Steps
-- Update tutorial with multi-robot example.
-- Create a multi-robot system test.
+- Update tutorial to include the multi-robot example.
+- Add multi-robot system test to `nav2`.
 - Design Improvements
   - Currently transforms are on separate topics (`/robot1/tf`, `/robot2/tf`, etc.), create a node that will take TF trees from robots , create a single tf tree (`/system/tf`) with transforms from `map` to each robot's `base_link` and broadcast it
 - Usability Improvements
   - Multi-robot on a single RVIZ instance using a plugin to toggle between robots (dropdown menu for example) for setting initial pose and goal pose. Visualization of robots positions using the system-level transform (`/system/tf`).
 - Performance Improvements
-  - Explore limitations for launching more robots.
+  - Explore limitations for launching more robots. Test with different DDS implementations.
   - Create a `RobotsLayer` in `Costmap2D` which takes the system-level transform (and footprint) and populates regions occupied by robots.
 - Launching improvements
   - Remove topic remapping from lower-level files by using a [`PushNodeRemapping`](https://github.com/ros2/launch_ros/issues/56) action only at the multi-robot launch file.
