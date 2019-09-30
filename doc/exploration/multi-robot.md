@@ -87,6 +87,7 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
   - [explore_multirobot](http://wiki.ros.org/explore_multirobot) (ROS1) for frontier exploration.
   - [map_merging](http://wiki.ros.org/map_merging) (ROS1)
   - [tf_splitter](http://wiki.ros.org/tf_splitter) (ROS1)
+
   Just to mention some, [here](https://github.com/topics/multi-robot) are more.
 
 ## Known risks/issues
