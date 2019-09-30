@@ -1,5 +1,5 @@
 # Navigation for Multi-robot Systems
----
+
 ## Objective
 
 Understand the **level of support** that `ros2/nav2` should/can provide for developing Multi-Robot Systems (*MRS*).
@@ -32,17 +32,14 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
     - Global world modeling and aggregation of sensing data
   - On a distributed architecture, solutions for:
     - Allocating navigation tasks between a team of robots
-<br>
 
 - What is **out of scope**?
   - Execution of tasks outside of navigation, i.e. manipulation, perception.
   - Execution of a mission plan (sequence of tasks) with a mix of tasks on a single robot.
   - Allocation of non-navigation tasks on a team of robots.
   - Fleet management
-<br>
 
 - What other elements, features, capabilities should be considered to ensure successful navigation on an environment with multiple robots?
-<br>
 
 - What are some key **use cases** to consider?
   - Robots delivering product on a warehouse or retail space.
@@ -52,18 +49,15 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
   - Robots performing surveillance.
   - Robots creating a map of an area.
   - Two robots moving an object.
-<br>
 
 ### ROS2 support for MRS:
 
 - What components or features are needed from ROS as middleware to develop an MRS?
   - Communication mechanism for robots in separate domains.
   - Partitioning within a shared ROS domain.
-<br>
 
 - What is available?
   - Logical partitioning using namespaces on a shared domain.
-<br>
 
 - What is currently missing?
   - Complete logical [partitioning](https://index.ros.org//doc/ros2/Roadmap/#new-features). Currently, nodes sharing a domain must discover each other (DDS discovery) which presents limitations. Also data is accessible across nodes of different robots which can be undesirable. Use of DDS features have been suggested to extend the partitioning:
@@ -71,7 +65,6 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
     - DDS Domain and Participants
 
     Besides logical partitioning, there might be other physical solutions.
-<br>
 
 ### Support from an MRS package:
 
@@ -85,7 +78,6 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
     - Mission Planning and Execution.
     - Task decomposition and allocation model.
     - Fleet management
-<br>
 
 - What packages are available for MRS support? What capabilities are offered?
   - [Multi-robot collision avoidance](http://wiki.ros.org/multi_robot_collision_avoidance) (ROS1), more info [here](http://www.willowgarage.com/blog/2012/07/23/multi-robot-collision-avoidance)
@@ -96,7 +88,6 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
   - [map_merging](http://wiki.ros.org/map_merging) (ROS1)
   - [tf_splitter](http://wiki.ros.org/tf_splitter) (ROS1)
   Just to mention some, [here](https://github.com/topics/multi-robot) are more.
-<br>
 
 ## Known risks/issues
 Simulation
