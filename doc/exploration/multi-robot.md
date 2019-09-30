@@ -24,7 +24,6 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
 <u>Navigation support for MRS:</u>
 
 - What is **within scope**? i.e. considering a system of multiple mobile robots, what are the concerns that *navigation* should provide a solution for?
-<span style="color:rgba(51,73, 255);">
   - Execution of elemental navigation tasks: point-to-point, keep pose, etc.
   - Execution of composed navigation tasks: way-point following, area coverage, etc.
   - Execution of a sequence of navigation tasks
@@ -35,24 +34,19 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
     - Global world modeling and aggregation of sensing data
   - On a distributed architecture, solutions for:
     - Allocating navigation tasks between a team of robots
-</span>
-<!-- <br> -->
+<br>
 
 - What is **out of scope**?
-<span style="color:rgba(51,73, 255);">
   - Execution of tasks outside of navigation, i.e. manipulation, perception.
   - Execution of a mission plan (sequence of tasks) with a mix of tasks on a single robot.
   - Allocation of non-navigation tasks on a team of robots.
   - Fleet management
-</span>
-<!-- <br> -->
+<br>
 
 - What other elements, features, capabilities should be considered to ensure successful navigation on an environment with multiple robots?
-<span style="color:rgba(51,73, 255);"> </span>
-<!-- <br> -->
+<br>
 
 - What are some key **use cases** to consider?
-<span style="color:rgba(51,73, 255);">
   - Robots delivering product on a warehouse or retail space.
   - Robots cleaning the floor of large building.
   - Robots collecting trash from bins.
@@ -60,38 +54,31 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
   - Robots performing surveillance.
   - Robots creating a map of an area.
   - Two robots moving an object.
-</span>
-<!-- <br> -->
+<br>
 
 <u>ROS2 support for MRS:</u>
 
 - What components or features are needed from the middleware to develop an MRS?
-<span style="color:rgba(51,73, 255);">
   - Communication mechanism for robots in separate domains.
   - Partitioning within a shared ROS domain.
-</span>
-<!-- <br> -->
+<br>
 
 - What is available?
-<span style="color:rgba(51,73, 255);">
   - Logical partitioning using namespaces on a shared domain.
-</span>
-<!-- <br> -->
+<br>
 
 - What is currently missing?
-<span style="color:rgba(51,73, 255);">
   - Complete [partitioning](https://index.ros.org//doc/ros2/Roadmap/#new-features). Currently, nodes sharing a domain must discover each other (DDS discovery) which presents limitations. Also data is accessible across nodes of different robots which can be undesirable. Use of DDS features have been suggested to extend the partitioning:
     - DDS Keyed Data
     - DDS Domain and Participants
 
     Besides logical partitioning, there might be other physical solutions.
-</span>
-<!-- <br> -->
+<br>
 
 <u>Support from an MRS package:</u>
 
 - What capabilities are needed?
-<span style="color:rgba(51,73, 255);">
+
   - A model for describing and developing a full multi-robot system:
     - Collective behavior (cooperative, competitive)
     - Robot awareness -- information that each robot has about it's team mates
@@ -99,12 +86,10 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
     - Organization level (centralized, distributed, hybrid)
     - Mission Planning and Execution. Task decomposition and allocation model.
     - Fleet management
-</span>
-<!-- <br> -->
+<br>
 
 - What packages are available for MRS coordination? What capabilities are offered?
-<span style="color:rgba(51,73, 255);"> </span>
-<!-- <br> -->
+<br>
 
 ---
 ## Known risks/issues
