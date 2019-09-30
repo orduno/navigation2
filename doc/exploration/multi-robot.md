@@ -6,7 +6,6 @@ Understand the **level of support** that `ros2/nav2` should/can provide for deve
 
 Additionally, engage on an exploratory discussion to identify challenges and opportunities for developing an MRS under ROS2.
 
----
 ## Current status
 
 The `nav2` stack currently supports multiple robots co-existing on a simulated environment sharing a ROS domain.
@@ -16,12 +15,11 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
 - Launch a namespaced `nav2` instance per robot.
 - Launch an RVIZ instance per robot with plugins to change the states of the `nav2` instances independently, and to provide the initial and goal poses.
 
----
 ## Key Questions
 
 *Take the current answers as a starting point, these are meant to trigger discussion and will certainly change as we gather input from the community.*
 
-<u>Navigation support for MRS:</u>
+### Navigation support for MRS:
 
 - What is **within scope**? i.e. considering a system of multiple mobile robots, what are the concerns that *navigation* should provide a solution for?
   - Execution of elemental navigation tasks: point-to-point, keep pose, etc.
@@ -56,9 +54,9 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
   - Two robots moving an object.
 <br>
 
-<u>ROS2 support for MRS:</u>
+### ROS2 support for MRS:
 
-- What components or features are needed from the middleware to develop an MRS?
+- What components or features are needed from ROS as middleware to develop an MRS?
   - Communication mechanism for robots in separate domains.
   - Partitioning within a shared ROS domain.
 <br>
@@ -68,14 +66,14 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
 <br>
 
 - What is currently missing?
-  - Complete [partitioning](https://index.ros.org//doc/ros2/Roadmap/#new-features). Currently, nodes sharing a domain must discover each other (DDS discovery) which presents limitations. Also data is accessible across nodes of different robots which can be undesirable. Use of DDS features have been suggested to extend the partitioning:
+  - Complete logical [partitioning](https://index.ros.org//doc/ros2/Roadmap/#new-features). Currently, nodes sharing a domain must discover each other (DDS discovery) which presents limitations. Also data is accessible across nodes of different robots which can be undesirable. Use of DDS features have been suggested to extend the partitioning:
     - DDS Keyed Data
     - DDS Domain and Participants
 
     Besides logical partitioning, there might be other physical solutions.
 <br>
 
-<u>Support from an MRS package:</u>
+### Support from an MRS package:
 
 - What capabilities are needed?
 
@@ -84,18 +82,30 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
     - Robot awareness -- information that each robot has about it's team mates
     - Coordination protocol -- explicit interaction rules.
     - Organization level (centralized, distributed, hybrid)
-    - Mission Planning and Execution. Task decomposition and allocation model.
+    - Mission Planning and Execution.
+    - Task decomposition and allocation model.
     - Fleet management
 <br>
 
-- What packages are available for MRS coordination? What capabilities are offered?
+- What packages are available for MRS support? What capabilities are offered?
+  - [Multi-robot collision avoidance](http://wiki.ros.org/multi_robot_collision_avoidance) (ROS1), more info [here](http://www.willowgarage.com/blog/2012/07/23/multi-robot-collision-avoidance)
+  - [RL based multi-robot collision avoidance](https://github.com/vincekurtz/CollisionAvoidance)
+  - [micROS](http://wiki.ros.org/micros_mars_task_alloc) (ROS1). Pkg for multi-task allocation based on the ALLIANCE model, more info [here](https://micros.trustie.net/) and repo [here](https://github.com/liminglong/micros_mars_task_alloc)
+  - [TUW_multi_robot](https://github.com/tuw-robotics/tuw_multi_robot) (ROS1). Pkg for planning routes of multiple robots on a search graph.
+  - [explore_multirobot](http://wiki.ros.org/explore_multirobot) (ROS1) for frontier exploration.
+  - [map_merging](http://wiki.ros.org/map_merging) (ROS1)
+  - [tf_splitter](http://wiki.ros.org/tf_splitter) (ROS1)
+  Just to mention some, [here](https://github.com/topics/multi-robot) are more.
 <br>
 
----
 ## Known risks/issues
-- Limitations with the number of robots we're able simulate successfully; bringup of individual `nav2 ` instances becomes slow or eventually halts (discovery issues with DDS?)
+Simulation
+- Limitations with the number of `nav2` instances we're able to bring-up successfully. -- bring-up becomes slow or eventually halts (discovery issues with DDS?)
 
-<!-- ---
+ROS2
+- Partitioning (see above)
+
+<!--
 ## Approach
 - Improve some of the existing capabilities, see next section.
 - Engage on an exploratory discussion. Come to an agreement on answers to key questions.
@@ -104,7 +114,6 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
 - Define milestones
 - ... -->
 
----
 ## Next Steps
 - Engage the ROS community on an **exploratory** discussion around MRS and `nav2` support.
 - Update **tutorial** to include the multi-robot example.
