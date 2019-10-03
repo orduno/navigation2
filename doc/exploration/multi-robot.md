@@ -2,7 +2,7 @@
 
 ## Objective
 
-Engage on an exploratory discussion to identify challenges, opportunities and benefits from developing a Multi-Robot Systems (*MRS*) under ROS2.
+Engage on an exploratory discussion to identify challenges and benefits from developing a Multi-Robot Systems (*MRS*) under ROS2.
 
 In general we need to understand:
 
@@ -12,16 +12,16 @@ In general we need to understand:
 
 ## Navigation for Multi-robot Systems
 
-In general, a navigation as a sub-system provides:
+In general, a navigation sub-system provides:
   - Execution of elemental navigation tasks: point-to-point, keep pose, etc.
   - Execution of composed navigation tasks: way-point following, area coverage, etc.
-  - Execution of a sequence of navigation tasks
+  - Execution of a sequence (possibly chained) navigation tasks
 
-In ROS2, `nav2` provides *some* of this core functionality.
+Where `ros2/nav2` provides *some* of the core functionality.
 
 ### Current status
 
-The `nav2` stack currently supports multiple robots co-existing on a simulated environment sharing a ROS domain.
+The `nav2` stack currently supports multiple robots co-existing on a simulated environment sharing a ROS domain. Currently, `nav2` only provides point-to-point navigation.
 
 The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` file as an example for launching a multi-robot system in simulation. The following steps are executed during launch-time:
 - Spawn two robots into a Gazebo instance.
@@ -30,7 +30,7 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
 
 ### Requirements
 
-We'd like to understand the **level of support** required from Navigation for Multi-Robot Systems (*MRS*).
+As a starting point, let's clarify the following questions:
 
 *Take the current answers as a starting point, these are meant to trigger discussion and will certainly change as we gather input from the community.*
 
@@ -72,7 +72,7 @@ We'd like to understand the **level of support** required from Navigation for Mu
 - Define milestones
 - ... -->
 
-- Engage the ROS community on an **exploratory** discussion around MRS and `nav2` support.
+- Engage the ROS community on an **exploratory** discussion around `nav2` support for MRS.
 - Update **tutorial** to include the multi-robot example.
 - Add **multi-robot system test** to `nav2`.
 - Design Improvements
@@ -94,10 +94,11 @@ In addition there are a few *minor* improvements to be done on the **launch file
 
 ### Requirements
 
-- What components or features are needed from ROS as middleware to develop an MRS?
+- What components or features are needed from ROS to develop an MRS?
   - Bridging between ROS domains, i.e. communication mechanism for robots in separate domains
     - Separating domains might be better for performance: hiding messages not required by other robots, etc.
   - Partitioning within a shared ROS domain.
+  - TF2 namespacing/prefixing
 
 - What is available?
   - Logical partitioning using namespaces on a shared domain.
