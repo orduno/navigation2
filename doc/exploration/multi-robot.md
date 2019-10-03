@@ -8,7 +8,7 @@ In general we need to understand:
 
 - What is required from ROS2 to develop an MRS? What is already there and what's missing?
 - What is required from the navigation sub-system and from `ros2/nav2`?
-- What is required from an MRS package?
+- What is required from a ROS2-based MRS package?
 
 ## Navigation for Multi-robot Systems
 
@@ -21,7 +21,7 @@ Where `ros2/nav2` provides *some* of the core functionality.
 
 ### Current status
 
-The `nav2` stack currently supports multiple robots co-existing on a simulated environment sharing a ROS domain. Currently, `nav2` only provides point-to-point navigation.
+The `nav2` stack currently supports multiple robots co-existing on a simulated environment sharing a ROS domain and provides point-to-point navigation for each robot.
 
 The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` file as an example for launching a multi-robot system in simulation. The following steps are executed during launch-time:
 - Spawn two robots into a Gazebo instance.
@@ -32,7 +32,7 @@ The `nav2_bringup` package provides the `nav2_multi_tb3_simulation_launch.py` fi
 
 As a starting point, let's clarify the following questions:
 
-*Take the current answers as a starting point, these are meant to trigger discussion and will certainly change as we gather input from the community.*
+*These are meant to trigger discussion and will certainly change as we gather input from the community.*
 
 - What is **within scope**? i.e. considering a system of multiple mobile robots, what are the concerns that *navigation* should provide a solution for?
   - Collision and deadlock avoidance between robots
@@ -50,7 +50,7 @@ As a starting point, let's clarify the following questions:
 - What other features or capabilities should be considered to ensure successful navigation on an environment with multiple robots?
 
 ### Use Cases
-- What are some key **use cases** to consider?
+- What are some **key use cases** to consider?
   - Robots delivering product on a warehouse or retail space.
   - Robots cleaning the floor of large building.
   - Robots collecting trash from bins.
@@ -59,7 +59,7 @@ As a starting point, let's clarify the following questions:
   - Robots creating a map of an area.
   - Two robots moving an object.
 
-### Known risks/issues
+### Known risks/issues/limitations
 
 ### Next Steps
 
@@ -123,7 +123,7 @@ ROS2
 
 - What capabilities are needed?
 
-  - A model for describing and developing a full multi-robot system:
+  - A framework/stack for describing and developing a full multi-robot system:
     - Collective behavior (cooperative, competitive)
     - Robot awareness -- information that each robot has about it's team mates
     - Coordination protocol -- explicit interaction rules.
