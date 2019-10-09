@@ -115,12 +115,14 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': use_sim_time},
                     {'autostart': autostart},
-                    {'node_names': ['map_server',
-                                    'amcl',
-                                    'controller_server',
-                                    'planner_server',
+                    {'node_names': [
+                                    # 'map_server',
+                                    # 'amcl',
+                                    # 'controller_server',
+                                    # 'planner_server',
                                     'recoveries_server',
-                                    'bt_navigator']}])
+                                    'bt_navigator'
+                                    ]}])
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -139,7 +141,7 @@ def generate_launch_description():
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_lifecycle_manager_cmd)
-    ld.add_action(start_localization_cmd)
+    # ld.add_action(start_localization_cmd)
     ld.add_action(start_navigation_cmd)
 
     return ld

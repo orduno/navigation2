@@ -101,22 +101,22 @@ def generate_launch_description():
             'map_subscribe_transient_local', default_value='false',
             description='Whether to set the map subscriber QoS to transient local'),
 
-        Node(
-            package='nav2_controller',
-            node_executable='controller_server',
-            output='screen',
-            parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
-            remappings=remappings),
+        # Node(
+        #     package='nav2_controller',
+        #     node_executable='controller_server',
+        #     output='screen',
+        #     parameters=[configured_params],
+        #     use_remappings=IfCondition(use_remappings),
+        #     remappings=remappings),
 
-        Node(
-            package='nav2_planner',
-            node_executable='planner_server',
-            node_name='planner_server',
-            output='screen',
-            parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
-            remappings=remappings),
+        # Node(
+        #     package='nav2_planner',
+        #     node_executable='planner_server',
+        #     node_name='planner_server',
+        #     output='screen',
+        #     parameters=[configured_params],
+        #     use_remappings=IfCondition(use_remappings),
+        #     remappings=remappings),
 
         Node(
             package='nav2_recoveries',
@@ -127,14 +127,14 @@ def generate_launch_description():
             use_remappings=IfCondition(use_remappings),
             remappings=remappings),
 
-        Node(
-            package='nav2_bt_navigator',
-            node_executable='bt_navigator',
-            node_name='bt_navigator',
-            output='screen',
-            parameters=[configured_params],
-            use_remappings=IfCondition(use_remappings),
-            remappings=remappings),
+        # Node(
+        #     package='nav2_bt_navigator',
+        #     node_executable='bt_navigator',
+        #     node_name='bt_navigator',
+        #     output='screen',
+        #     parameters=[configured_params],
+        #     use_remappings=IfCondition(use_remappings),
+        #     remappings=remappings),
 
         Node(
             condition=IfCondition(use_lifecycle_mgr),
@@ -144,9 +144,11 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
-                        {'node_names': ['controller_server',
-                                        'planner_server',
+                        {'node_names': [
+                                        # 'controller_server',
+                                        # 'planner_server',
                                         'recoveries_server',
-                                        'bt_navigator']}]),
+                                        'bt_navigator'
+                                        ]}]),
 
     ])

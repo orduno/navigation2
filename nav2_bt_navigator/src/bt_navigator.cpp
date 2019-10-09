@@ -63,7 +63,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-    "/goal_pose",
+    "/goal",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
@@ -248,6 +248,11 @@ BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr
 {
   nav2_msgs::action::NavigateToPose::Goal goal;
   goal.pose = *pose;
+
+  // Enable result awareness by providing an empty lambda function
+  auto send_goal_options = typename rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+  // send_goal_options.result_callback = [](auto) {};
+  send_goal_options.result_callback = [](auto)->void {};
   self_client_->async_send_goal(goal);
 }
 
