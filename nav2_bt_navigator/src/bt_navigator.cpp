@@ -52,8 +52,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "NavigateToPose");
+  // self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
+  //   client_node_, "NavigateToPose");
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -151,7 +151,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   goal_sub_.reset();
   client_node_.reset();
-  self_client_.reset();
+  // self_client_.reset();
   tf_.reset();
   tf_listener_.reset();
   action_server_.reset();
@@ -253,7 +253,7 @@ BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr
   auto send_goal_options = typename rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
   // send_goal_options.result_callback = [](auto) {};
   send_goal_options.result_callback = [](auto)->void {};
-  self_client_->async_send_goal(goal);
+  // self_client_->async_send_goal(goal);
 }
 
 }  // namespace nav2_bt_navigator

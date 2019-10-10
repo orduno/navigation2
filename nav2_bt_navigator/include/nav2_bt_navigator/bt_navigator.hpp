@@ -81,7 +81,7 @@ protected:
   std::unique_ptr<BT::Tree> tree_;
 
   // A client that we'll use to send a command message to our own task server
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
+  // rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
