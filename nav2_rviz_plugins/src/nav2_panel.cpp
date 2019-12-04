@@ -40,6 +40,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   start_reset_button_ = new QPushButton;
   pause_resume_button_ = new QPushButton;
   navigation_mode_button_ = new QPushButton;
+  robot_name_input_ = new QLineEdit;
+  robots_ = new QComboBox;
 
   // Create the state machine used to present the proper control button states in the UI
 
@@ -211,13 +213,21 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QObject::connect(&state_machine_, SIGNAL(started()), this, SLOT(startThread()));
   state_machine_.start();
 
-  // Lay out the items in the panel
-  QVBoxLayout * main_layout = new QVBoxLayout;
-  main_layout->addWidget(pause_resume_button_);
-  main_layout->addWidget(start_reset_button_);
-  main_layout->addWidget(navigation_mode_button_);
+  // robot_name_input_->setMaxLength(10);
+  robot_name_input_->setPlaceholderText("Type the robot's namespace followed by Enter");
 
-  main_layout->setContentsMargins(10, 10, 10, 10);
+  robots_->addItem("Robot1");
+  robots_->addItem("Robot2");
+
+  // Lay out the items in the panel
+  QGridLayout * main_layout = new QGridLayout;
+  main_layout->addWidget(robot_name_input_, 0, 0);
+  main_layout->addWidget(robots_, 0, 1);
+  main_layout->addWidget(pause_resume_button_, 1, 0);
+  main_layout->addWidget(start_reset_button_, 1, 1);
+  main_layout->addWidget(navigation_mode_button_, 2, 0, 2 , 1);
+
+  // main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
 
   auto options = rclcpp::NodeOptions().arguments(

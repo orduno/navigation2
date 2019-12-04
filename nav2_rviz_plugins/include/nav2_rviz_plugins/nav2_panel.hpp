@@ -33,6 +33,8 @@
 #include "nav2_util/geometry_utils.hpp"
 
 class QPushButton;
+class QLineEdit;
+class QComboBoxClass;
 
 namespace nav2_rviz_plugins
 {
@@ -101,6 +103,9 @@ private:
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
   QPushButton * navigation_mode_button_{nullptr};
+
+  QLineEdit * robot_name_input_{nullptr};
+  QComboBox * robots_{nullptr};
 
   QStateMachine state_machine_;
   InitialThread * initial_thread_;
